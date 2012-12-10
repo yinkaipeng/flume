@@ -51,9 +51,9 @@ class EventQueueBackingStoreFactory {
                   + " exists but checkpoint does not. Checkpoint = " + checkpointFile
                   + ", metaDataFile = " + metaDataFile);
           throw new BadCheckpointException(
-                  "The last checkpoint was not completed correctly, " +
-                      "since Checkpoint file does not exist while metadata " +
-                      "file does.");
+                  "The last checkpoint was not completed correctly. "
+                  + "Please delete all files in the checkpoint directory: "
+                  + checkpointFile.getParentFile());
         }
       }
       // brand new, use v3
