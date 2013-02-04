@@ -46,6 +46,7 @@ limitations under the License.
     <hadoop-one.version>1.0.1</hadoop-one.version>
     <hadoop-two.version>2.0.0-alpha</hadoop-two.version>
     <hbaseversion>0.94.2</hbaseversion>
+    <zookeeper.version>3.4.5</zookeeper.version>
     <repoid>apache.staging.https</repoid>
     <repourl>https://repository.apache.org/service/local/staging/deploy/maven2/</repourl>
     <reponame>Apache Staging Repository</reponame>
@@ -816,6 +817,16 @@ limitations under the License.
         <artifactId>joda-time</artifactId>
         <version>2.1</version>
       </dependency>
+      
+      <!-- Adding zookeeper as dependency, beacuse it was 
+           pulling different version of zookeeper as transient
+           dependency from asynchbase. -->
+      
+      <dependency>
+        <groupId>org.apache.zookeeper</groupId>
+        <artifactId>zookeeper</artifactId>
+        <version>${zookeeper.version}</version>
+       </dependency>
 
       <dependency>
         <groupId>org.apache.hbase</groupId>
