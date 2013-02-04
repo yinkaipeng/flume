@@ -40,7 +40,15 @@ limitations under the License.
     <test.exclude.pattern>$</test.exclude.pattern> <!-- junk pattern -->
     <test.include.pattern>**/Test*.java</test.include.pattern>
     <siteUrlDeployment>file://people.apache.org/www/incubator.apache.org/flume</siteUrlDeployment>
+    <siteid>apache.website</siteid>
+    <sitename>Flume Site</sitename>
     <stagingDirectory>${project.basedir}/target/docs</stagingDirectory>
+    <hadoop-one.version>1.0.1</hadoop-one.version>
+    <hadoop-two.version>2.0.0-alpha</hadoop-two.version>
+    <hbaseversion>0.94.2</hbaseversion>
+    <repoid>apache.staging.https</repoid>
+    <repourl>https://repository.apache.org/service/local/staging/deploy/maven2/</repourl>
+    <reponame>Apache Staging Repository</reponame>
 
   </properties>
 
@@ -67,8 +75,8 @@ limitations under the License.
         </property>
       </activation>
       <properties>
-        <hadoop.version>1.0.1</hadoop.version>
-        <hbase.version>0.92.1</hbase.version>
+        <hadoop.version>${hadoop-one.version}</hadoop.version>
+        <hbase.version>${hbaseversion}</hbase.version>
         <hadoop.common.artifact.id>hadoop-core</hadoop.common.artifact.id>
       </properties>
       <dependencyManagement>
@@ -96,8 +104,8 @@ limitations under the License.
         </property>
       </activation>
       <properties>
-        <hadoop.version>2.0.0-alpha</hadoop.version>
-        <hbase.version>0.94.2</hbase.version>
+        <hadoop.version>${hadoop-two.version}</hadoop.version>
+        <hbase.version>${hbaseversion}</hbase.version>
         <hadoop.common.artifact.id>hadoop-common</hadoop.common.artifact.id>
       </properties>
       <dependencyManagement>
@@ -432,14 +440,14 @@ limitations under the License.
 
   <distributionManagement>
     <repository>
-      <id>apache.staging.https</id>
-      <name>Apache Staging Repository</name>
-      <url>https://repository.apache.org/service/local/staging/deploy/maven2/</url>
+      <id>${repoid}</id>
+      <name>${reponame}</name>
+      <url>${repourl}</url>
     </repository>
     <site>
-      <id>apache.website</id>
+      <id>${siteid}</id>
       <url>${siteUrlDeployment}</url>
-      <name>Flume Site</name>
+      <name>${sitename}</name>
     </site>
   </distributionManagement>
 
@@ -812,13 +820,13 @@ limitations under the License.
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase</artifactId>
-        <version>${hbase.version}</version>
+        <version>${hbaseversion}</version>
       </dependency>
 
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase</artifactId>
-        <version>${hbase.version}</version>
+        <version>${hbaseversion}</version>
         <classifier>tests</classifier>
         <scope>test</scope>
       </dependency>
