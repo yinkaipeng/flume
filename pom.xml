@@ -539,6 +539,7 @@ limitations under the License.
                   <exclude>**/*.patch</exclude>
                   <exclude>**/*.avsc</exclude>
                   <exclude>**/docs/**</exclude>
+                  <exclude>HDP-CHANGES.txt</exclude>
                 </excludes>
               </configuration>
             </execution>
@@ -619,6 +620,13 @@ limitations under the License.
 
     </pluginManagement>
 
+    <extensions>
+      <extension>
+      <groupId>org.springframework.build.aws</groupId>
+      <artifactId>org.springframework.build.aws.maven</artifactId>
+      <version>3.0.0.RELEASE</version>
+      </extension>
+    </extensions>
   </build>
 
   <dependencyManagement>
