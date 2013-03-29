@@ -14,7 +14,8 @@ Condor-1.3.1 branched from Apache @ release-1.3.1 (77b5d2885fecb3560a873bd89f49c
  IMPROVEMENTS
     FLUME-1878 - FileChannel replay should print status every 10000 events
     FLUME-1891 - Fast replay runs even when checkpoint exists.
-    FLUME-1762 - File Channel should recover automatically if the checkpoint is incomplete or bad by deleting the contents of the checkpoint directory
+    FLUME-1762 - File Channel should recover automatically if the checkpoint is incomplete or 
+                 bad by deleting the contents of the checkpoint directory
 
 
  BUG FIXES
