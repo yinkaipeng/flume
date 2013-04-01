@@ -52,7 +52,14 @@ public enum ChannelType {
    * @see org.apache.flume.channel.recoverable.memory.RecoverableMemoryChannel
    */
   RECOVERABLEMEMORY(
-      "org.apache.flume.channel.recoverable.memory.RecoverableMemoryChannel");
+      "org.apache.flume.channel.recoverable.memory.RecoverableMemoryChannel"),
+
+  /**
+   * Spillable Memory channel
+   *
+   * @see SpillableMemoryChannel
+   */
+  SPILLABLEMEMORY("org.apache.flume.channel.SpillableMemoryChannel");
 
   private final String channelClassName;
 

@@ -26,6 +26,8 @@ import org.apache.flume.conf.Configurable;
 import org.apache.flume.lifecycle.LifecycleAware;
 import org.apache.flume.lifecycle.LifecycleState;
 
+import java.util.Map;
+
 @InterfaceAudience.Public
 @InterfaceStability.Stable
 public abstract class AbstractChannel
@@ -66,6 +68,11 @@ public abstract class AbstractChannel
 
   @Override
   public void configure(Context context) {
+
+  }
+
+
+  public void postConfigure(Map<String, AbstractChannel> channelMap) {
 
   }
 

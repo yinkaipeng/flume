@@ -17,13 +17,8 @@
  */
 package org.apache.flume.node;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.apache.flume.Channel;
 import org.apache.flume.ChannelFactory;
@@ -38,6 +33,7 @@ import org.apache.flume.Source;
 import org.apache.flume.SourceFactory;
 import org.apache.flume.SourceRunner;
 import org.apache.flume.annotations.Disposable;
+import org.apache.flume.channel.AbstractChannel;
 import org.apache.flume.channel.ChannelProcessor;
 import org.apache.flume.channel.ChannelSelectorFactory;
 import org.apache.flume.channel.DefaultChannelFactory;
@@ -149,6 +145,7 @@ public abstract class AbstractConfigurationProvider implements
           throws InstantiationException {
     LOGGER.info("Creating channels");
 
+    Map<String, AbstractChannel> channelsMap = new HashMap<String, AbstractChannel>();
     /*
      * Some channels will be reused across re-configurations. To handle this,
      * we store all the names of current channels, perform the reconfiguration,
@@ -180,7 +177,8 @@ public abstract class AbstractConfigurationProvider implements
         try {
           Configurables.configure(channel, comp);
           channelComponentMap.put(comp.getComponentName(),
-              new ChannelComponent(channel));
+                  new ChannelComponent(channel));
+          channelsMap.put(comp.getComponentName(), (AbstractChannel) channel);
           LOGGER.info("Created channel " + chName);
         } catch (Exception e) {
           String msg = String.format("Channel %s has been removed due to an " +
@@ -189,6 +187,8 @@ public abstract class AbstractConfigurationProvider implements
         }
       }
     }
+
+
     /*
      * Components which DO NOT have a ComponentConfiguration object
      * and use only Context
@@ -202,6 +202,7 @@ public abstract class AbstractConfigurationProvider implements
         try {
           Configurables.configure(channel, context);
           channelComponentMap.put(chName, new ChannelComponent(channel));
+          channelsMap.put(chName, (AbstractChannel) channel);
           LOGGER.info("Created channel " + chName);
         } catch (Exception e) {
           String msg = String.format("Channel %s has been removed due to an " +
@@ -226,9 +227,15 @@ public abstract class AbstractConfigurationProvider implements
         }
       }
     }
+
+     for(Channel channel : channelsMap.values() ) {
+        ((AbstractChannel)channel).postConfigure(channelsMap);
+     }
+
+
   }
 
-  private Channel getOrCreateChannel(
+  public Channel getOrCreateChannel(
       ListMultimap<Class<? extends Channel>, String> channelsNotReused,
       String name, String type)
       throws FlumeException {

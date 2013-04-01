@@ -52,7 +52,9 @@ public class ChannelConfiguration extends ComponentConfiguration {
      * Recoverable Memory Channel
      * @see org.apache.flume.channel.recoverable.memory.RecoverableMemoryChannel
      */
-    RECOVERABLEMEMORY("org.apache.flume.conf.channel.RecoverableMemoryChannelConfiguration");
+    RECOVERABLEMEMORY("org.apache.flume.conf.channel.RecoverableMemoryChannelConfiguration"),
+
+    SPILLABLEMEMORY("org.apache.flume.conf.channel.SpillableMemoryChannelConfiguration");
 
     private String channelConfigurationType;
 

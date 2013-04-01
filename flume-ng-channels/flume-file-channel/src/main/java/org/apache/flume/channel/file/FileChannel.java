@@ -27,10 +27,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.flume.Channel;
-import org.apache.flume.ChannelException;
-import org.apache.flume.Context;
-import org.apache.flume.Event;
+import org.apache.flume.*;
 import org.apache.flume.annotations.InterfaceAudience;
 import org.apache.flume.annotations.InterfaceStability;
 import org.apache.flume.annotations.Disposable;
@@ -440,7 +437,7 @@ public class FileChannel extends BasicChannelSemantics {
       // this does not need to be in the critical section as it does not
       // modify the structure of the log or queue.
       if(!queueRemaining.tryAcquire(keepAlive, TimeUnit.SECONDS)) {
-        throw new ChannelException("The channel has reached it's capacity. "
+        throw new ChannelFullException("The channel has reached it's capacity. "
             + "This might be the result of a sink on the channel having too "
             + "low of batch size, a downstream system running slower than "
             + "normal, or that the channel capacity is just too low. "

@@ -915,6 +915,12 @@ limitations under the License.
         <version>1.3.1</version>
       </dependency>
 
+      <dependency>
+        <groupId>org.apache.flume.flume-ng-channels</groupId>
+        <artifactId>flume-spillable-memory-channel</artifactId>
+        <version>1.3.1</version>
+      </dependency>
+
      <dependency>
        <groupId>org.apache.flume.flume-ng-channels</groupId>
        <artifactId>flume-recoverable-memory-channel</artifactId>
@@ -954,7 +960,7 @@ limitations under the License.
       <dependency>
         <groupId>org.apache.flume.flume-ng-sources</groupId>
         <artifactId>flume-jms-source</artifactId>
-        <version>1.4.0-SNAPSHOT</version>
+        <version>1.3.1</version>
       </dependency>
 
       <dependency>
