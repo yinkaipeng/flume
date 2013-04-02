@@ -15,7 +15,7 @@
 
 
 ======================================
-Flume 1.3.0 User Guide
+Flume 1.3.1 User Guide
 ======================================
 
 Introduction
@@ -2406,7 +2406,7 @@ Log4J Appender
 
 Appends Log4j events to a flume agent's avro source. A client using this
 appender must have the flume-ng-sdk in the classpath (eg,
-flume-ng-sdk-1.3.0.jar).
+flume-ng-sdk-1.3.1.jar).
 Required properties are in **bold**.
 
 =============  =======  ==========================================================================
