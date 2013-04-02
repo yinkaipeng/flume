@@ -1651,6 +1651,69 @@ Example for agent named a1:
   a1.channels.c1.type = memory
   a1.channels.c1.capacity = 1000
 
+
+Spillable Memory Channel  (Experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Events are stored in an in-memory queue upto a configurable capacity. Additional events that
+do not fit into main memory are spilled into a configurable overflow channel. Basically
+it is a memory channel with the ability to spill excess capacity into another channel. Although
+any channel can be used to handle overflow, it is highly recommended to use File channel.
+
+Spillable channel provides fast throughput speeds similar to that of Memory channel during normal
+operation when the drain rate is same as or exceeds ingest rate. When ingest rate exceeds drain
+rate either due to unexpected spikes in ingest rate or problems on sink side, memory queue fills
+up and overall throughput degrades due to reliance on the slower overflow channel.
+
+Spillable Channel is a non-durable channel due to its reliance on main memory as primary store.
+Consequenltly, if File channel speed is acceptable for normal operation it is preferrable to use
+it over Spillable channel.
+
+Required properties are in **bold**.
+
+========================  ===========  =====================================================================================================
+Property Name             Default      Description
+========================  ===========  =====================================================================================================
+**type**                  --           The component type name, needs to be ``SPILLABLEMEMORY``
+**overflow**              --           Name of the channel to use as overflow
+memoryCapacity            100          The max number of events stored in memory
+totalCapacity             2147483647   The max number of events stored in memory + overflow
+maxTransactionBatchSize   100          The tight upper bound for the max events that are can be inserted/drained in a single transaction. Set this to the largest batchSize setting of all sinks and sources connected to this channel.
+keep-alive                3            Timeout in seconds for adding or removing an event
+========================  ===========  =====================================================================================================
+
+.. warning:: The **keep-alive** setting of the Overflow channel must be set to 0.
+             Overflow channel should not be connected to any source or sink.
+
+Example for agent named agent1:
+
+.. code-block:: properties
+
+  agent1.sources = source1
+  agent1.sinks = sink1
+  agent1.channels = spillChannel overflowFileChannel
+
+  agent1.sources.source1.type = SEQ
+  agent1.sources.source1.batchSize = 10
+  agent1.sources.source1.channels = spillChannel1
+
+  agent1.sinks.sink1.type = null
+  agent1.sinks.sink1.channel = spillChannel1
+  agent1.sinks.sink1.batchSize = 10
+
+  agent1.channels.spillChannel.type = SPILLABLEMEMORY
+  agent1.channels.spillChannel.maxTransactionBatchSize = 10
+  agent1.channels.spillChannel.memoryCapacity = 1000
+  agent1.channels.spillChannel.totalCapacity = 10000
+  agent1.channels.spillChannel.keep-alive = 3
+  agent1.channels.spillChannel.overflowChannel = overflowFileChannel
+
+  agent1.channels.overflowFileChannel.type = file
+  agent1.channels.overflowFileChannel.checkpointDir = /tmp/fchannel/checkpoint
+  agent1.channels.overflowFileChannel.dataDirs = /tmp/fchannel/data
+  agent1.channels.overflowFileChannel.keep-alive = 0
+  agent1.channels.overflowFileChannel.capacity = 9000
+
 JDBC Channel
 ~~~~~~~~~~~~
 
