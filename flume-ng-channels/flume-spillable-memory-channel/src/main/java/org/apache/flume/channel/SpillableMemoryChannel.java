@@ -52,7 +52,7 @@ import com.google.common.base.Preconditions;
 @Recyclable
 public class SpillableMemoryChannel extends BasicChannelSemantics {
   private static Logger LOGGER = LoggerFactory.getLogger(SpillableMemoryChannel.class);
-  public static final Integer defaultMemoryCapacity = 100;
+  public static final Integer defaultMemoryCapacity = 100000;
   public static final Integer totalCapacityUnlimited = Integer.MAX_VALUE;  // Unlimited
 
   public static final Integer defaultMaxTransactionBatchSize = 100;
@@ -223,6 +223,10 @@ public class SpillableMemoryChannel extends BasicChannelSemantics {
       if(headValue.intValue() == 0)
         queue.removeFirst();
       overflowCounter -= takeCount;
+    }
+
+    public long getOverflowCount() {
+      return overflowCounter;
     }
 
   }
@@ -399,6 +403,7 @@ public class SpillableMemoryChannel extends BasicChannelSemantics {
           overflowTransaction.commit();
         }
       }
+      channelCounter.setChannelSize(queue.size() + drainOrder.getOverflowCount());
     }
 
     private void takeCommit() {
@@ -501,7 +506,7 @@ public class SpillableMemoryChannel extends BasicChannelSemantics {
       } else {
         overflowTransaction.rollback();
       }
-      channelCounter.setChannelSize(queue.size()); // TODO: Probably need to add the size of the overflow channel's queue also
+      channelCounter.setChannelSize(queue.size() + drainOrder.getOverflowCount()); // TODO: Probably need to add the size of the overflow channel's queue also
     }
   } // Transaction
 
@@ -742,7 +747,7 @@ public class SpillableMemoryChannel extends BasicChannelSemantics {
   @Override
   public synchronized void start() {
     channelCounter.start();
-    channelCounter.setChannelSize(queue.size());
+    channelCounter.setChannelSize(queue.size() + drainOrder.getOverflowCount());
     int remainingCapacity = memoryCapacity - queue.size();
     channelCounter.setChannelCapacity(queue.size() + remainingCapacity);
     overflowChannel = overflowChannelTmp;
@@ -752,7 +757,7 @@ public class SpillableMemoryChannel extends BasicChannelSemantics {
 
   @Override
   public synchronized void stop() {
-    channelCounter.setChannelSize(queue.size());
+    channelCounter.setChannelSize(queue.size()+ drainOrder.getOverflowCount());
     channelCounter.stop();
     overflowChannel.stop();
     super.stop();
