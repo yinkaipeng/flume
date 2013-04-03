@@ -24,13 +24,10 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.GuardedBy;
+
+import org.apache.flume.*;
 import org.apache.flume.annotations.Recyclable;
 
-import org.apache.flume.ChannelException;
-import org.apache.flume.ChannelFullException;
-
-import org.apache.flume.Context;
-import org.apache.flume.Event;
 import org.apache.flume.annotations.InterfaceAudience;
 import org.apache.flume.annotations.InterfaceStability;
 import org.apache.flume.instrumentation.ChannelCounter;
@@ -64,6 +61,7 @@ public class SpillableMemoryChannel extends BasicChannelSemantics {
   public static final Integer defaultOverflowDeactivationThreshold = 5; // percent
 
   private Object queueLock = new Object(); // use for synchronizing access to primary/overflow channels & drain order
+  private boolean drainOverflow = true;
 
   @GuardedBy(value = "queueLock")
 //  private LinkedBlockingDeque<Event> queue;
@@ -513,6 +511,7 @@ public class SpillableMemoryChannel extends BasicChannelSemantics {
 
   public SpillableMemoryChannel() {
     super();
+    drainOverflow = true;
   }
 
   /**
@@ -752,8 +751,46 @@ public class SpillableMemoryChannel extends BasicChannelSemantics {
     channelCounter.setChannelCapacity(queue.size() + remainingCapacity);
     overflowChannel = overflowChannelTmp;
     overflowChannel.start();
+    if(drainOverflow)
+      drainChannel(overflowChannel);
+    drainOverflow = false;
     super.start();
   }
+
+  /**
+   * Drains the specified channel and discards all events
+   * @param channel The channel to be drained
+   */
+  private void drainChannel(BasicChannelSemantics channel) throws ChannelException {
+    LOGGER.info("Discarding events in " + overflowChannelName + " channel prior to startup");
+    Transaction tx = null;
+    try {
+      int count=0;
+      boolean done = false;
+      while(!done) {
+      tx =  channel.getTransaction();
+      tx.begin();
+      for(int i=0; i<transBatchSize; ++i) {
+        if(channel.take()==null) {
+          done=true;
+          break;
+        }
+        ++count;
+      }
+      tx.commit();
+      LOGGER.info("Discarded " + count + " events from " + overflowChannelName);
+      tx.close();
+    }
+    } catch (ChannelException ex) {
+      LOGGER.error("Unable to discard all events in " + overflowChannelName + " channel. Please clear its contents manually.");
+      if (tx != null) {
+        tx.rollback();
+        tx.close();
+      }
+      throw ex;
+    }
+  }
+
 
   @Override
   public synchronized void stop() {

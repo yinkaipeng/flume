@@ -1676,14 +1676,16 @@ Property Name             Default      Description
 ========================  ===========  =====================================================================================================
 **type**                  --           The component type name, needs to be ``SPILLABLEMEMORY``
 **overflow**              --           Name of the channel to use as overflow
-memoryCapacity            100000       The max number of events stored in memory
-totalCapacity             2147483647   The max number of events stored in memory + overflow
-maxTransactionBatchSize   100          The tight upper bound for the max events that are can be inserted/drained in a single transaction. Set this to the largest batchSize setting of all sinks and sources connected to this channel.
+memoryCapacity            100000       The max number of events stored in memory. If set to 0, in-memory queue will not be used
+totalCapacity             2147483647   The max number of events stored in memory + overflow. If totalCapacity = memoryCapacity, overflow will not be used
+maxTransactionBatchSize   100          The tight upper bound for the max events that are can be inserted/drained in a single transaction. Set this to the largest batchSize setting of all sinks and sources connected to this channel
 keep-alive                3            Timeout in seconds for adding or removing an event
 ========================  ===========  =====================================================================================================
 
 .. warning:: The **keep-alive** setting of the Overflow channel must be set to 0.
              Overflow channel should not be connected to any source or sink.
+
+.. warning:: When the Flume process is (re)started, all pre-existing events in the overflow channel will be discarded before resuming normal operation.
 
 Example for agent named agent1:
 

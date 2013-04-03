@@ -99,6 +99,9 @@ public class TestSpillableMemoryChannel {
     startChannel(params);
   }
 
+  private static void debug(String msg) {
+//    System.out.println(msg);
+  }
 
   static class NullFound extends RuntimeException {
     public int expectedValue;
@@ -152,7 +155,7 @@ public class TestSpillableMemoryChannel {
 
   private static void takeNull(AbstractChannel channel) {
       Event e = channel.take();
-//      Assert.assertNull(e);
+      Assert.assertNull(e);
   }
 
   private static void takeN(int first, int count, AbstractChannel channel) {
@@ -191,11 +194,11 @@ public class TestSpillableMemoryChannel {
       putN(first, count, channel);
       tx.commit();
     } catch (RuntimeException e) {
-      System.out.println("Queue size is " +  ( (SpillableMemoryChannel) channel).queueSize());
+      debug("Queue size is " +  ( (SpillableMemoryChannel) channel).queueSize());
       tx.rollback();
       throw e;
     } catch (Throwable e) {
-      System.out.println("Queue size is " +  ( (SpillableMemoryChannel) channel).queueSize());
+      debug("Queue size is " +  ( (SpillableMemoryChannel) channel).queueSize());
       e.printStackTrace();
     } finally {
       tx.close();
@@ -276,7 +279,7 @@ public class TestSpillableMemoryChannel {
           }
           watch.elapsed();
 //          System.out.println(Thread.currentThread().getName() + " is done.");
-          System.out.println("FC Max queue size " + maxdepth);
+          debug("FC Max queue size " + maxdepth);
         }
       };
   }
@@ -656,6 +659,30 @@ public class TestSpillableMemoryChannel {
     transactionalTakeN(15, 5, channel);
   }
 
+
+  @Test
+  public void testRestart()  {
+    //1) bring up with small capacity
+    Map<String, String> params = new HashMap<String, String>();
+    params.put("overflowChannel", fileChannelName);
+    params.put("maxTransactionBatchSize", "10");
+    params.put("memoryCapacity", "0");
+    params.put("totalCapacity", "10");
+    params.put("keep-alive", "0");
+    startChannel(params);
+
+    transactionalPutN(1, 5, channel);
+    transactionalTakeN(1, 1, channel);
+
+    //2) Restart and verify that all items inserted prior to restart have been drained
+    tearDown();
+    setUp();
+    params.put("overflowChannel", fileChannelName);
+    startChannel(params);
+
+    transactionalTakeNull(3, channel);
+  }
+
   @Test
   public void testPerf() {
 
@@ -676,20 +703,20 @@ public class TestSpillableMemoryChannel {
 
       long elapsed = System.currentTimeMillis() - startTime;
       totalPutTime+= elapsed;
-      System.out.println("Total put time: " + elapsed + " ms" );
+      debug("Total put time: " + elapsed + " ms" );
 
       startTime = System.currentTimeMillis();
       for(int i =0; i<100000; i=i+100)
         transactionalTakeN(i,100,channel);
       elapsed = System.currentTimeMillis() - startTime;
       totalTakeTime+= elapsed;
-      System.out.println("Total take time: " + elapsed + "ms" );
+      debug("Total take time: " + elapsed + "ms" );
     }
 
-    System.out.println();
-    System.out.println("TOTAL put  time: " + totalPutTime + " ms" );
-    System.out.println("TOTAL take time: " + totalTakeTime + " ms" );
-    System.out.println("TOTAL exec time: " + ( System.currentTimeMillis() - startTime0) + " ms" );
+    debug("");
+    debug("TOTAL put  time: " + totalPutTime + " ms" );
+    debug("TOTAL take time: " + totalTakeTime + " ms" );
+    debug("TOTAL exec time: " + ( System.currentTimeMillis() - startTime0) + " ms" );
 
   }
 
@@ -715,7 +742,7 @@ public class TestSpillableMemoryChannel {
     sinkThd.join();
 
     watch.elapsed();
-    System.out.println("Max Queue size " + channel.getMaxQueueSize() );
+    debug("Max Queue size " + channel.getMaxQueueSize() );
   }
 
 
@@ -783,12 +810,12 @@ public class TestSpillableMemoryChannel {
 
     watch.elapsed();
 
-    System.out.println("Total puts " + channel.drainOrder.totalPuts);
+    debug("Total puts " + channel.drainOrder.totalPuts);
 
-    System.out.println("Max Queue size " + channel.getMaxQueueSize() );
-    System.out.println(channel.queue.size());
+    debug("Max Queue size " + channel.getMaxQueueSize() );
+    debug("" + channel.queue.size());
 
-    System.out.println("done");
+    debug("done");
   }
 
 
@@ -811,9 +838,9 @@ public class TestSpillableMemoryChannel {
         suffix = "{ " + suffix + " }";
 
       if (elapsed < 10000)
-        System.out.println(Thread.currentThread().getName() +  " : [ " + elapsed + " ms ].        " + suffix);
+        debug(Thread.currentThread().getName() +  " : [ " + elapsed + " ms ].        " + suffix);
       else
-        System.out.println(Thread.currentThread().getName() +  " : [ " + elapsed / 1000 + " sec ].       " + suffix);
+        debug(Thread.currentThread().getName() +  " : [ " + elapsed / 1000 + " sec ].       " + suffix);
     }
   }
 
