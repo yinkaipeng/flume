@@ -50,7 +50,7 @@ limitations under the License.
     <repoid>apache.staging.https</repoid>
     <repourl>https://repository.apache.org/service/local/staging/deploy/maven2/</repourl>
     <reponame>Apache Staging Repository</reponame>
-
+    <repo.maven.org>http://repo1.maven.org/maven2</repo.maven.org>
   </properties>
 
   <modules>
@@ -418,6 +418,11 @@ limitations under the License.
   </pluginRepositories>
 
   <repositories>
+    <repository>
+      <id>${repoid}</id>
+      <name>${reponame}</name>
+      <url>${repo.maven.org}</url>
+    </repository> 
     <repository>
       <id>repo1.maven.org</id>
       <url>http://repo1.maven.org/maven2</url>
