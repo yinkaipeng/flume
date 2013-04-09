@@ -49,7 +49,7 @@ limitations under the License.
     <zookeeper.version>3.4.5</zookeeper.version>
     <repoid>apache.staging.https</repoid>
     <repourl>https://repository.apache.org/service/local/staging/deploy/maven2/</repourl>
-    <eeponame>Apache Staging Repository</reponame>
+    <reponame>Apache Staging Repository</reponame>
     <repo.maven.org>http://repo1.maven.org/maven2</repo.maven.org>
     <publicrepoid>public</publicrepoid>
   </properties>
