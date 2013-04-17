@@ -52,6 +52,7 @@ limitations under the License.
     <reponame>Apache Staging Repository</reponame>
     <repo.maven.org>http://repo1.maven.org/maven2</repo.maven.org>
     <publicrepoid>public</publicrepoid>
+    <avro.version>1.7.1</avro.version>
   </properties>
 
   <modules>
