@@ -186,7 +186,14 @@ public class SourceConfiguration extends ComponentConfiguration {
      *
      * @see org.apache.flume.source.SpoolDirectorySource
      */
-    SPOOLDIR("org.apache.flume.conf.source.SpoolDirectorySourceConfiguration");
+    SPOOLDIR("org.apache.flume.conf.source.SpoolDirectorySourceConfiguration"),
+
+    /**
+     * JMS Source
+     *
+     * @see org.apache.flume.source.jms.JMSSource
+     */
+    JMS("org.apache.flume.source.jms.JMSSourceConfiguration");
 
     private String srcConfigurationName;
 
