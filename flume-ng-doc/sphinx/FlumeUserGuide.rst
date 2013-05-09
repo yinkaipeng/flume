@@ -714,7 +714,8 @@ JMS Source
 JMS Source reads messages from a JMS destination such as a queue or topic. Being a JMS
 application it should work with any JMS provider but has only been tested with ActiveMQ.
 The JMS source provides configurable batch size, message selector, user/pass, and message
-to flume event converter.
+to flume event converter. Note that the vendor provided JMS jars should be included in the
+Flume classpath using --classpath on command line argument.
 
 Required properties are in **bold**.
 

@@ -10,6 +10,7 @@ Condor-1.3.1 branched from Apache @ release-1.3.1 (77b5d2885fecb3560a873bd89f49c
     FLUME-1804 - JMS source not included in binary dist
     FLUME-1777 - AbstractSource does not provide enough implementation for sub-classes
     FLUME-1886 - Add a JMS enum type to SourceType so that users don't need to enter FQCN for JMSSource
+    FLUME-1976 - JMS Source document should provide instruction on JMS implementation jars
 
     [Spillable Channel - Experimental]
     FLUME-1227 - Introduce some sort of SpillableChannel
