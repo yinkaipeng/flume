@@ -1,5 +1,7 @@
 Condor-1.3.1 branched from Apache @ release-1.3.1 (77b5d2885fecb3560a873bd89f49cbac8a010347)
 
+
+CONDOR:
  INCOMPATIBLE CHANGES
 
 
@@ -36,3 +38,19 @@ Condor-1.3.1 branched from Apache @ release-1.3.1 (77b5d2885fecb3560a873bd89f49c
     FLUME-1870 - Flume sends non-numeric values with type as float to Ganglia causing ganglia to crash
     FLUME-1918 - File Channel cannot handle capacity of more than 500 Million events
     FLUME-1262 - Move doc generation to a different profile
+
+
+
+
+
+COMANCHE:
+  INCOMPATIBLE CHANGES
+
+
+  NEW FEATURES
+
+
+  IMPROVEMENTS
+
+
+  BUG FIXES
