@@ -1,0 +1,2 @@
+ git@github.com:hortonworks/flume.git   @  bighweel-beta2-1.4.0  branched from apache
+git://git.apache.org/flume.git  @ flume-1.4 (756924e96ace470289472a3bdb4d87e273ca74ef)
