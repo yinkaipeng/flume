@@ -556,6 +556,7 @@ limitations under the License.
                   <exclude>**/.classpath</exclude>
                   <exclude>**/.project</exclude>
                   <exclude>**/target/**</exclude>
+                  <exclude>HDP-CHANGES.txt</exclude>
                 </excludes>
               </configuration>
             </execution>
