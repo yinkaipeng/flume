@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.apache.flume.ChannelException;
+import org.apache.flume.ChannelFullException;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.annotations.InterfaceAudience;
@@ -125,7 +126,7 @@ public class MemoryChannel extends BasicChannelSemantics {
       int remainingChange = takeList.size() - putList.size();
       if(remainingChange < 0) {
         if(!queueRemaining.tryAcquire(-remainingChange, keepAlive, TimeUnit.SECONDS)) {
-          throw new ChannelException("Space for commit to queue couldn't be acquired" +
+          throw new ChannelFullException("Space for commit to queue couldn't be acquired" +
               " Sinks are likely not keeping up with sources, or the buffer size is too tight");
         }
       }

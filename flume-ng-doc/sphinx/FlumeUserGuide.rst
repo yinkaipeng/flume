@@ -2155,6 +2155,77 @@ The same scenerio as above, however key-0 has its own password:
   a1.channels.c1.encryption.keyProvider.keys.key-0.passwordFile = /path/to/key-0.password
 
 
+Spillable Memory Channel
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The events are stored in an in-memory queue and on disk. The disk store is managed using a embedded File channel. The in-memory queue
+us used as the primary store and the disk as overflow. When the in-memory queue is full, additional incoming events are stored in the
+file channel. It is ideal for flows that need higher throughput of memory channel, but at the same time need the large capacity of
+the file channel in order to be more tolerant of intermittent sink side outages or drop in drain rates. In case of an agent crash,
+only the events stored on disk are recovered when the agent is restarted.
+
+Required properties are in **bold**.
+
+============================  ================  =============================================================================================
+Property Name                 Default           Description
+============================  ================  =============================================================================================
+**type**                      --                The component type name, needs to be ``SPILLABLEMEMORY``
+memoryCapacity                10000             Maximum number of events stored in memory. To disable the use of in-memory queue, set this to zero.
+overflowCapacity              100000000         Maximum number of events stored in overflow disk (i.e File channel). To disable the use of overflow disk, set this to zero.
+overflowTimeout               3                 The number seconds of seconds to wait before enabling disk overflow when memory fills up
+byteCapacityBufferPercentage  20                Defines the percent of buffer between byteCapacity and the estimated total size
+                                                of all events in the channel, to account for data in headers. See below.
+byteCapacity                  see description   Maximum total **bytes** of memory allowed as a sum of all events in the memory queue.
+                                                The implementation only counts the Event ``body``, which is the reason for
+                                                providing the ``byteCapacityBufferPercentage`` configuration parameter as well.
+                                                Defaults to a computed value equal to 80% of the maximum memory available to
+                                                the JVM (i.e. 80% of the -Xmx value passed on the command line).
+                                                Note that if you have multiple memory channels on a single JVM, and they happen
+                                                to hold the same physical events (i.e. if you are using a replicating channel
+                                                selector from a single source) then those event sizes may be double-counted for
+                                                channel byteCapacity purposes.
+                                                Setting this value to ``0`` will cause this value to fall back to a hard
+                                                internal limit of about 200 GB.
+<file channel properties>     see file channel  Any file channel property with the exception of 'keep-alive' and 'capacity' can be used.
+                                                The keep-alive of file channel is managed by Spillable Memory Channel. Use 'overflowCapacity'
+                                                to set the File channel's capacity.
+============================  ================  =============================================================================================
+
+In Memory channel is considered full if either memoryCapacity or byteCapacity limit reached.
+
+Example for agent named a1:
+
+.. code-block:: properties
+
+  a1.channels = c1
+  a1.channels.c1.type = SPILLABLEMEMORY
+  a1.channels.c1.memoryCapacity = 10000
+  a1.channels.c1.overflowCapacity = 1000000
+  a1.channels.c1.byteCapacity = 800000
+  a1.channels.c1.checkpointDir = /mnt/flume/checkpoint
+  a1.channels.c1.dataDirs = /mnt/flume/data
+
+To disable the use of the in-memory queue and function like a file channel:
+
+.. code-block:: properties
+
+  a1.channels = c1
+  a1.channels.c1.type = SPILLABLEMEMORY
+  a1.channels.c1.memoryCapacity = 0
+  a1.channels.c1.overflowCapacity = 1000000
+  a1.channels.c1.checkpointDir = /mnt/flume/checkpoint
+  a1.channels.c1.dataDirs = /mnt/flume/data
+
+
+To disable the use of overflow disk and function purely as a in-memory channel:
+
+.. code-block:: properties
+
+  a1.channels = c1
+  a1.channels.c1.type = SPILLABLEMEMORY
+  a1.channels.c1.memoryCapacity = 100000
+
+
 Pseudo Transaction Channel
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

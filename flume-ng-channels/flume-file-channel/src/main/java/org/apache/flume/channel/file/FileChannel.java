@@ -23,10 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import org.apache.flume.Channel;
-import org.apache.flume.ChannelException;
-import org.apache.flume.Context;
-import org.apache.flume.Event;
+import org.apache.flume.*;
 import org.apache.flume.annotations.Disposable;
 import org.apache.flume.annotations.InterfaceAudience;
 import org.apache.flume.annotations.InterfaceStability;
@@ -77,14 +74,14 @@ public class FileChannel extends BasicChannelSemantics {
 
   private Integer capacity = 0;
   private int keepAlive;
-  private Integer transactionCapacity = 0;
+  protected Integer transactionCapacity = 0;
   private Long checkpointInterval = 0L;
   private long maxFileSize;
   private long minimumRequiredSpace;
   private File checkpointDir;
   private File backupCheckpointDir;
   private File[] dataDirs;
-  private Log log;
+  protected Log log;
   private volatile boolean open;
   private volatile Throwable startupError;
   private Semaphore queueRemaining;
@@ -353,20 +350,25 @@ public class FileChannel extends BasicChannelSemantics {
       }
       throw new IllegalStateException(msg);
     }
+
     FileBackedTransaction trans = transactions.get();
     if(trans != null && !trans.isClosed()) {
       Preconditions.checkState(false,
           "Thread has transaction which is still open: " +
               trans.getStateAsString()  + channelNameDescriptor);
     }
-    trans = new FileBackedTransaction(log, TransactionIDOracle.next(),
-        transactionCapacity, keepAlive, queueRemaining, getName(),
-        channelCounter);
+    trans = newFileBackedTransaction();
     transactions.set(trans);
     return trans;
   }
 
-  int getDepth() {
+  protected FileBackedTransaction newFileBackedTransaction() {
+    return new FileBackedTransaction(log, TransactionIDOracle.next(),
+        transactionCapacity, keepAlive, queueRemaining, getName(),
+        channelCounter);
+  }
+
+  protected int getDepth() {
     Preconditions.checkState(open, "Channel closed"  + channelNameDescriptor);
     Preconditions.checkNotNull(log, "log");
     FlumeEventQueue queue = log.getFlumeEventQueue();
@@ -423,7 +425,7 @@ public class FileChannel extends BasicChannelSemantics {
    * Transaction backed by a file. This transaction supports either puts
    * or takes but not both.
    */
-  static class FileBackedTransaction extends BasicTransactionSemantics {
+  static protected class FileBackedTransaction extends BasicTransactionSemantics {
     private final LinkedBlockingDeque<FlumeEventPointer> takeList;
     private final LinkedBlockingDeque<FlumeEventPointer> putList;
     private final long transactionID;
@@ -465,7 +467,7 @@ public class FileChannel extends BasicChannelSemantics {
       // this does not need to be in the critical section as it does not
       // modify the structure of the log or queue.
       if(!queueRemaining.tryAcquire(keepAlive, TimeUnit.SECONDS)) {
-        throw new ChannelException("The channel has reached it's capacity. "
+        throw new ChannelFullException("The channel has reached it's capacity. "
             + "This might be the result of a sink on the channel having too "
             + "low of batch size, a downstream system running slower than "
             + "normal, or that the channel capacity is just too low. "
