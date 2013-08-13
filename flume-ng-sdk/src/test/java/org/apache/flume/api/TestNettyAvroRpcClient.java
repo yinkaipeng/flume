@@ -370,17 +370,10 @@ public class TestNettyAvroRpcClient {
       }
     }
 
-    int threadCount = ManagementFactory.getThreadMXBean().getThreadCount();
-    logger.warn("Init thread count: {}, thread count: {}",
-        initThreadCount, threadCount);
-    try {
-      Thread.sleep(1000L); // wait for threads to wind up
-    } catch (InterruptedException e) {
-    }
-
-    Assert.assertEquals("Thread leak in RPC client",
-        initThreadCount, threadCount);
 
   }
-
+    int finalThreadCount = ManagementFactory.getThreadMXBean().getThreadCount();
+    logger.warn("Initial thread count: {}, final thread count: {}",
+        initThreadCount, finalThreadCount);
+    Assert.assertTrue("Thread leak in RPC client", initThreadCount >= finalThreadCount);
 }
