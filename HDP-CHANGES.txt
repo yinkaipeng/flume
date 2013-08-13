@@ -4,3 +4,13 @@ git://git.apache.org/flume.git  @ flume-1.4 (756924e96ace470289472a3bdb4d87e273c
 New Features:
 -----------------------
 FLUME-1227    Introduce some sort of SpillableChannel
+
+Improvements:
+-----------------------
+FLUME-1618   Make Flume NG build and tests work with Hadoop 2.0
+
+Bug Fixes:
+----------------------
+FLUME-2158   hdfs-sink and tools modules should not override hadoop1/hadoop2 specific properties in their poms
+FLUME-2159   Sporadic failures in TestNettyAvroRpcClient.spinThreadsCrazily
+
