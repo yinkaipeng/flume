@@ -26,7 +26,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
+import java.lang.management.ThreadInfo;
 import org.junit.Test;
 
 import org.apache.avro.ipc.Server;
@@ -373,6 +373,11 @@ public class TestNettyAvroRpcClient {
     int threadCount = ManagementFactory.getThreadMXBean().getThreadCount();
     logger.warn("Init thread count: {}, thread count: {}",
         initThreadCount, threadCount);
+    try {
+      Thread.sleep(1000L); // wait for threads to wind up
+    } catch (InterruptedException e) {
+    }
+
     Assert.assertEquals("Thread leak in RPC client",
         initThreadCount, threadCount);
 
