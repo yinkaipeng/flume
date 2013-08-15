@@ -194,6 +194,22 @@
 
         <dependency>
           <groupId>org.apache.hbase</groupId>
+          <artifactId>hbase-hadoop-compat</artifactId>
+          <classifier>tests</classifier>
+          <optional>true</optional>
+          <scope>test</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>hbase-hadoop2-compat</artifactId>
+          <classifier>tests</classifier>
+          <optional>true</optional>
+          <scope>test</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.apache.hbase</groupId>
           <artifactId>hbase-server</artifactId>
           <classifier>tests</classifier>
           <optional>true</optional>
