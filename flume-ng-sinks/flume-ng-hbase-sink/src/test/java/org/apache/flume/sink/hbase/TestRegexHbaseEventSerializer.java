@@ -59,8 +59,8 @@ public class TestRegexHbaseEventSerializer {
     assertTrue(actions.get(0) instanceof Put);
     Put put = (Put) actions.get(0);
     
-    assertTrue(put.getFamilyMap().containsKey(s.cf));
-    List<KeyValue> kvPairs = (List<KeyValue>) put.getFamilyMap().get(s.cf);
+    assertTrue(put.getFamilyCellMap().containsKey(s.cf));
+    List<KeyValue> kvPairs = (List<KeyValue>) put.getFamilyCellMap().get(s.cf);
     assertTrue(kvPairs.size() == 1);
     
     Map<String, String> resultMap = Maps.newHashMap();
@@ -90,7 +90,7 @@ public class TestRegexHbaseEventSerializer {
 
     Put put = (Put)actions.get(0);
 
-    List<? extends Cell> kvPairs = put.getFamilyMap().get(s.cf);
+    List<? extends Cell> kvPairs = put.getFamilyCellMap().get(s.cf);
     assertTrue(kvPairs.size() == 2);
 
     Map<String, String> resultMap = Maps.newHashMap();
@@ -129,8 +129,8 @@ public class TestRegexHbaseEventSerializer {
     assertTrue(actions.get(0) instanceof Put);
     
     Put put = (Put) actions.get(0);
-    assertTrue(put.getFamilyMap().containsKey(s.cf));
-    List<KeyValue> kvPairs = (List<KeyValue>) put.getFamilyMap().get(s.cf);
+    assertTrue(put.getFamilyCellMap().containsKey(s.cf));
+    List<KeyValue> kvPairs = (List<KeyValue>) put.getFamilyCellMap().get(s.cf);
     assertTrue(kvPairs.size() == 11);
     
     Map<String, String> resultMap = Maps.newHashMap();
@@ -216,8 +216,8 @@ public class TestRegexHbaseEventSerializer {
     assertTrue(actions.get(0) instanceof Put);
 
     Put put = (Put) actions.get(0);
-    assertTrue(put.getFamilyMap().containsKey(s.cf));
-    List<? extends Cell> kvPairs = put.getFamilyMap().get(s.cf);
+    assertTrue(put.getFamilyCellMap().containsKey(s.cf));
+    List<? extends Cell> kvPairs = put.getFamilyCellMap().get(s.cf);
     assertTrue(kvPairs.size() == 3);
 
     Map<String, byte[]> resultMap = Maps.newHashMap();
