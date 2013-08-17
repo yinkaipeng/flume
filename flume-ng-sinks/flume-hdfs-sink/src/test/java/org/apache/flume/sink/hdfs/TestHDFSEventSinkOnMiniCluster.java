@@ -424,7 +424,12 @@ public class TestHDFSEventSinkOnMiniCluster {
     logger.info("Running process(). Same file.");
     sink.process();
 
-    // kill a datanode
+      try {
+          Thread.sleep(1000);
+      } catch (InterruptedException e) {
+          // ignore
+      }
+      // kill a datanode
     logger.info("Killing datanode #1...");
     cluster.stopDataNode(0);
 
