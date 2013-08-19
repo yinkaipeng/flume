@@ -18,4 +18,4 @@ Bug Fixes:
 FLUME-2158   hdfs-sink and tools modules should not override hadoop1/hadoop2 specific properties in their poms
 FLUME-2159   Sporadic failures in TestNettyAvroRpcClient.spinThreadsCrazily
 FLUME-2162   TestHDFSEventSinkOnMiniCluster.maxUnderReplicationTest fails on hadoop2
-
+FLUME-2172   Update protocol buffer from 2.4.1 to 2.5.0
