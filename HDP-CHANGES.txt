@@ -5,6 +5,10 @@ New Features:
 -----------------------
 FLUME-1227    Introduce some sort of SpillableChannel
 
+Un supported Features:
+-----------------------
+Async HBase sink is not supported in this version.
+
 Improvements:
 -----------------------
 FLUME-1618   Make Flume NG build and tests work with Hadoop 2.0

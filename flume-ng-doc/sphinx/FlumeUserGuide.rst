@@ -1781,6 +1781,8 @@ Example for agent named a1:
 
 AsyncHBaseSink
 ''''''''''''''
+Note: This sink is not supported in this release due incompatibility beteen async 
+hbase library and HBase 0.95.
 
 This sink writes data to HBase using an asynchronous model. A class implementing
 AsyncHbaseEventSerializer
