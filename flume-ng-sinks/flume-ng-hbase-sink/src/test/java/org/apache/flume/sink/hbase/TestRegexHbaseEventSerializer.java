@@ -32,7 +32,6 @@ import java.util.Map;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.event.EventBuilder;
-import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.client.Increment;
 import org.apache.hadoop.hbase.client.Put;
