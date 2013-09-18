@@ -32,7 +32,7 @@ import java.util.Map;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.event.EventBuilder;
-import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Increment;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Row;
@@ -89,14 +89,12 @@ public class TestRegexHbaseEventSerializer {
 
     Put put = (Put)actions.get(0);
 
-    List<? extends Cell> kvPairs = put.getFamilyMap().get(s.cf);
+    List<KeyValue> kvPairs = put.getFamilyMap().get(s.cf);
     assertTrue(kvPairs.size() == 2);
 
     Map<String, String> resultMap = Maps.newHashMap();
-    for (Cell cell : kvPairs) {
-  //    System.out.println(new String(cell.getQualifierArray() + " -- " + new String(cell.getValueArray()) );
-      resultMap.put(new String(cell.getQualifierArray(), cell.getQualifierOffset(), cell.getQualifierLength())
-                   , new String(cell.getValueArray(), cell.getValueOffset(), cell.getValueLength()) );
+    for (KeyValue kv : kvPairs) {
+      resultMap.put(new String(kv.getQualifier()), new String(kv.getValue()));
     }
     assertEquals("val1", resultMap.get("col1"));
     assertEquals("val2", resultMap.get("col2"));
@@ -216,15 +214,12 @@ public class TestRegexHbaseEventSerializer {
 
     Put put = (Put) actions.get(0);
     assertTrue(put.getFamilyMap().containsKey(s.cf));
-    List<? extends Cell> kvPairs = put.getFamilyMap().get(s.cf);
+    List<KeyValue> kvPairs = put.getFamilyMap().get(s.cf);
     assertTrue(kvPairs.size() == 3);
 
     Map<String, byte[]> resultMap = Maps.newHashMap();
-    for (Cell cell : kvPairs) {
-      byte[] value = new byte [ cell.getValueLength() ];
-      System.arraycopy(cell.getValueArray(), cell.getValueOffset(), value, 0, cell.getValueLength() );
-      resultMap.put(new String(cell.getQualifierArray(), cell.getQualifierOffset(), cell.getQualifierLength(), charset),
-                     value);
+    for (KeyValue kv : kvPairs) {
+      resultMap.put(new String(kv.getQualifier(), charset), kv.getValue());
     }
 
     assertEquals(body, new String(resultMap.get(RegexHbaseEventSerializer.COLUMN_NAME_DEFAULT), charset));

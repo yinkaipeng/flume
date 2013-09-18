@@ -267,7 +267,7 @@ public class HBaseSink extends AbstractSink implements Configurable {
             }
             // Newer versions of HBase - Increment implements Row.
             if(r instanceof Increment) {
-              ((Increment)r).setDurability(enableWal ? Durability.USE_DEFAULT : Durability.SKIP_WAL);
+              ((Increment)r).setWriteToWAL(enableWal);
             }
           }
           table.batch(actions);
@@ -279,7 +279,7 @@ public class HBaseSink extends AbstractSink implements Configurable {
         @Override
         public Void run() throws Exception {
           for (final Increment i : incs) {
-            i.setDurability(enableWal ? Durability.USE_DEFAULT : Durability.SKIP_WAL);
+            i.setWriteToWAL(enableWal);
             table.increment(i);
           }
           return null;
