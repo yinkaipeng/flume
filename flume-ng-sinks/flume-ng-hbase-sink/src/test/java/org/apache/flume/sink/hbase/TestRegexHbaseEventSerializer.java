@@ -59,7 +59,7 @@ public class TestRegexHbaseEventSerializer {
     Put put = (Put) actions.get(0);
     
     assertTrue(put.getFamilyMap().containsKey(s.cf));
-    List<KeyValue> kvPairs = (List<KeyValue>) put.getFamilyMap().get(s.cf);
+    List<KeyValue> kvPairs = put.getFamilyMap().get(s.cf);
     assertTrue(kvPairs.size() == 1);
     
     Map<String, String> resultMap = Maps.newHashMap();
@@ -127,7 +127,7 @@ public class TestRegexHbaseEventSerializer {
     
     Put put = (Put) actions.get(0);
     assertTrue(put.getFamilyMap().containsKey(s.cf));
-    List<KeyValue> kvPairs = (List<KeyValue>) put.getFamilyMap().get(s.cf);
+    List<KeyValue> kvPairs = put.getFamilyMap().get(s.cf);
     assertTrue(kvPairs.size() == 11);
     
     Map<String, String> resultMap = Maps.newHashMap();
