@@ -170,6 +170,10 @@
         <dependency>
           <groupId>org.apache.hbase</groupId>
           <artifactId>hbase-common</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>hbase-common</artifactId>
           <classifier>tests</classifier>
           <scope>test</scope>
         </dependency>
@@ -177,37 +181,38 @@
         <dependency>
           <groupId>org.apache.hbase</groupId>
           <artifactId>hbase-client</artifactId>
-          <optional>true</optional>
         </dependency>
 
         <dependency>
           <groupId>org.apache.hbase</groupId>
           <artifactId>hbase-server</artifactId>
-          <optional>true</optional>
           <scope>test</scope>
         </dependency>
 
         <dependency>
           <groupId>org.apache.hbase</groupId>
           <artifactId>hbase-hadoop-compat</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>hbase-hadoop-compat</artifactId>
           <classifier>tests</classifier>
-          <optional>true</optional>
           <scope>test</scope>
         </dependency>
-
+        <dependency>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>hbase-hadoop2-compat</artifactId>
+        </dependency>
         <dependency>
           <groupId>org.apache.hbase</groupId>
           <artifactId>hbase-hadoop2-compat</artifactId>
           <classifier>tests</classifier>
-          <optional>true</optional>
           <scope>test</scope>
         </dependency>
-
         <dependency>
           <groupId>org.apache.hbase</groupId>
           <artifactId>hbase-server</artifactId>
           <classifier>tests</classifier>
-          <optional>true</optional>
           <scope>test</scope>
         </dependency>
       </dependencies>

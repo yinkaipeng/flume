@@ -170,6 +170,12 @@ limitations under the License.
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-common</artifactId>
             <version>${hbase.version}</version>
+          </dependency>
+
+          <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-common</artifactId>
+            <version>${hbase.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
           </dependency>
@@ -192,14 +198,24 @@ limitations under the License.
           </dependency>
           <dependency>
             <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-hadoop-compat</artifactId>
+            <artifactId>hbase-hadoop2-compat</artifactId>
+            <version>${hbase.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-hadoop2-compat</artifactId>
             <version>${hbase.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
           </dependency>
           <dependency>
             <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-hadoop2-compat</artifactId>
+            <artifactId>hbase-hadoop-compat</artifactId>
+            <version>${hbase.version}</version>
+          </dependency>
+          <dependency>   <!-- TRIAL -->
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-hadoop-compat</artifactId>
             <version>${hbase.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
