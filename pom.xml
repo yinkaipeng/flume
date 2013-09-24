@@ -170,12 +170,6 @@ limitations under the License.
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-common</artifactId>
             <version>${hbase.version}</version>
-          </dependency>
-
-          <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-common</artifactId>
-            <version>${hbase.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
           </dependency>
