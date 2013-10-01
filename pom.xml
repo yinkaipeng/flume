@@ -814,6 +814,12 @@ limitations under the License.
       </dependency>
 
       <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>4.2.1</version> <!-- solr-core needs this at least, but libthrift (in hadoop2 profile) pulls old version) -->
+      </dependency>
+
+      <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
         <scope>compile</scope>
