@@ -63,8 +63,8 @@ public class TestSpillableMemoryChannel {
   }
 
   private void reconfigureChannel(Map<String, String> overrides) {
-    channel.stop();
     configureChannel(overrides);
+    channel.stop();
     channel.start();
   }
 

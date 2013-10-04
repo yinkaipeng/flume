@@ -32,6 +32,7 @@ import org.apache.flume.annotations.InterfaceStability;
 import org.apache.flume.channel.file.FileChannel;
 import org.apache.flume.instrumentation.ChannelCounter;
 
+import org.apache.flume.lifecycle.LifecycleState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -504,6 +505,10 @@ public class SpillableMemoryChannel extends FileChannel {
   @Override
   public void configure(Context context) {
 
+    if(getLifecycleState() == LifecycleState.START    // does not support reconfig when running
+            || getLifecycleState() == LifecycleState.ERROR )
+      stop();
+
     if(totalStored==null)
       totalStored = new Semaphore(0);
 
@@ -662,6 +667,8 @@ public class SpillableMemoryChannel extends FileChannel {
 
   @Override
   public synchronized void stop() {
+    if(getLifecycleState()==LifecycleState.STOP)
+      return;
     channelCounter.setChannelSize(getDepth() + memQueue.size());
     channelCounter.stop();
     super.stop();
