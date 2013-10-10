@@ -398,6 +398,8 @@ public class SpillableMemoryChannel extends FileChannel {
               useOverflow = true;
   //            System.out.println("USING OVERFLOW");
           }
+      } else {
+        useOverflow = true;
       }
 
       if(putList.size() > largestPutTxSize)
@@ -603,9 +605,14 @@ public class SpillableMemoryChannel extends FileChannel {
     try {
       overflowCapacity = context.getInteger("overflowCapacity", defaultOverflowCapacity);  // file channel capacity
       // Determine if File channel needs to be disabled
-        overflowDisabled = (overflowCapacity<1) ;
-        if(overflowDisabled)
-          overflowActivated = false;
+      if(memoryCapacity<1 && overflowCapacity<1) {
+          LOGGER.warn("overflowCapacity cannot be set to 0 when memoryCapacity is set to 0. " +
+                "Using default value for overflowCapacity = " + defaultOverflowCapacity);
+          overflowCapacity = defaultOverflowCapacity;
+      }
+      overflowDisabled = (overflowCapacity<1) ;
+      if(overflowDisabled)
+        overflowActivated = false;
     } catch(NumberFormatException e) {
       overflowCapacity = defaultOverflowCapacity;
     }
