@@ -263,7 +263,7 @@ public class HBaseSink extends AbstractSink implements Configurable {
         public Void run() throws Exception {
           for(Row r : actions) {
             if(r instanceof Put) {
-              ((Put)r).setDurability(enableWal ? Durability.USE_DEFAULT : Durability.SKIP_WAL);
+              ((Put)r).setWriteToWAL(enableWal);
             }
             // Newer versions of HBase - Increment implements Row.
             if(r instanceof Increment) {
