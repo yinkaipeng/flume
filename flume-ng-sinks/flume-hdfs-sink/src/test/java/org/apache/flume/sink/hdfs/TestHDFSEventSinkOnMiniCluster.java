@@ -348,9 +348,13 @@ public class TestHDFSEventSinkOnMiniCluster {
       logger.info("Found file on DFS: {}", filePath);
       FSDataInputStream stream = fs.open(filePath);
       BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-      String line = reader.readLine();
-      logger.info("First line in file {}: {}", filePath, line);
-      Assert.assertTrue(line.startsWith("yarg"));
+      String line;
+      int lineNum  =0;
+      while( (line = reader.readLine() ) != null ) {
+        ++lineNum;
+         logger.info("Lines in file {}: {}", filePath, lineNum + "- " +  line);
+         Assert.assertTrue(line.startsWith("yarg"));
+      }
     }
 
     Assert.assertTrue("4 or 5 files expected, found " + statuses.length,
