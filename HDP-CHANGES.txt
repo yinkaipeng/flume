@@ -1,22 +1,15 @@
- git@github.com:hortonworks/flume.git   @  bighweel-GA-1.4.0  branched from hortonworks bighweel-beta2-1.4.0 (d1153149e58fe814b9e263c4585330f1a176f1a5)
+ git@github.com:hortonworks/flume.git   @  baikal-GA-1.4.1  branched from hortonworks bighweel-GA-1.4.0 (fcdc3d29a1f249bef653b10b149aea2bc5df892e)
 
 
 New Features:
 -----------------------
-FLUME-1227    Introduce some sort of SpillableChannel
 
 Un supported Features:
 -----------------------
-Async HBase sink is not supported in this version.
 
 Improvements:
 -----------------------
-FLUME-1618   Make Flume NG build and tests work with Hadoop 2.0 
-FLUME-2172   Update protocol buffer from 2.4.1 to 2.5.0
 
 Bug Fixes:
 ----------------------
-FLUME-2158   hdfs-sink and tools modules should not override hadoop1/hadoop2 specific properties in their poms
-FLUME-2159   Sporadic failures in TestNettyAvroRpcClient.spinThreadsCrazily
-FLUME-2162   TestHDFSEventSinkOnMiniCluster.maxUnderReplicationTest fails on hadoop2
 
