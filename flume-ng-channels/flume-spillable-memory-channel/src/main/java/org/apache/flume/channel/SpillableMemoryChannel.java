@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.GuardedBy;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.flume.*;
 import org.apache.flume.annotations.Recyclable;
 
@@ -41,13 +42,38 @@ import com.google.common.base.Preconditions;
 /**
  * <p>
  * SpillableMemoryChannel will use main memory for buffering events until it has reached capacity.
- * Thereafter another channel (such as file channel) will be used to buffer the events.
+ * Thereafter file channel will be used as overflow.
  * </p>
  */
-@InterfaceAudience.Public
+@InterfaceAudience.Private
 @InterfaceStability.Evolving
 @Recyclable
 public class SpillableMemoryChannel extends FileChannel {
+  // config settings
+  /** Max number of events to be stored in memory */
+  public static final String MEMORY_CAPACITY = "memoryCapacity";
+  /** Seconds to wait before enabling disk overflow when memory fills up */
+  public static final String OVERFLOW_TIMEOUT = "overflowTimeout";
+  /** Internal use only. To remain undocumented in User guide. Determines the
+   * percent free space available in mem queue when we stop spilling to overflow
+   */
+  public static final String OVERFLOW_DEACTIVATION_THRESHOLD
+          = "overflowDeactivationThreshold";
+  /** percent of buffer between byteCapacity and the estimated event size. */
+  public static final String BYTE_CAPACITY_BUFFER_PERCENTAGE
+          = "byteCapacityBufferPercentage";
+
+  /** max number of bytes used for all events in the queue. */
+  public static final String BYTE_CAPACITY = "byteCapacity";
+  /** max number of events in overflow. */
+  public static final String OVERFLOW_CAPACITY = "overflowCapacity";
+  /** file channel setting that is overriden by Spillable Channel */
+  public static final String KEEP_ALIVE = "keep-alive";
+  /** file channel capacity overridden by Spillable Channel */
+  public static final String CAPACITY = "capacity";
+  /** Estimated average size of events expected to be in the channel */
+  public static final String AVG_EVENT_SIZE = "avgEventSize";
+
   private static Logger LOGGER = LoggerFactory.getLogger(SpillableMemoryChannel.class);
   public static final int defaultMemoryCapacity = 10000;
   public static final int defaultOverflowCapacity = 100000000;
@@ -55,37 +81,54 @@ public class SpillableMemoryChannel extends FileChannel {
   public static final int defaultOverflowTimeout = 3;
   public static final int defaultOverflowDeactivationThreshold = 5; // percent
 
-  private Object queueLock = new Object(); // use for synchronizing access to primary/overflow channels & drain order
+  // memory consumption control
+  private static final int defaultAvgEventSize = 500;
+  private static final Long defaultByteCapacity
+          = (long)(Runtime.getRuntime().maxMemory() * .80);
+  private static final int defaultByteCapacityBufferPercentage = 20;
+
+  private volatile int byteCapacity;
+  private volatile double avgEventSize = defaultAvgEventSize;
+  private volatile int lastByteCapacity;
+  private volatile int byteCapacityBufferPercentage;
+  private Semaphore bytesRemaining;
+
+  // for synchronizing access to primary/overflow channels & drain order
+  final private Object queueLock = new Object();
 
   @GuardedBy(value = "queueLock")
   public ArrayDeque<Event> memQueue;
 
-  private Semaphore memQueRemaining;  // tracks number of free slots in primary channel (includes all active put lists)
-                                      // .. used to determine if the puts should go into primary or overflow
+  // This semaphore tracks number of free slots in primary channel (includes
+  // all active put lists) .. used to determine if the puts
+  // should go into primary or overflow
+  private Semaphore memQueRemaining;
 
-  private Semaphore totalStored;     // tracks number of events in both channels. Takes will block on this
+  // tracks number of events in both channels. Takes will block on this
+  private Semaphore totalStored;
 
-  private int maxQueueSize = 0;
+  private int maxMemQueueSize = 0;     // max sie of memory Queue
 
   private boolean overflowDisabled;         // if true indicates the overflow should not be used at all.
   private boolean overflowActivated=false;  // indicates if overflow can be used. invariant: false if overflowDisabled is true.
 
-  private int memoryCapacity = Integer.MIN_VALUE;     // max events that the channel can hold  in memory
+  // if true overflow can be used. invariant: false if overflowDisabled is true.
+  private int memoryCapacity = -1;     // max events that the channel can hold  in memory
   private int overflowCapacity;
 
   private int overflowTimeout;
 
-  private double overflowDeactivationThreshold = defaultOverflowDeactivationThreshold / 100; // mem full % at which we stop spill to overflow
+  // mem full % at which we stop spill to overflow
+  private double overflowDeactivationThreshold
+          = defaultOverflowDeactivationThreshold / 100;
 
-  // memory consumption control
-  private static final int defaultAvgEventSize = 100;
-  private static final Long defaultByteCapacity = (long)(Runtime.getRuntime().maxMemory() * .80);
-  private static final int defaultByteCapacityBufferPercentage = 20;
-  private volatile int byteCapacity;
-  private volatile double avgEventSize = 100;
-  private volatile int lastByteCapacity;
-  private volatile int byteCapacityBufferPercentage;
-  private Semaphore bytesRemaining;
+  public SpillableMemoryChannel() {
+    super();
+  }
+
+  protected int getTotalStored() {
+    return totalStored.availablePermits();
+  }
 
   public int getMemoryCapacity() {
     return memoryCapacity;
@@ -94,8 +137,8 @@ public class SpillableMemoryChannel extends FileChannel {
     return overflowTimeout;
   }
 
-  public int getMaxQueueSize() {
-    return maxQueueSize;
+  public int getMaxMemQueueSize() {
+    return maxMemQueueSize;
   }
 
   protected Integer getOverflowCapacity() {
@@ -106,9 +149,10 @@ public class SpillableMemoryChannel extends FileChannel {
     return overflowDisabled;
   }
 
-  private ChannelCounter channelCounter;
+  @VisibleForTesting
+  protected ChannelCounter channelCounter;
 
-  public DrainOrderQueue drainOrder = new DrainOrderQueue();  // TODO : make private
+  public final DrainOrderQueue drainOrder = new DrainOrderQueue();
 
   public int queueSize() {
     synchronized (queueLock) {
@@ -125,7 +169,7 @@ public class SpillableMemoryChannel extends FileChannel {
     }
 
     public void add(int amount) {
-      value+=amount;
+      value += amount;
     }
 
     public int intValue() {
@@ -140,13 +184,13 @@ public class SpillableMemoryChannel extends FileChannel {
     public ArrayDeque<MutableInteger> queue = new ArrayDeque<MutableInteger>(1000);
 
     public int totalPuts = 0;  // for debugging only
-    private long overflowCounter = 0; // number of items currently in overflow channel
+    private long overflowCounter = 0; // # of items in overflow channel
 
     public  String dump() {
       StringBuilder sb = new StringBuilder();
 
       sb.append("  [ ");
-      for(MutableInteger i : queue) {
+      for (MutableInteger i : queue) {
         sb.append(i.intValue());
         sb.append(" ");
       }
@@ -155,39 +199,43 @@ public class SpillableMemoryChannel extends FileChannel {
     }
 
     public void putPrimary(Integer eventCount) {
-      totalPuts+=eventCount;
-      if( queue.peekLast()==null || queue.getLast().intValue() < 0)
+      totalPuts += eventCount;
+      if (  (queue.peekLast() == null) || queue.getLast().intValue() < 0) {
         queue.addLast(new MutableInteger(eventCount));
-      else
+      } else {
         queue.getLast().add(eventCount);
+      }
     }
 
     public void putFirstPrimary(Integer eventCount) {
-      if( queue.peekFirst()==null || queue.getFirst().intValue() < 0 )
+      if ( (queue.peekFirst() == null) || queue.getFirst().intValue() < 0) {
         queue.addFirst(new MutableInteger(eventCount));
-      else
+      } else {
         queue.getFirst().add(eventCount);
+      }
     }
 
     public void putOverflow(Integer eventCount) {
-      totalPuts+=eventCount;
-      if( queue.peekLast()==null ||  queue.getLast().intValue() > 0  )
-        queue.addLast(new MutableInteger(- eventCount));
-      else
+      totalPuts += eventCount;
+      if ( (queue.peekLast() == null) ||  queue.getLast().intValue() > 0) {
+        queue.addLast(new MutableInteger(-eventCount));
+      } else {
         queue.getLast().add(-eventCount);
-      overflowCounter+=eventCount;
+      }
+      overflowCounter += eventCount;
     }
 
     public void putFirstOverflow(Integer eventCount) {
-      if( queue.peekFirst()==null ||  queue.getFirst().intValue() > 0  )
+      if ( (queue.peekFirst() == null) ||  queue.getFirst().intValue() > 0) {
         queue.addFirst(new MutableInteger(-eventCount));
-      else
+      }  else {
         queue.getFirst().add(-eventCount);
-      overflowCounter+=eventCount;
+      }
+      overflowCounter += eventCount;
     }
 
     public int front() {
-      return  queue.getFirst().intValue();
+      return queue.getFirst().intValue();
     }
 
     public boolean isEmpty() {
@@ -197,39 +245,49 @@ public class SpillableMemoryChannel extends FileChannel {
     public void takePrimary(int takeCount) {
       MutableInteger headValue = queue.getFirst();
 
-      if(headValue.intValue() < takeCount)   // this condition is optimization to avoid redundant conversions of int -> Integer -> string in hot path
-        Preconditions.checkArgument(headValue.intValue() >= takeCount, "Cannot take {} from {} in DrainOrder Queue", takeCount, headValue.intValue() );
+      // this condition is optimization to avoid redundant conversions of
+      // int -> Integer -> string in hot path
+      if (headValue.intValue() < takeCount)  {
+        throw new IllegalStateException("Cannot take " + takeCount +
+                " from " + headValue.intValue() + " in DrainOrder Queue");
+      }
 
       headValue.add(-takeCount);
-      if(headValue.intValue() == 0)
+      if (headValue.intValue() == 0) {
         queue.removeFirst();
+      }
     }
 
     public void takeOverflow(int takeCount) {
       MutableInteger headValue = queue.getFirst();
-      Preconditions.checkArgument(headValue.intValue() <= -takeCount, "Cannot take {} from {} in DrainOrder Queue", takeCount, headValue.intValue() );
+      if(headValue.intValue() > -takeCount) {
+        throw new IllegalStateException("Cannot take " + takeCount + " from "
+                + headValue.intValue() + " in DrainOrder Queue head " );
+      }
 
       headValue.add(takeCount);
-      if(headValue.intValue() == 0)
+      if (headValue.intValue() == 0) {
         queue.removeFirst();
+      }
       overflowCounter -= takeCount;
     }
 
   }
 
   private class SpillableMemoryTransaction extends BasicTransactionSemantics {
-    BasicTransactionSemantics overflowTakeTx = null;  // Take-transaction for overflow
-    BasicTransactionSemantics overflowPutTx = null;   // Put-transaction for overflow
+    BasicTransactionSemantics overflowTakeTx = null; // Take-Txn for overflow
+    BasicTransactionSemantics overflowPutTx = null;  // Put-Txn for overflow
     boolean useOverflow = false;
     boolean putCalled = false;    // set on first invocation to put
     boolean takeCalled = false;   // set on first invocation to take
-    int largestTakeTxSize = 50;
-    int largestPutTxSize = 50;
+    int largestTakeTxSize = 5000; // not a constraint, just hint for allocation
+    int largestPutTxSize = 5000;  // not a constraint, just hint for allocation
 
-    Integer overflowPutCount = 0;    // puts going to overflow in this transaction
+    Integer overflowPutCount = 0;    // # of puts going to overflow in this Txn
 
     private int putListByteCount = 0;
     private int takeListByteCount = 0;
+    private int takeCount = 0;
 
     ArrayDeque<Event> takeList;
     ArrayDeque<Event> putList;
@@ -242,11 +300,6 @@ public class SpillableMemoryChannel extends FileChannel {
       channelCounter = counter;
     }
 
-    private void debug(String msg) {
-//      System.out.println("********  " + msg);
-    }
-
-
     @Override
     public void begin() {
       super.begin();
@@ -254,10 +307,12 @@ public class SpillableMemoryChannel extends FileChannel {
 
     @Override
     public void close() {
-      if(overflowTakeTx!=null)
+      if (overflowTakeTx!=null) {
         overflowTakeTx.close();
-      if(overflowPutTx!=null)
+      }
+      if (overflowPutTx!=null) {
         overflowPutTx.close();
+      }
       super.close();
     }
 
@@ -268,268 +323,298 @@ public class SpillableMemoryChannel extends FileChannel {
 
       putCalled = true;
       int eventByteSize = (int)Math.ceil(estimateEventSize(event)/ avgEventSize);
-      if(! putList.offer(event)) {
-        throw new ChannelFullException("Put queue for SpillableMemoryTransaction of capacity " +
-                putList.size() + " full, consider committing more frequently, " +
-                "increasing capacity or increasing thread count");
+      if (!putList.offer(event)) {
+        throw new ChannelFullException("Put queue in " + getName() +
+                " channel's Transaction having capacity " + putList.size() +
+                " full, consider reducing batch size of sources");
       }
       putListByteCount += eventByteSize;
     }
 
 
-    // Take will limit itself to a single channel within a transaction. This ensures commits/rollbacks
-    //  are restricted to a single channel.
+    // Take will limit itself to a single channel within a transaction.
+    // This ensures commits/rollbacks are restricted to a single channel.
     @Override
     protected Event doTake() throws InterruptedException {
-//      debug("Taking() ");
       channelCounter.incrementEventTakeAttemptCount();
-
-      if(!totalStored.tryAcquire(overflowTimeout, TimeUnit.SECONDS)) {
-//        debug("Take is backing off! ");
+      if (!totalStored.tryAcquire(overflowTimeout, TimeUnit.SECONDS)) {
+        LOGGER.debug("Take is backing off as channel is empty.");
         return null;
       }
+      boolean takeSuceeded = false;
+      try {
+        Event event;
+        synchronized(queueLock) {
+          int drainOrderTop = drainOrder.front();
 
-      Event event;
-      synchronized(queueLock) {
+          if (!takeCalled) {
+            takeCalled = true;
+            if (drainOrderTop < 0) {
+              useOverflow = true;
+              overflowTakeTx = getOverflowTx();
+              overflowTakeTx.begin();
+            }
+          }
 
-        int drainOrderTop = drainOrder.front();
+          if (useOverflow) {
+            if (drainOrderTop > 0) {
+              LOGGER.debug("Take is switching to primary");
+              return null;       // takes should now occur from primary channel
+            }
 
-        if(!takeCalled) {
-          takeCalled = true;
-          if( drainOrderTop < 0 ) {
-            useOverflow = true;
-            overflowTakeTx = getOverflowTx();
-            overflowTakeTx.begin();
+            event = overflowTakeTx.take();
+            ++takeCount;
+            drainOrder.takeOverflow(1);
+          } else {
+            if (drainOrderTop < 0) {
+              LOGGER.debug("Take is switching to overflow");
+              return null;      // takes should now occur from overflow channel
+            }
+
+            event = memQueue.poll();
+            ++takeCount;
+            drainOrder.takePrimary(1);
+            Preconditions.checkNotNull(event, "Queue.poll returned NULL despite"
+                    + " semaphore signalling existence of entry");
           }
         }
 
-        if( useOverflow ) {
-          if(drainOrderTop > 0) {
-            debug("Take is switching to primary! ");
-            totalStored.release();
-            return null;       // takes should now occur from primary channel
-          }
+        int eventByteSize = (int)Math.ceil(estimateEventSize(event)/ avgEventSize);
+        if (!useOverflow) {
+          // takeList is thd pvt, so no need to do this in synchronized block
+          takeList.offer(event);
+        }
 
-          event = overflowTakeTx.take();
-          drainOrder.takeOverflow(1);
-        } else {
-          if( drainOrderTop < 0 ) {
-            debug("Take is switching to overflow! ");
-            totalStored.release();
-            return null;      // takes should now occur from overflow channel
-          }
-
-          event =  memQueue.poll();
-          drainOrder.takePrimary(1);
-          Preconditions.checkNotNull(event, "Queue.poll returned NULL despite semaphore " +
-                  "signalling existence of entry");
-//          debug("Take  " + EventHelper.dumpEvent(event));
+        takeListByteCount += eventByteSize;
+        takeSuceeded = true;
+        return event;
+      } finally {
+        if(!takeSuceeded) {
+          totalStored.release();
         }
       }
-
-      if(!useOverflow) {
-        takeList.offer(event);  // does not need to happen inside synchronized block
-      }
-
-      int eventByteSize = (int)Math.ceil(estimateEventSize(event)/ avgEventSize);
-      takeListByteCount += eventByteSize;
-      return event;
-    }
-
-    private BasicTransactionSemantics getOverflowTx() {
-      return newFileBackedTransaction();
     }
 
     @Override
     protected void doCommit() throws InterruptedException {
-//      debug("Committing()");
-//      System.out.println(drainOrder.dump());
-      if(putCalled)
+      if (putCalled) {
         putCommit();
-      else if(takeCalled)
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Put Committed. Drain Order Queue state : "
+                  + drainOrder.dump());
+        }
+      } else if (takeCalled) {
         takeCommit();
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Take Committed. Drain Order Queue state : "
+                  + drainOrder.dump());
+        }
+      }
     }
 
     private void takeCommit() {
-      if(takeList.size() > largestTakeTxSize)
-        largestTakeTxSize = takeList.size();
+      if (takeCount > largestTakeTxSize)
+        largestTakeTxSize = takeCount;
 
       synchronized (queueLock) {
-        if(overflowTakeTx!=null) {
+        if (overflowTakeTx!=null) {
           overflowTakeTx.commit();
         }
-        double memoryPercentFree = (memoryCapacity==0)
-                             ?  0
-                             :  (memoryCapacity - memQueue.size() + takeList.size() ) / (double)memoryCapacity ;
-        if(overflowActivated  &&  memoryPercentFree >= overflowDeactivationThreshold ) {
+        double memoryPercentFree = (memoryCapacity == 0) ?  0
+           :  (memoryCapacity - memQueue.size() + takeCount ) / (double)memoryCapacity ;
+
+        if (overflowActivated
+                &&  memoryPercentFree >= overflowDeactivationThreshold) {
           overflowActivated = false;
-//          System.out.println("OVERFLOW DEACTIVATED");
+          LOGGER.info("Overflow Deactivated");
         }
+        channelCounter.setChannelSize(getTotalStored());
       }
-      if(!useOverflow)  {
-        memQueRemaining.release(takeList.size());
+      if (!useOverflow)  {
+        memQueRemaining.release(takeCount);
         bytesRemaining.release(takeListByteCount);
       }
 
-      channelCounter.addToEventTakeSuccessCount(takeList.size());
+      channelCounter.addToEventTakeSuccessCount(takeCount);
     }
 
     private void putCommit() throws InterruptedException {
       // decide if overflow needs to be used
       int timeout = overflowActivated  ? 0 : overflowTimeout;
 
-      if( memoryCapacity!=0 ) {
-          // check if we have enough event slots(memoryCapacity) for using memory queue
-          if( !memQueRemaining.tryAcquire(putList.size(), timeout, TimeUnit.SECONDS) ) {
-              if(overflowDisabled)
-                  throw new ChannelFullException("Spillable Memory Channel's memory capacity has been " +
-                          "reached and overflow is disabled. Consider increasing memoryCapacity.");
+      if (memoryCapacity != 0) {
+          // check for enough event slots(memoryCapacity) for using memory queue
+          if (!memQueRemaining.tryAcquire(putList.size(), timeout, TimeUnit.SECONDS)) {
+              if (overflowDisabled) {
+                  throw new ChannelFullException("Spillable Memory Channel's " +
+                          "memory capacity has been reached and overflow is " +
+                          "disabled. Consider increasing memoryCapacity.");
+              }
               overflowActivated = true;
               useOverflow = true;
           }
           // check if we have enough byteCapacity for using memory queue
-          else if( !bytesRemaining.tryAcquire(putListByteCount, overflowTimeout, TimeUnit.SECONDS) )  {
+          else if (!bytesRemaining.tryAcquire(putListByteCount, overflowTimeout
+                  , TimeUnit.SECONDS))  {
               memQueRemaining.release(putList.size());
-              if(overflowDisabled)
-                  throw new ChannelFullException("Spillable Memory Channel's memory capacity has been reached.  "
-                          + (bytesRemaining.availablePermits() * (int) avgEventSize) + " bytes are free "
-                          + "and overflow is disabled. Consider increasing byteCapacity or capacity." );
+              if (overflowDisabled) {
+                  throw new ChannelFullException("Spillable Memory Channel's "
+                      + "memory capacity has been reached.  "
+                      + (bytesRemaining.availablePermits() * (int) avgEventSize)
+                      + " bytes are free and overflow is disabled. Consider "
+                      + "increasing byteCapacity or capacity." );
+              }
               overflowActivated = true;
               useOverflow = true;
-  //            System.out.println("USING OVERFLOW");
           }
       } else {
         useOverflow = true;
       }
 
-      if(putList.size() > largestPutTxSize)
+      if (putList.size() > largestPutTxSize) {
         largestPutTxSize = putList.size();
+      }
 
       if (useOverflow) {
-        overflowPutTx = getOverflowTx();
-        overflowPutTx.begin();
-        for(Event event : putList) {
-          overflowPutTx.put(event);
-        }
-        overflowPutCommit(overflowPutTx);
-        totalStored.release(putList.size());
-        overflowPutCount+= putList.size();
-        return;
+        commitPutsToOverflow();
       } else {
-        synchronized (queueLock) {
-          for(Event e : putList ) {
-  //            debug("Putt  " + EventHelper.dumpEvent(e));
-            if(!memQueue.offer(e)) {
-              throw new ChannelException("Unable to add to in memory queue, this is very unexpected");
-            }
-          }
-          drainOrder.putPrimary(putList.size());
-          maxQueueSize = (memQueue.size() > maxQueueSize) ? memQueue.size() : maxQueueSize;
-        }
-        // update counters and semaphores
-        totalStored.release(putList.size());
-        channelCounter.addToEventPutSuccessCount(putList.size());
+        commitPutsToPrimary();
       }
     }
 
-    private void overflowPutCommit(Transaction overflowTx) throws InterruptedException {
-      for(int i=0; i<2; ++i)  {  // reattempt only once if overflow is full first time around
+    private void commitPutsToOverflow() throws InterruptedException {
+      overflowPutTx = getOverflowTx();
+      overflowPutTx.begin();
+      for (Event event : putList) {
+        overflowPutTx.put(event);
+      }
+      commitPutsToOverflow_core(overflowPutTx);
+      totalStored.release(putList.size());
+      overflowPutCount += putList.size();
+      channelCounter.addToEventPutSuccessCount(putList.size());
+    }
+
+    private void commitPutsToOverflow_core(Transaction overflowPutTx)
+            throws InterruptedException {
+      // reattempt only once if overflow is full first time around
+      for (int i = 0; i < 2; ++i)  {
         try {
           synchronized(queueLock) {
-            overflowTx.commit();
+            overflowPutTx.commit();
             drainOrder.putOverflow(putList.size());
+            channelCounter.setChannelSize(memQueue.size()
+                    + drainOrder.overflowCounter);
             break;
           }
         } catch (ChannelFullException e)  { // drop lock & reattempt
-          if(i==0) {
-            System.out.println("Sleeping");
+          if (i==0) {
             Thread.sleep(overflowTimeout *1000);
           }
-          else
+          else {
             throw e;
+          }
         }
       }
+    }
+
+    private void commitPutsToPrimary() {
+      synchronized (queueLock) {
+        for (Event e : putList) {
+          if (!memQueue.offer(e)) {
+            throw new ChannelException("Unable to insert event into memory " +
+                    "queue in spite of spare capacity, this is very unexpected");
+          }
+        }
+        drainOrder.putPrimary(putList.size());
+        maxMemQueueSize = (memQueue.size() > maxMemQueueSize) ?  memQueue.size()
+                                                              : maxMemQueueSize;
+        channelCounter.setChannelSize(memQueue.size()
+                + drainOrder.overflowCounter);
+      }
+      // update counters and semaphores
+      totalStored.release(putList.size());
+      channelCounter.addToEventPutSuccessCount(putList.size());
     }
 
     @Override
     protected void doRollback() {
-//      debug("Rollback()" + (takeCalled ? " take" : (putCalled ? " put" : "N/A")));
+      LOGGER.debug("Rollback() of " +
+              (takeCalled ? " Take Tx" : (putCalled ? " Put Tx" : "Empty Tx")));
 
-      if(putCalled) {
-        if(overflowPutTx!=null)
+      if (putCalled) {
+        if (overflowPutTx!=null) {
           overflowPutTx.rollback();
-        if(!useOverflow) {
-          bytesRemaining.release(putListByteCount);
-          // putList.clear()
         }
-        // putListByteCount = 0;
-      }
-      else if(takeCalled) {
-        int takeCount = takeList.size();
+        if (!useOverflow) {
+          bytesRemaining.release(putListByteCount);
+          putList.clear();
+        }
+        putListByteCount = 0;
+      } else if (takeCalled) {
         synchronized(queueLock) {
-          if(overflowTakeTx!=null)
+          if (overflowTakeTx!=null) {
             overflowTakeTx.rollback();
-          if(useOverflow) {
-            drainOrder.putFirstOverflow(takeList.size());
+          }
+          if (useOverflow) {
+            drainOrder.putFirstOverflow(takeCount);
           } else {
             int remainingCapacity = memoryCapacity - memQueue.size();
-            Preconditions.checkState(remainingCapacity >= takeList.size(), "Not enough space in memory " +
-                    "queue to rollback takes. This should never happen, please report");
-            while(!takeList.isEmpty()) {
+            Preconditions.checkState(remainingCapacity >= takeCount,
+                    "Not enough space in memory queue to rollback takes. This" +
+                            " should never happen, please report");
+            while (!takeList.isEmpty()) {
               memQueue.addFirst(takeList.removeLast());
             }
             drainOrder.putFirstPrimary(takeCount);
           }
         }
-        if(!useOverflow)
-          totalStored.release(takeCount);
-        // takeListByteCount = 0;
+        totalStored.release(takeCount);
       } else {
         overflowTakeTx.rollback();
       }
-      channelCounter.setChannelSize(memQueue.size() + getDepth() );
+      channelCounter.setChannelSize(memQueue.size() + drainOrder.overflowCounter);
     }
   } // Transaction
-
-
-  public SpillableMemoryChannel() {
-    super();
-  }
 
   /**
    * Read parameters from context
    * <li>memoryCapacity = total number of events allowed at one time in the memory queue.
    * <li>overflowCapacity = total number of events allowed at one time in the overflow file channel.
-   * <li>byteCapacity = the max number of bytes used for events in the queue.
+   * <li>byteCapacity = the max number of bytes used for events in the memory queue.
    * <li>byteCapacityBufferPercentage = type int. Defines the percent of buffer between byteCapacity and the estimated event size.
    * <li>overflowTimeout = type int. Number of seconds to wait on a full memory before deciding to enable overflow
    */
   @Override
   public void configure(Context context) {
 
-    if(getLifecycleState() == LifecycleState.START    // does not support reconfig when running
-            || getLifecycleState() == LifecycleState.ERROR )
+    if (getLifecycleState() == LifecycleState.START    // does not support reconfig when running
+            || getLifecycleState() == LifecycleState.ERROR)
       stop();
 
-    if(totalStored==null)
+    if (totalStored == null) {
       totalStored = new Semaphore(0);
+    }
 
-    if (channelCounter == null)
+    if (channelCounter == null) {
       channelCounter = new ChannelCounter(getName());
+    }
 
     // 1) Memory Capacity
     Integer newMemoryCapacity;
     try {
-      newMemoryCapacity = context.getInteger("memoryCapacity", defaultMemoryCapacity);
-      if(newMemoryCapacity==null)
+      newMemoryCapacity = context.getInteger(MEMORY_CAPACITY
+              , defaultMemoryCapacity);
+      if (newMemoryCapacity == null) {
         newMemoryCapacity = defaultMemoryCapacity;
-      if(newMemoryCapacity<0)
-        throw new NumberFormatException("memoryCapacity must be >= 0");
+      }
+      if (newMemoryCapacity < 0) {
+        throw new NumberFormatException(MEMORY_CAPACITY + " must be >= 0");
+      }
 
     } catch(NumberFormatException e) {
       newMemoryCapacity = defaultMemoryCapacity;
-      LOGGER.warn("Invalid memoryCapacity specified, initializing channel to "
-                + "default value of {}", defaultMemoryCapacity);
+      LOGGER.warn("Invalid " + MEMORY_CAPACITY + " specified, initializing " +
+          getName() + " channel to default value of {}", defaultMemoryCapacity);
     }
     try {
       resizePrimaryQueue(newMemoryCapacity);
@@ -537,48 +622,63 @@ public class SpillableMemoryChannel extends FileChannel {
       Thread.currentThread().interrupt();
     }
 
-    // overflowTimeout - how long to wait before switching to overflow when mem is full
+    // overflowTimeout - wait time before switching to overflow when mem is full
     try {
-      Integer newOverflowTimeout = context.getInteger("overflowTimeout", defaultOverflowTimeout);
-      overflowTimeout = (newOverflowTimeout != null) ? newOverflowTimeout : defaultOverflowTimeout;
+      Integer newOverflowTimeout =
+              context.getInteger(OVERFLOW_TIMEOUT, defaultOverflowTimeout);
+      overflowTimeout = (newOverflowTimeout != null) ? newOverflowTimeout
+                                                     : defaultOverflowTimeout;
     } catch(NumberFormatException e) {
-      LOGGER.warn("Incorrect specification for SpillableMemoryChannel's keep-alive." +
-              " Using default value {}", defaultOverflowTimeout);
+      LOGGER.warn("Incorrect value for " + getName() + "'s " + OVERFLOW_TIMEOUT
+            + " setting. Using default value {}", defaultOverflowTimeout);
       overflowTimeout = defaultOverflowTimeout;
     }
 
-    // overflowDeactivationThreshold -- For internal use. To remain undocumented.
-    // determines the % free space in memory queue at which we stop spilling to overflow
     try {
-      Integer newThreshold = context.getInteger("overflowDeactivationThreshold");
-      overflowDeactivationThreshold =  (newThreshold != null) ? newThreshold/100.0  : defaultOverflowDeactivationThreshold / 100.0;
+      Integer newThreshold = context.getInteger(OVERFLOW_DEACTIVATION_THRESHOLD);
+      overflowDeactivationThreshold =  (newThreshold != null) ?
+                                   newThreshold/100.0
+                                 : defaultOverflowDeactivationThreshold / 100.0;
     } catch(NumberFormatException e) {
-      LOGGER.warn("Incorrect specification for SpillableMemoryChannel's overflowDeactivationThreshold." +
-              " Using default value {} %", defaultOverflowDeactivationThreshold);
+      LOGGER.warn("Incorrect value for " + getName() + "'s " +
+              OVERFLOW_DEACTIVATION_THRESHOLD + ". Using default value {} %",
+              defaultOverflowDeactivationThreshold);
       overflowDeactivationThreshold = defaultOverflowDeactivationThreshold / 100.0;
     }
 
     // 3) Memory consumption control
-
     try {
-      byteCapacityBufferPercentage = context.getInteger("byteCapacityBufferPercentage", defaultByteCapacityBufferPercentage);
+      byteCapacityBufferPercentage =
+              context.getInteger(BYTE_CAPACITY_BUFFER_PERCENTAGE
+                      , defaultByteCapacityBufferPercentage);
     } catch(NumberFormatException e) {
+      LOGGER.warn("Error parsing " + BYTE_CAPACITY_BUFFER_PERCENTAGE + " for "
+              + getName() + ". Using default="
+              + defaultByteCapacityBufferPercentage + ". " + e.getMessage());
       byteCapacityBufferPercentage = defaultByteCapacityBufferPercentage;
     }
 
-    try { // avgEventSize .. to remain undocumented.. used in unit testing
-      avgEventSize = context.getInteger("avgEventSize", defaultAvgEventSize);
+    try {
+      avgEventSize = context.getInteger(AVG_EVENT_SIZE, defaultAvgEventSize);
     } catch ( NumberFormatException e) {
+      LOGGER.warn("Error parsing " + AVG_EVENT_SIZE + " for " + getName()
+              + ". Using default = " + defaultAvgEventSize + ". "
+              + e.getMessage());
       avgEventSize = defaultAvgEventSize;
     }
 
     try {
-      byteCapacity = (int)((context.getLong("byteCapacity", defaultByteCapacity) * (1 - byteCapacityBufferPercentage * .01 )) / avgEventSize);
+      byteCapacity = (int) ((context.getLong(BYTE_CAPACITY, defaultByteCapacity) * (1 - byteCapacityBufferPercentage * .01 )) / avgEventSize);
       if (byteCapacity < 1) {
         byteCapacity = Integer.MAX_VALUE;
       }
     } catch(NumberFormatException e) {
-      byteCapacity = (int)((defaultByteCapacity * (1 - byteCapacityBufferPercentage * .01 )) / avgEventSize);
+      LOGGER.warn("Error parsing " + BYTE_CAPACITY + " setting for " + getName()
+              + ". Using default = " + defaultByteCapacity + ". "
+              + e.getMessage());
+      byteCapacity = (int)
+            ( (defaultByteCapacity * (1 - byteCapacityBufferPercentage * .01 ))
+                    / avgEventSize);
     }
 
 
@@ -591,7 +691,7 @@ public class SpillableMemoryChannel extends FileChannel {
         lastByteCapacity = byteCapacity;
       } else {
         try {
-          if(!bytesRemaining.tryAcquire(lastByteCapacity - byteCapacity, overflowTimeout, TimeUnit.SECONDS)) {
+          if (!bytesRemaining.tryAcquire(lastByteCapacity - byteCapacity, overflowTimeout, TimeUnit.SECONDS)) {
             LOGGER.warn("Couldn't acquire permits to downsize the byte capacity, resizing has been aborted");
           } else {
             lastByteCapacity = byteCapacity;
@@ -603,36 +703,38 @@ public class SpillableMemoryChannel extends FileChannel {
     }
 
     try {
-      overflowCapacity = context.getInteger("overflowCapacity", defaultOverflowCapacity);  // file channel capacity
+      overflowCapacity = context.getInteger(OVERFLOW_CAPACITY, defaultOverflowCapacity);  // file channel capacity
       // Determine if File channel needs to be disabled
-      if(memoryCapacity<1 && overflowCapacity<1) {
-          LOGGER.warn("overflowCapacity cannot be set to 0 when memoryCapacity is set to 0. " +
-                "Using default value for overflowCapacity = " + defaultOverflowCapacity);
+        if ( memoryCapacity < 1   &&   overflowCapacity < 1) {
+          LOGGER.warn("For channel " + getName() + OVERFLOW_CAPACITY +
+                  " cannot be set to 0 if " + MEMORY_CAPACITY + " is also 0. " +
+                  "Using default value " + OVERFLOW_CAPACITY + " = " +
+                  defaultOverflowCapacity);
           overflowCapacity = defaultOverflowCapacity;
-      }
-      overflowDisabled = (overflowCapacity<1) ;
-      if(overflowDisabled)
-        overflowActivated = false;
+        }
+        overflowDisabled = (overflowCapacity < 1) ;
+        if (overflowDisabled) {
+          overflowActivated = false;
+        }
     } catch(NumberFormatException e) {
       overflowCapacity = defaultOverflowCapacity;
     }
 
-
-
     // Configure File channel
-    context.put("keep-alive","0"); // override keep-alive for  File channel
-    context.put("capacity", Integer.toString(overflowCapacity) );  // file channel capacity
+    context.put(KEEP_ALIVE,"0"); // override keep-alive for  File channel
+    context.put(CAPACITY, Integer.toString(overflowCapacity) );  // file channel capacity
     super.configure(context);
   }
 
 
   private void resizePrimaryQueue(int newMemoryCapacity) throws InterruptedException {
-    if(memQueue != null   &&   memoryCapacity == newMemoryCapacity)
+    if (memQueue != null   &&   memoryCapacity == newMemoryCapacity) {
       return;
+    }
 
     if (memoryCapacity > newMemoryCapacity) {
       int diff = memoryCapacity - newMemoryCapacity;
-      if(!memQueRemaining.tryAcquire(diff, overflowTimeout, TimeUnit.SECONDS)) {
+      if (!memQueRemaining.tryAcquire(diff, overflowTimeout, TimeUnit.SECONDS)) {
         LOGGER.warn("Memory buffer currently contains more events than the new size. Downsizing has been aborted.");
         return;
       }
@@ -645,10 +747,11 @@ public class SpillableMemoryChannel extends FileChannel {
     } else  {   // if (memoryCapacity <= newMemoryCapacity)
       synchronized(queueLock) {
         ArrayDeque<Event> newQueue = new ArrayDeque<Event>(newMemoryCapacity);
-        if(memQueue !=null)
+        if (memQueue !=null) {
           newQueue.addAll(memQueue);
+        }
         memQueue = newQueue;
-        if(memQueRemaining == null ) {
+        if (memQueRemaining == null) {
           memQueRemaining = new Semaphore(newMemoryCapacity);
         } else {
           int diff = newMemoryCapacity - memoryCapacity;
@@ -663,20 +766,21 @@ public class SpillableMemoryChannel extends FileChannel {
   public synchronized void start() {
     super.start();
     int overFlowCount = super.getDepth();
-    if(drainOrder.isEmpty()) {
+    if (drainOrder.isEmpty()) {
       drainOrder.putOverflow(overFlowCount);
       totalStored.release(overFlowCount);
     }
     int totalCount =  overFlowCount + memQueue.size();
     channelCounter.setChannelCapacity(memoryCapacity + getOverflowCapacity());
-    channelCounter.setChannelSize( totalCount );
+    channelCounter.setChannelSize(totalCount);
   }
 
   @Override
   public synchronized void stop() {
-    if(getLifecycleState()==LifecycleState.STOP)
+    if (getLifecycleState()==LifecycleState.STOP) {
       return;
-    channelCounter.setChannelSize(getDepth() + memQueue.size());
+    }
+    channelCounter.setChannelSize(memQueue.size() + drainOrder.overflowCounter);
     channelCounter.stop();
     super.stop();
   }
@@ -686,10 +790,14 @@ public class SpillableMemoryChannel extends FileChannel {
     return new SpillableMemoryTransaction(channelCounter);
   }
 
-  private long estimateEventSize(Event event)
-  {
+
+  private BasicTransactionSemantics getOverflowTx() {
+    return super.createTransaction();
+  }
+
+  private long estimateEventSize(Event event) {
     byte[] body = event.getBody();
-    if(body != null && body.length != 0) {
+    if (body != null && body.length != 0) {
       return body.length;
     }
     //Each event occupies at least 1 slot, so return 1.
@@ -697,6 +805,3 @@ public class SpillableMemoryChannel extends FileChannel {
   }
 
 }
-
-
-

@@ -51,12 +51,13 @@ public class TestSpillableMemoryChannel {
     Context context = new Context();
     File checkPointDir = fileChannelDir.newFolder("checkpoint");
     File dataDir = fileChannelDir.newFolder("data");
-    context.put(FileChannelConfiguration.CHECKPOINT_DIR, checkPointDir.getAbsolutePath());
+    context.put(FileChannelConfiguration.CHECKPOINT_DIR
+            , checkPointDir.getAbsolutePath());
     context.put(FileChannelConfiguration.DATA_DIRS, dataDir.getAbsolutePath());
     // Set checkpoint for 5 seconds otherwise test will run out of memory
     context.put(FileChannelConfiguration.CHECKPOINT_INTERVAL, "5000");
 
-    if(overrides!=null)
+    if (overrides != null)
       context.putAll(overrides);
 
     Configurables.configure(channel, context);
@@ -85,15 +86,16 @@ public class TestSpillableMemoryChannel {
     public int expectedValue;
     public NullFound(int expected) {
       super("Expected " + expected + ",  but null found");
-      expectedValue=expected;
+      expectedValue = expected;
     }
   }
 
   static class TooManyNulls extends RuntimeException {
     private int nullsFound;
     public TooManyNulls(int count) {
-      super("Total nulls found in thread (" + Thread.currentThread().getName() + ") : " + count);
-      nullsFound=count;
+      super("Total nulls found in thread ("
+              + Thread.currentThread().getName() + ") : " + count);
+      nullsFound = count;
     }
   }
 
@@ -101,7 +103,6 @@ public class TestSpillableMemoryChannel {
   public void setUp() {
     channel = new SpillableMemoryChannel();
     channel.setName("spillChannel-" + UUID.randomUUID() );
-    configureChannel(null);
   }
 
   @After
@@ -110,21 +111,20 @@ public class TestSpillableMemoryChannel {
   }
 
   private static void putN(int first, int count, AbstractChannel channel) {
-    for(int i=0; i<count; ++i) {
+    for (int i = 0; i < count; ++i) {
       channel.put(EventBuilder.withBody(String.valueOf(first++).getBytes()));
     }
   }
 
   private static void takeNull(AbstractChannel channel) {
-      Event e = channel.take();
-//      Assert.assertNull(e);
+      channel.take();
   }
 
   private static void takeN(int first, int count, AbstractChannel channel) {
     int last = first + count;
-    for(int i=first; i<last; ++i) {
+    for (int i = first; i < last; ++i) {
       Event e = channel.take();
-      if(e==null) {
+      if (e == null) {
         throw new NullFound(i);
       }
       Event expected = EventBuilder.withBody( String.valueOf(i).getBytes() );
@@ -132,42 +132,39 @@ public class TestSpillableMemoryChannel {
     }
   }
 
-  private static int takeN_NoCheck(int count, AbstractChannel channel) throws InterruptedException {
-    final int MAXNULLS = 1000000;
-    int nullsFound = 0;
-    for(int i=0; i<count;) {
+  // returns the number of non null events found
+  private static int takeN_NoCheck(int batchSize, AbstractChannel channel) {
+    int i = 0;
+    for (; i < batchSize; ++i) {
       Event e = channel.take();
-      if(e!=null) {
-        ++i;
-      } else {
-        ++nullsFound;
-        if(nullsFound >= MAXNULLS)
-           throw new TooManyNulls(nullsFound);
-        Thread.sleep(0);
+      if (e == null) {
+        try {
+          Thread.sleep(0);
+        } catch (InterruptedException ex)
+        { /* ignore */ }
+        return i;
       }
     }
-    return nullsFound;
+    return i;
   }
 
-  private static void transactionalPutN(int first, int count, AbstractChannel channel) {
+  private static void transactionalPutN(int first, int count,
+                                        AbstractChannel channel) {
     Transaction tx = channel.getTransaction();
     tx.begin();
     try {
       putN(first, count, channel);
       tx.commit();
     } catch (RuntimeException e) {
-//      System.out.println("Queue size is " +  ( (SpillableMemoryChannel) channel).queueSize());
       tx.rollback();
       throw e;
-    } catch (Throwable e) {
-//      System.out.println("Queue size is " +  ( (SpillableMemoryChannel) channel).queueSize());
-      e.printStackTrace();
     } finally {
       tx.close();
     }
   }
 
-  private static void transactionalTakeN(int first, int count, AbstractChannel channel) {
+  private static void transactionalTakeN(int first, int count,
+                                         AbstractChannel channel) {
     Transaction tx = channel.getTransaction();
     tx.begin();
     try {
@@ -182,28 +179,22 @@ public class TestSpillableMemoryChannel {
     } catch (RuntimeException e) {
       tx.rollback();
       throw e;
-    } catch (Throwable e) {
-//      System.out.println("Queue size is " + ((SpillableMemoryChannel) channel).queueSize());
-      e.printStackTrace();
     } finally {
       tx.close();
     }
   }
 
-  private static int transactionalTakeN_NoCheck(int count, AbstractChannel channel) throws InterruptedException {
+  private static int transactionalTakeN_NoCheck(int count
+          , AbstractChannel channel)  {
     Transaction tx = channel.getTransaction();
     tx.begin();
     try {
-      int nullCount = takeN_NoCheck(count, channel);
+      int eventCount = takeN_NoCheck(count, channel);
       tx.commit();
-      return  nullCount;
+      return  eventCount;
     } catch (RuntimeException e) {
       tx.rollback();
       throw e;
-    } catch (Throwable e) {
-//      System.out.println("Queue size is " +  ( (SpillableMemoryChannel) channel).queueSize());
-      e.printStackTrace();
-      return -1;
     } finally {
       tx.close();
     }
@@ -213,7 +204,7 @@ public class TestSpillableMemoryChannel {
     Transaction tx = channel.getTransaction();
     tx.begin();
     try {
-      for(int i = 0; i<count; ++i)
+      for (int i = 0; i < count; ++i)
         takeNull(channel);
       tx.commit();
     } catch (AssertionError e) {
@@ -227,27 +218,29 @@ public class TestSpillableMemoryChannel {
     }
   }
 
-  private Thread makePutThread(String threadName, final int first, final int count, final int batchSize, final AbstractChannel channel) {
+  private Thread makePutThread(String threadName
+          , final int first, final int count, final int batchSize
+          , final AbstractChannel channel) {
     return
       new Thread(threadName) {
         public void run() {
           int maxdepth = 0;
           StopWatch watch = new StopWatch();
-          for(int i = first; i<first+count; i=i+batchSize) {
+          for (int i = first; i<first+count; i=i+batchSize) {
             transactionalPutN(i, batchSize, channel);
           }
           watch.elapsed();
-//          System.out.println("FC Max queue size " + maxdepth);
         }
       };
   }
 
-  private static Thread makeTakeThread(String threadName, final int first, final int count, final int batchSize, final AbstractChannel channel) {
+  private static Thread makeTakeThread(String threadName, final int first
+        , final int count, final int batchSize, final AbstractChannel channel) {
     return
       new Thread(threadName) {
         public void run() {
           StopWatch watch = new StopWatch();
-          for(int i = first; i<first+count; ) {
+          for (int i = first; i < first+count; ) {
             try {
               transactionalTakeN(i, batchSize, channel);
               i = i + batchSize;
@@ -256,29 +249,35 @@ public class TestSpillableMemoryChannel {
             }
           }
           watch.elapsed();
-//          System.out.println(Thread.currentThread().getName() + " is done.");
         }
       };
   }
 
-  private static Thread makeTakeThread_noCheck(String threadName, final int count, final int batchSize, final AbstractChannel channel) {
+  private static Thread makeTakeThread_noCheck(String threadName
+        , final int totalEvents, final int batchSize, final AbstractChannel channel) {
     return
       new Thread(threadName) {
         public void run() {
+          int batchSz = batchSize;
           StopWatch watch = new StopWatch();
-          int i = 0, nulls=0 ;
-          while(i<count) {
-            try {
-              nulls += transactionalTakeN_NoCheck(batchSize, channel);
-              i+=batchSize;
-            } catch (NullFound e) {
-              i = e.expectedValue;
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-              return;
-            }
+          int i = 0, attempts = 0 ;
+          while(i < totalEvents) {
+              int remaining = totalEvents - i;
+              batchSz = (remaining > batchSz) ? batchSz : remaining;
+              int takenCount = transactionalTakeN_NoCheck(batchSz, channel);
+              if(takenCount < batchSz) {
+                try {
+                  Thread.sleep(20);
+                } catch (InterruptedException ex)
+                { /* ignore */ }
+              }
+              i += takenCount;
+              ++attempts;
+              if(attempts  >  totalEvents * 3 ) {
+                throw new TooManyNulls(attempts);
+              }
           }
-          watch.elapsed(" items = " + i + ", nulls = " + nulls);
+          watch.elapsed(" items = " + i + ", attempts = " + attempts);
         }
       };
   }
@@ -321,7 +320,7 @@ public class TestSpillableMemoryChannel {
     } catch (ChannelException e) {
       threw = true;
     }
-    Assert.assertTrue(threw);
+    Assert.assertTrue("Expecting ChannelFullException to be thrown", threw);
 
     transactionalTakeN(0,2, channel);
 
@@ -348,10 +347,10 @@ public class TestSpillableMemoryChannel {
     boolean threw = false;
     try {
       transactionalPutN(7,2,channel);   // cannot fit in channel
-    } catch (Exception e) {
+    } catch (ChannelFullException e) {
       threw = true;
     }
-    Assert.assertTrue(threw);
+    Assert.assertTrue("Expecting ChannelFullException to be thrown", threw);
 
     transactionalTakeN(1,2, channel);
     transactionalTakeN(3,2, channel);
@@ -372,8 +371,27 @@ public class TestSpillableMemoryChannel {
 
     restartChannel(params);
 
-    transactionalTakeN(3,2, channel);  // from overflow, as in memory stuff should be lost
+    // from overflow, as in memory stuff should be lost
+    transactionalTakeN(3,2, channel);
 
+  }
+
+  @Test
+  public void testBasicStart() {
+    Map<String, String> params = new HashMap<String, String>();
+    params.put("memoryCapacity", "10000000");
+    params.put("overflowCapacity", "20000000");
+    params.put(FileChannelConfiguration.TRANSACTION_CAPACITY, "10");
+    params.put("overflowTimeout", "1" );
+
+    startChannel(params);
+
+    transactionalPutN( 1,5,channel);
+    transactionalPutN( 6,5,channel);
+    transactionalPutN(11,5,channel); // these should go to overflow
+
+    transactionalTakeN(1,10, channel);
+    transactionalTakeN(11,5, channel);
   }
 
   @Test
@@ -441,10 +459,10 @@ public class TestSpillableMemoryChannel {
     boolean threw = false;
     try {
       transactionalPutN(11, 1, channel);  // into overflow
-    } catch (Exception e) {
+    } catch (ChannelFullException e) {
       threw = true;
     }
-    Assert.assertTrue("byteCapacity did not work as expected",threw);
+    Assert.assertTrue("byteCapacity did not throw as expected", threw);
 
   }
 
@@ -524,11 +542,7 @@ public class TestSpillableMemoryChannel {
     tx.rollback();
     tx.close();
 
-    try {
-      transactionalTakeN_NoCheck(5, channel);
-    } catch (InterruptedException e) {
-      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-    }
+    transactionalTakeN_NoCheck(5, channel);
 
     //4.  verify things back to normal after take rollback
     transactionalPutN(21,5, channel);
@@ -545,9 +559,12 @@ public class TestSpillableMemoryChannel {
     params.put("overflowTimeout", "0");
     startChannel(params);
 
-    Assert.assertTrue("overflowTimeout setting did not reconfigure correctly", channel.getOverflowTimeout()==0);
-    Assert.assertTrue("memoryCapacity did not reconfigure correctly", channel.getMemoryCapacity()==10);
-    Assert.assertTrue("overflowCapacity did not reconfigure correctly", channel.isOverflowDisabled()==true );
+    Assert.assertTrue("overflowTimeout setting did not reconfigure correctly"
+            , channel.getOverflowTimeout() == 0);
+    Assert.assertTrue("memoryCapacity did not reconfigure correctly"
+            , channel.getMemoryCapacity() == 10);
+    Assert.assertTrue("overflowCapacity did not reconfigure correctly"
+            , channel.isOverflowDisabled() );
 
     transactionalPutN(1, 10, channel);
     boolean threw = false;
@@ -556,7 +573,8 @@ public class TestSpillableMemoryChannel {
     } catch (ChannelException e) {
       threw = true;
     }
-    Assert.assertTrue("Expected the channel to fill up and throw an exception, but it did not throw", threw);
+    Assert.assertTrue("Expected the channel to fill up and throw an exception, "
+            + "but it did not throw", threw);
 
 
     //2) Resize and verify
@@ -565,11 +583,15 @@ public class TestSpillableMemoryChannel {
     params.put("overflowCapacity", "0");
     reconfigureChannel(params);
 
-    Assert.assertTrue("overflowTimeout setting did not reconfigure correctly", channel.getOverflowTimeout()==SpillableMemoryChannel.defaultOverflowTimeout);
-    Assert.assertTrue("memoryCapacity did not reconfigure correctly", channel.getMemoryCapacity()==20);
-    Assert.assertTrue("overflowCapacity did not reconfigure correctly", channel.isOverflowDisabled()==true );
+    Assert.assertTrue("overflowTimeout setting did not reconfigure correctly"
+        , channel.getOverflowTimeout() == SpillableMemoryChannel.defaultOverflowTimeout);
+    Assert.assertTrue("memoryCapacity did not reconfigure correctly"
+        , channel.getMemoryCapacity() == 20);
+    Assert.assertTrue("overflowCapacity did not reconfigure correctly"
+        , channel.isOverflowDisabled() );
 
-    transactionalTakeN(1, 10, channel); // pull out the values inserted prior to reconfiguration
+    // pull out the values inserted prior to reconfiguration
+    transactionalTakeN(1, 10, channel);
 
     transactionalPutN(11, 10, channel);
     transactionalPutN(21, 10, channel);
@@ -580,7 +602,8 @@ public class TestSpillableMemoryChannel {
     } catch (ChannelException e) {
       threw = true;
     }
-    Assert.assertTrue("Expected the channel to fill up and throw an exception, but it did not throw", threw);
+    Assert.assertTrue("Expected the channel to fill up and throw an exception, "
+            + "but it did not throw", threw);
 
     transactionalTakeN(11, 10, channel);
     transactionalTakeN(21, 10, channel);
@@ -590,10 +613,14 @@ public class TestSpillableMemoryChannel {
     params = new HashMap<String, String>();
     reconfigureChannel(params);
 
-    Assert.assertTrue("overflowTimeout setting did not reconfigure correctly", channel.getOverflowTimeout()==SpillableMemoryChannel.defaultOverflowTimeout);
-    Assert.assertTrue("memoryCapacity did not reconfigure correctly", channel.getMemoryCapacity()==SpillableMemoryChannel.defaultMemoryCapacity);
-    Assert.assertTrue("overflowCapacity did not reconfigure correctly", channel.getOverflowCapacity()== SpillableMemoryChannel.defaultOverflowCapacity);
-    Assert.assertTrue("overflowCapacity did not reconfigure correctly", channel.isOverflowDisabled()==false);
+    Assert.assertTrue("overflowTimeout setting did not reconfigure correctly"
+      , channel.getOverflowTimeout() == SpillableMemoryChannel.defaultOverflowTimeout);
+    Assert.assertTrue("memoryCapacity did not reconfigure correctly"
+      , channel.getMemoryCapacity() == SpillableMemoryChannel.defaultMemoryCapacity);
+    Assert.assertTrue("overflowCapacity did not reconfigure correctly"
+      , channel.getOverflowCapacity() == SpillableMemoryChannel.defaultOverflowCapacity);
+    Assert.assertFalse("overflowCapacity did not reconfigure correctly"
+      , channel.isOverflowDisabled());
 
 
     // 4) Reconfiguring of  overflow
@@ -610,11 +637,13 @@ public class TestSpillableMemoryChannel {
     transactionalPutN(16,5, channel);
     threw=false;
     try {
-      transactionalPutN(21,5, channel); // should error out as both primary & overflow are full
+      // should error out as both primary & overflow are full
+      transactionalPutN(21,5, channel);
     } catch (ChannelException e) {
       threw = true;
     }
-    Assert.assertTrue("Expected the last insertion to fail, but it didn't.", threw);
+    Assert.assertTrue("Expected the last insertion to fail, but it didn't."
+            , threw);
 
     // reconfig the overflow
     params = new HashMap<String, String>();
@@ -624,7 +653,8 @@ public class TestSpillableMemoryChannel {
     params.put("overflowTimeout", "1");
     reconfigureChannel(params);
 
-    transactionalPutN(21,5, channel);  // should succeed now as we have made room in the overflow
+    // should succeed now as we have made room in the overflow
+    transactionalPutN(21,5, channel);
 
     transactionalTakeN(1,10, channel);
     transactionalTakeN(11,5, channel);
@@ -640,8 +670,9 @@ public class TestSpillableMemoryChannel {
     params.put("overflowTimeout", "3");
     startChannel(params);
 
-    Thread sourceThd = makePutThread("putter", 1, 500000, 100, channel);
-    Thread sinkThd =  makeTakeThread("taker",  1, 500000, 100, channel);
+    // run source and sink concurrently
+    Thread sourceThd = makePutThread("src", 1, 500000, 100, channel);
+    Thread sinkThd = makeTakeThread("sink",  1, 500000, 100, channel);
 
     StopWatch watch = new StopWatch();
 
@@ -652,36 +683,129 @@ public class TestSpillableMemoryChannel {
     sinkThd.join();
 
     watch.elapsed();
-    System.out.println("Max Queue size " + channel.getMaxQueueSize() );
+    System.out.println("Max Queue size " + channel.getMaxMemQueueSize() );
   }
 
+  @Test
+  public void testCounters() throws InterruptedException {
+    Map<String, String> params = new HashMap<String, String>();
+    params.put("memoryCapacity",  "5000");
+    params.put("overflowCapacity","5000");
+    params.put("transactionCapacity","5000");
+    params.put("overflowTimeout", "0");
+    startChannel(params);
 
-  public ArrayList<Thread> createSourceThreads(int count, int totalEvents, int batchSize) {
+    //1. fill up mem queue
+    Thread sourceThd = makePutThread("src", 1, 5000, 2500, channel);
+    sourceThd.start();
+    sourceThd.join();
+
+    Assert.assertEquals(5000, channel.getTotalStored());
+    Assert.assertEquals(5000, channel.channelCounter.getChannelSize());
+    Assert.assertEquals(5000, channel.channelCounter.getEventPutAttemptCount());
+    Assert.assertEquals(5000, channel.channelCounter.getEventPutSuccessCount());
+
+    //2. empty mem queue
+    Thread sinkThd =  makeTakeThread("sink",  1, 5000, 1000, channel);
+    sinkThd.start();
+    sinkThd.join();
+    Assert.assertEquals(0, channel.getTotalStored());
+    Assert.assertEquals(0, channel.channelCounter.getChannelSize());
+    Assert.assertEquals(5000, channel.channelCounter.getEventTakeAttemptCount());
+    Assert.assertEquals(5000, channel.channelCounter.getEventTakeSuccessCount());
+
+
+    //3. fill up mem & overflow
+    sourceThd = makePutThread("src", 1, 10000, 1000, channel);
+    sourceThd.start();
+    sourceThd.join();
+    Assert.assertEquals(10000, channel.getTotalStored());
+    Assert.assertEquals(10000, channel.channelCounter.getChannelSize());
+    Assert.assertEquals(15000, channel.channelCounter.getEventPutAttemptCount());
+    Assert.assertEquals(15000, channel.channelCounter.getEventPutSuccessCount());
+
+
+    //4. empty memory
+    sinkThd = makeTakeThread("sink",  1, 5000, 1000, channel);
+    sinkThd.start();
+    sinkThd.join();
+    Assert.assertEquals(5000, channel.getTotalStored());
+    Assert.assertEquals(5000, channel.channelCounter.getChannelSize());
+    Assert.assertEquals(10000, channel.channelCounter.getEventTakeAttemptCount());
+    Assert.assertEquals(10000, channel.channelCounter.getEventTakeSuccessCount());
+
+    //5. empty overflow
+    transactionalTakeN(5001, 1000, channel);
+    transactionalTakeN(6001, 1000, channel);
+    transactionalTakeN(7001, 1000, channel);
+    transactionalTakeN(8001, 1000, channel);
+    transactionalTakeN(9001, 1000, channel);
+    Assert.assertEquals(0, channel.getTotalStored());
+    Assert.assertEquals(0, channel.channelCounter.getChannelSize());
+    Assert.assertEquals(15000, channel.channelCounter.getEventTakeAttemptCount());
+    Assert.assertEquals(15000, channel.channelCounter.getEventTakeSuccessCount());
+
+
+
+    //6. now do it concurrently
+    sourceThd = makePutThread("src1", 1, 5000, 1000, channel);
+    Thread sourceThd2 = makePutThread("src2", 1, 5000, 500, channel);
+    sinkThd =  makeTakeThread_noCheck("sink1", 5000, 1000, channel);
+    sourceThd.start();
+    sourceThd2.start();
+    sinkThd.start();
+    sourceThd.join();
+    sourceThd2.join();
+    sinkThd.join();
+    Assert.assertEquals(5000, channel.getTotalStored());
+    Assert.assertEquals(5000, channel.channelCounter.getChannelSize());
+    Thread sinkThd2 =  makeTakeThread_noCheck("sink2", 2500, 500, channel);
+    Thread sinkThd3 =  makeTakeThread_noCheck("sink3", 2500, 1000, channel);
+    sinkThd2.start();
+    sinkThd3.start();
+    sinkThd2.join();
+    sinkThd3.join();
+    Assert.assertEquals(0, channel.getTotalStored());
+    Assert.assertEquals(0, channel.channelCounter.getChannelSize());
+    Assert.assertEquals(25000, channel.channelCounter.getEventTakeSuccessCount());
+    Assert.assertEquals(25000, channel.channelCounter.getEventPutSuccessCount());
+    Assert.assertTrue("TakeAttempt channel counter value larger than expected" ,
+            25000 <= channel.channelCounter.getEventTakeAttemptCount());
+    Assert.assertTrue("PutAttempt channel counter value larger than expected",
+            25000 <= channel.channelCounter.getEventPutAttemptCount());
+  }
+
+  public ArrayList<Thread> createSourceThreads(int count, int totalEvents
+          , int batchSize) {
     ArrayList<Thread> sourceThds = new ArrayList<Thread>();
 
-    for(int i=0; i<count; ++i) {
-      sourceThds.add(  makePutThread("PUTTER" + i, 1, totalEvents/count, batchSize, channel) );
+    for (int i = 0; i < count; ++i) {
+      sourceThds.add(  makePutThread("src" + i, 1, totalEvents/count
+              , batchSize, channel) );
     }
     return sourceThds;
   }
 
-  public ArrayList<Thread> createSinkThreads(int count, int totalEvents, int batchSize) {
+  public ArrayList<Thread> createSinkThreads(int count, int totalEvents
+          , int batchSize) {
     ArrayList<Thread> sinkThreads = new ArrayList<Thread>(count);
 
-    for(int i=0; i<count; ++i) {
-      sinkThreads.add( makeTakeThread_noCheck("taker"+i, totalEvents/count, batchSize, channel) );
+    for (int i = 0; i < count; ++i) {
+      sinkThreads.add( makeTakeThread_noCheck("sink"+i, totalEvents/count
+              , batchSize, channel) );
     }
     return sinkThreads;
   }
 
   public void startThreads(ArrayList<Thread> threads) {
-    for(Thread thread : threads ) {
+    for (Thread thread : threads) {
       thread.start();
     }
   }
 
-  public void joinThreads(ArrayList<Thread> threads) throws InterruptedException {
-    for(Thread thread : threads ) {
+  public void joinThreads(ArrayList<Thread> threads)
+          throws InterruptedException {
+    for (Thread thread : threads) {
       try {
         thread.join();
       } catch (InterruptedException e) {
@@ -693,8 +817,8 @@ public class TestSpillableMemoryChannel {
 
   @Test
   public void testParallelMultipleSourcesAndSinks() throws InterruptedException {
-    int sourceCount = 1;
-    int sinkCount = 1;
+    int sourceCount = 8;
+    int sinkCount = 8;
     int eventCount = 1000000;
     int batchSize = 100;
 
@@ -706,7 +830,8 @@ public class TestSpillableMemoryChannel {
 
     ArrayList<Thread> sinks = createSinkThreads(sinkCount, eventCount, batchSize);
 
-    ArrayList<Thread> sources =  createSourceThreads(sourceCount, eventCount, batchSize);
+    ArrayList<Thread> sources = createSourceThreads(sourceCount
+            , eventCount, batchSize);
 
 
     StopWatch watch = new StopWatch();
@@ -720,7 +845,7 @@ public class TestSpillableMemoryChannel {
 
     System.out.println("Total puts " + channel.drainOrder.totalPuts);
 
-    System.out.println("Max Queue size " + channel.getMaxQueueSize() );
+    System.out.println("Max Queue size " + channel.getMaxMemQueueSize() );
     System.out.println(channel.memQueue.size());
 
     System.out.println("done");
@@ -739,15 +864,19 @@ public class TestSpillableMemoryChannel {
 
     public void elapsed(String suffix) {
       long elapsed = System.currentTimeMillis() - startTime;
-      if(suffix==null)
+      if (suffix == null) {
         suffix = "";
-      else
+      } else {
         suffix = "{ " + suffix + " }";
+      }
 
-      if (elapsed < 10000)
-        System.out.println(Thread.currentThread().getName() +  " : [ " + elapsed + " ms ].        " + suffix);
-      else
-        System.out.println(Thread.currentThread().getName() +  " : [ " + elapsed / 1000 + " sec ].       " + suffix);
+      if (elapsed < 10000) {
+        System.out.println(Thread.currentThread().getName()
+                +  " : [ " + elapsed + " ms ].        " + suffix);
+      } else {
+        System.out.println(Thread.currentThread().getName()
+                +  " : [ " + elapsed / 1000 + " sec ].       " + suffix);
+      }
     }
   }
 
