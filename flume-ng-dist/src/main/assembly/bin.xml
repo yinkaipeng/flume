@@ -27,6 +27,7 @@
   <formats>
     <format>dir</format>
     <format>tar.gz</format>
+    <format>zip</format>
   </formats>
 
   <baseDirectory>apache-flume-${project.version}-bin</baseDirectory>

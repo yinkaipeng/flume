@@ -74,9 +74,17 @@ limitations under the License.
     <module>flume-ng-sdk</module>
     <module>flume-ng-tests</module>
     <module>flume-tools</module>
+	<module>winpkg</module>
   </modules>
 
   <profiles>
+
+	<profile>
+	<id>winpkg></id>
+	<modules>
+		<module>winpkg</module>
+	</modules>
+	</profile>
 
     <profile>
       <id>hadoop-1.0</id>
@@ -560,7 +568,29 @@ limitations under the License.
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
       </plugin>
-
+	<plugin>
+        <groupId>com.google.code.maven-replacer-plugin</groupId>
+        <artifactId>replacer</artifactId>
+        <version>1.5.2</version>
+        <executions>
+            <execution>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includes>
+                        <include>winpkg/src/scripts/*</include>
+                    </includes>
+                    <replacements>
+                        <replacement>
+                            <token>@flume.version@</token>
+                            <value>${project.version}</value>
+                        </replacement>
+                    </replacements>
+                </configuration>
+        </plugin>
     </plugins>
 
     <pluginManagement>
@@ -573,6 +603,12 @@ limitations under the License.
           <configuration>
             <source>${sourceJavaVersion}</source>
             <target>${targetJavaVersion}</target>
+            <source>1.6</source>
+            <target>1.6</target>
+            <!-- Memory management -->
+            <fork>true</fork>
+            <meminitial>128m</meminitial>
+            <maxmem>512m</maxmem>
           </configuration>
         </plugin>
 
@@ -591,6 +627,7 @@ limitations under the License.
               <exclude>**/*$*</exclude>
               <exclude>${test.exclude.pattern}</exclude>
             </excludes>
+            <argLine>-Djava.library.path="${hadoop.library.path}"</argLine>
           </configuration>
         </plugin>
 
@@ -1032,12 +1069,6 @@ limitations under the License.
       <dependency>
         <groupId>org.apache.flume.flume-ng-sinks</groupId>
         <artifactId>flume-ng-elasticsearch-sink</artifactId>
-        <version>1.4.0</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.flume.flume-ng-sinks</groupId>
-        <artifactId>flume-ng-morphline-solr-sink</artifactId>
         <version>1.4.0</version>
       </dependency>
 
