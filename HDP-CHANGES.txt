@@ -3,9 +3,11 @@
 
 New Features:
 -----------------------
+ 1227 - Introduce some sort of SpillableChannel
 
 Un supported Features:
 -----------------------
+ Async HBase Sink is not currently supported due to issue with AsyncHbase library
 
 Improvements:
 -----------------------
