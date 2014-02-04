@@ -128,7 +128,7 @@ Setting up an agent
 -------------------
 
 Flume agent configuration is stored in a local configuration file.  This is a
-text file which has a format follows the Java properties file format.
+text file that follows the Java properties file format.
 Configurations for one or more agents can be specified in the same
 configuration file. The configuration file includes properties of each source,
 sink and channel in an agent and how they are wired together to form data
@@ -1397,7 +1397,7 @@ Scribe Source
 
 Scribe is another type of ingest system. To adopt existing Scribe ingest system,
 Flume should use ScribeSource based on Thrift with compatible transfering protocol.
-The deployment of Scribe please following guide from Facebook.
+For deployment of Scribe please follow the guide from Facebook.
 Required properties are in **bold**.
 
 ==============  ===========  ==============================================
@@ -1781,7 +1781,7 @@ Example for agent named a1:
 
 AsyncHBaseSink
 ''''''''''''''
-Note: This sink is not supported in this release due incompatibility beteen async 
+Note: This sink is not supported in this release due incompatibility beteen async
 hbase library and HBase 0.95.
 
 This sink writes data to HBase using an asynchronous model. A class implementing
@@ -1837,7 +1837,7 @@ This sink extracts data from Flume events, transforms it, and loads it in near-r
 
 This sink is well suited for use cases that stream raw data into HDFS (via the HdfsSink) and simultaneously extract, transform and load the same data into Solr (via MorphlineSolrSink). In particular, this sink can process arbitrary heterogeneous raw data from disparate data sources and turn it into a data model that is useful to Search applications.
 
-The ETL functionality is customizable using a `morphline configuration file <http://cloudera.github.io/cdk/docs/0.4.0/cdk-morphlines/index.html>`_ that defines a chain of transformation commands that pipe event records from one command to another. 
+The ETL functionality is customizable using a `morphline configuration file <http://cloudera.github.io/cdk/docs/0.4.0/cdk-morphlines/index.html>`_ that defines a chain of transformation commands that pipe event records from one command to another.
 
 Morphlines can be seen as an evolution of Unix pipelines where the data model is generalized to work with streams of generic records, including arbitrary binary payloads. A morphline command is a bit like a Flume Interceptor. Morphlines can be embedded into Hadoop components such as Flume.
 
@@ -2160,24 +2160,25 @@ The same scenerio as above, however key-0 has its own password:
 Spillable Memory Channel
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The events are stored in an in-memory queue and on disk. The disk store is managed using a embedded File channel. The in-memory queue
-us used as the primary store and the disk as overflow. When the in-memory queue is full, additional incoming events are stored in the
-file channel. It is ideal for flows that need higher throughput of memory channel, but at the same time need the large capacity of
-the file channel in order to be more tolerant of intermittent sink side outages or drop in drain rates. In case of an agent crash,
-only the events stored on disk are recovered when the agent is restarted.
+The events are stored in an in-memory queue and on disk. The in-memory queue serves as the primary store and the disk as overflow.
+The disk store is managed using an embedded File channel. When the in-memory queue is full, additional incoming events are stored in
+the file channel. This channel is ideal for flows that need high throughput of memory channel during normal operation, but at the
+same time need the larger capacity of the file channel for better tolerance of intermittent sink side outages or drop in drain rates.
+The throughput will reduce approximately to file channel speeds during such abnormal situations. In case of an agent crash or restart,
+only the events stored on disk are recovered when the agent comes online. This channel is currently experimental.
 
-Required properties are in **bold**.
+Required properties are in **bold**. Please refer to file channel for additional required properties.
 
 ============================  ================  =============================================================================================
 Property Name                 Default           Description
 ============================  ================  =============================================================================================
 **type**                      --                The component type name, needs to be ``SPILLABLEMEMORY``
-memoryCapacity                10000             Maximum number of events stored in memory. To disable the use of in-memory queue, set this to zero.
-overflowCapacity              100000000         Maximum number of events stored in overflow disk (i.e File channel). To disable the use of overflow disk, set this to zero.
-overflowTimeout               3                 The number seconds of seconds to wait before enabling disk overflow when memory fills up
+memoryCapacity                10000             Maximum number of events stored in memory queue. To disable use of in-memory queue, set this to zero.
+overflowCapacity              100000000         Maximum number of events stored in overflow disk (i.e File channel). To disable use of overflow, set this to zero.
+overflowTimeout               3                 The number of seconds to wait before enabling disk overflow when memory fills up.
 byteCapacityBufferPercentage  20                Defines the percent of buffer between byteCapacity and the estimated total size
                                                 of all events in the channel, to account for data in headers. See below.
-byteCapacity                  see description   Maximum total **bytes** of memory allowed as a sum of all events in the memory queue.
+byteCapacity                  see description   Maximum **bytes** of memory allowed as a sum of all events in the memory queue.
                                                 The implementation only counts the Event ``body``, which is the reason for
                                                 providing the ``byteCapacityBufferPercentage`` configuration parameter as well.
                                                 Defaults to a computed value equal to 80% of the maximum memory available to
@@ -2188,12 +2189,13 @@ byteCapacity                  see description   Maximum total **bytes** of memor
                                                 channel byteCapacity purposes.
                                                 Setting this value to ``0`` will cause this value to fall back to a hard
                                                 internal limit of about 200 GB.
+avgEventSize                  500               Estimated average size of events, in bytes, going into the channel
 <file channel properties>     see file channel  Any file channel property with the exception of 'keep-alive' and 'capacity' can be used.
                                                 The keep-alive of file channel is managed by Spillable Memory Channel. Use 'overflowCapacity'
                                                 to set the File channel's capacity.
 ============================  ================  =============================================================================================
 
-In Memory channel is considered full if either memoryCapacity or byteCapacity limit reached.
+In-memory queue is considered full if either memoryCapacity or byteCapacity limit is reached.
 
 Example for agent named a1:
 
