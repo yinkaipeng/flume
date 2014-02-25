@@ -14,16 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flume.sink.solr.morphline;
+package org.apache.flume.serialization;
 
 import java.io.IOException;
 import java.util.List;
 
 import org.apache.flume.Context;
 import org.apache.flume.Event;
-import org.apache.flume.serialization.EventDeserializer;
-import org.apache.flume.serialization.EventDeserializerFactory;
-import org.apache.flume.serialization.ResettableInputStream;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,14 +41,14 @@ public class TestBlobDeserializer extends Assert {
 
   @Test
   public void testSimple() throws IOException {
-    ResettableInputStream in = new ResettableTestStringInputStream(mini);
+    ResettableInputStream in = new ResettableTestByteInputStream(mini);
     EventDeserializer des = new BlobDeserializer(new Context(), in);
     validateMiniParse(des);
   }
 
   @Test
   public void testSimpleViaBuilder() throws IOException {
-    ResettableInputStream in = new ResettableTestStringInputStream(mini);
+    ResettableInputStream in = new ResettableTestByteInputStream(mini);
     EventDeserializer.Builder builder = new BlobDeserializer.Builder();
     EventDeserializer des = builder.build(new Context(), in);
     validateMiniParse(des);
@@ -59,7 +56,7 @@ public class TestBlobDeserializer extends Assert {
 
   @Test
   public void testSimpleViaFactory() throws IOException {
-    ResettableInputStream in = new ResettableTestStringInputStream(mini);
+    ResettableInputStream in = new ResettableTestByteInputStream(mini);
     EventDeserializer des;
     des = EventDeserializerFactory.getInstance(BlobDeserializer.Builder.class.getName(), new Context(), in);
     validateMiniParse(des);
@@ -67,7 +64,7 @@ public class TestBlobDeserializer extends Assert {
 
   @Test
   public void testBatch() throws IOException {
-    ResettableInputStream in = new ResettableTestStringInputStream(mini);
+    ResettableInputStream in = new ResettableTestByteInputStream(mini);
     EventDeserializer des = new BlobDeserializer(new Context(), in);
     List<Event> events;
 
@@ -86,7 +83,7 @@ public class TestBlobDeserializer extends Assert {
     Context ctx = new Context();
     ctx.put(BlobDeserializer.MAX_BLOB_LENGTH_KEY, "10");
 
-    ResettableInputStream in = new ResettableTestStringInputStream(longLine);
+    ResettableInputStream in = new ResettableTestByteInputStream(longLine);
     EventDeserializer des = new BlobDeserializer(ctx, in);
 
     assertEventBodyEquals("abcdefghij", des.readEvent());
