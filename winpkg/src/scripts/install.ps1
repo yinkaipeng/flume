@@ -59,7 +59,7 @@ param(
 
 function Main( $scriptDir )
 {
-    $FinalName = "flume-@flume.version@"
+    $FinalName = "flume-1.4.0"
     if ( -not (Test-Path ENV:WINPKG_LOG))
     {
         $ENV:WINPKG_LOG = "$FinalName.winpkg.log"

@@ -1285,7 +1285,7 @@ By default HTTPSource splits JSON input into Flume events. As an alternative, Bl
 =====================  ==================  ============================================================================
 Property Name          Default             Description
 =====================  ==================  ============================================================================
-**handler**            --                  The FQCN of this class: ``org.apache.flume.sink.solr.morphline.BlobHandler``
+**handler**            --                  The FQCN of this class: ``org.apache.flume.source.http.BlobHandler``
 handler.maxBlobLength  100000000           The maximum number of bytes to read and buffer for a given request
 =====================  ==================  ============================================================================
 
