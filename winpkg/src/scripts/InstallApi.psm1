@@ -23,7 +23,7 @@
 ###
 $ScriptDir = Resolve-Path (Split-Path $MyInvocation.MyCommand.Path)
 
-$FinalName = "flume-1.4.0"
+$FinalName = "flume-@flume.version@"
 
 ###############################################################################
 ###

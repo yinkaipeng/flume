@@ -16,7 +16,7 @@
 
 function Main( $scriptDir )
 {
-    Write-Log "Uninstalling Apache flume flume-1.4.0"
+    Write-Log "Uninstalling Apache flume flume-@flume.version@"
     Uninstall "flume" $ENV:HADOOP_NODE_INSTALL_ROOT
     Write-Log "Finished Uninstalling Apache flume"
 }
