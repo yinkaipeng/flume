@@ -1558,8 +1558,6 @@ Name                      Default       Description
 **hive.partition**        --            Comma separate list of partition values identifying the partition to write to. May contain escape
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
                                         then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21
-idleTimeout               0             Timeout after which inactive connections get closed
-                                        (0 = disable automatic closing of idle files)
 callTimeout               10000         Number of milliseconds allowed for Hive operations, such as open Txn, write, commit, abort.
 batchSize                 5000          Max number of events written to Hive in a single Hive transaction
 txnsPerBatch              1000          The number of desired transactions per Transaction batch.

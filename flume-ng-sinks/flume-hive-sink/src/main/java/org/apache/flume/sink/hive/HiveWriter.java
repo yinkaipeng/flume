@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 
-import org.apache.flume.Context;
 import org.apache.hive.streaming.*;
 
 import org.apache.flume.Event;
@@ -168,10 +167,11 @@ class HiveWriter {
   /**
    * Commits the current Txn.
    * If 'rollToNext' is true, will switch to next Txn in batch or to a
-   *       new TxnBatch if current batch is empty
+   *       new TxnBatch if current Txn batch is exhausted
    * TODO: see what to do when there are errors in each IO call stage
    */
-  public void flush(boolean rollToNext) throws IOException, InterruptedException, StreamingException {
+  public void flush(boolean rollToNext)
+          throws IOException, InterruptedException, StreamingException {
     lastUsed = System.currentTimeMillis();
     commitTxn();
     if(txnBatch.remainingTransactions() == 0) {
@@ -191,6 +191,7 @@ class HiveWriter {
     closeTxnBatch();
     closeConnection();
     closed = true;
+    sinkCounter.incrementConnectionClosedCount();
   }
 
   private void closeConnection() throws IOException, InterruptedException {
