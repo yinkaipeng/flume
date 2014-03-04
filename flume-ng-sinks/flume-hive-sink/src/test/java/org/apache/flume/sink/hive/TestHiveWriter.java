@@ -20,14 +20,20 @@
 package org.apache.flume.sink.hive;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import junit.framework.Assert;
 import org.apache.flume.Context;
 import org.apache.flume.event.SimpleEvent;
 import org.apache.flume.instrumentation.SinkCounter;
+import org.apache.hadoop.hive.cli.CliSessionState;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.ql.CommandNeedRetryException;
+import org.apache.hadoop.hive.ql.Driver;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hive.streaming.HiveEndPoint;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,10 +57,15 @@ public class TestHiveWriter {
 
   private final int port;
   private final String metaStoreURI;
+
+  private HiveDelimitedTextSerializer serializer;
+
   private final HiveConf conf;
+  private Driver driver;
 
   private ExecutorService callTimeoutPool;
-  private HiveDelimitedTextSerializer serializer;
+  int timeout = 10000; // msec
+
 
 
   public TestHiveWriter() throws Exception {
@@ -69,12 +80,15 @@ public class TestHiveWriter {
     callTimeoutPool = Executors.newFixedThreadPool(threadPoolSize,
             new ThreadFactoryBuilder().setNameFormat("hiveWriterTest").build());
 
-
     // Start metastore
     conf = new HiveConf(this.getClass());
     TestUtil.setConfValues(conf);
     conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
     TestUtil.startLocalMetaStore(port, conf);
+
+    // 2) Setup Hive client
+    SessionState.start(new CliSessionState(conf));
+    driver = new Driver(conf);
   }
 
   @Before
@@ -88,28 +102,25 @@ public class TestHiveWriter {
     ctx.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
     serializer = new HiveDelimitedTextSerializer();
     serializer.configure(ctx);
-
   }
 
   @Test
   public void testInstantiate() throws Exception {
     HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals);
     SinkCounter sinkCounter = new SinkCounter(this.getClass().getName());
-    int timeout = 10000; // msec
-    HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout, timeout, callTimeoutPool,
-            "flumetest", serializer, sinkCounter);
+
+    HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout, timeout
+            , callTimeoutPool, "flumetest", serializer, sinkCounter);
 
     writer.close();
   }
-
 
   @Test
   public void testWriteBasic() throws Exception {
     HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals);
     SinkCounter sinkCounter = new SinkCounter(this.getClass().getName());
-    int timeout = 10000; // msec
-    HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout, timeout, callTimeoutPool,
-            "flumetest", serializer, sinkCounter);
+    HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout, timeout
+            , callTimeoutPool, "flumetest", serializer, sinkCounter);
 
     SimpleEvent event = new SimpleEvent();
     event.setBody("1,xyz,Hello world,abc".getBytes());
@@ -126,23 +137,48 @@ public class TestHiveWriter {
   public void testWriteMultiFlush() throws Exception {
     HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals);
     SinkCounter sinkCounter = new SinkCounter(this.getClass().getName());
-    int timeout = 10000; // msec
-    HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout, timeout, callTimeoutPool,
-            "flumetest", serializer, sinkCounter);
 
+    HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout, timeout
+            , callTimeoutPool, "flumetest", serializer, sinkCounter);
+
+    checkRecordCountInTable(0);
     SimpleEvent event = new SimpleEvent();
-    event.setBody("1,xyz,Hello world,abc".getBytes());
+
+    String REC1 = "1,xyz,Hello world,abc";
+    event.setBody(REC1.getBytes());
+    writer.write(event);
+    checkRecordCountInTable(0);
+    writer.flush(true);
+    checkRecordCountInTable(1);
+
+    String REC2 = "2,xyz,Hello world,abc";
+    event.setBody(REC2.getBytes());
+    writer.write(event);
+    checkRecordCountInTable(1);
+    writer.flush(true);
+    checkRecordCountInTable(2);
+
+    String REC3 = "3,xyz,Hello world,abc";
+    event.setBody(REC3.getBytes());
     writer.write(event);
     writer.flush(true);
-    event.setBody("2,xyz,Hello world,abc".getBytes());
-    writer.write(event);
-    writer.flush(true);
-    event.setBody("3,xyz,Hello world,abc".getBytes());
-    writer.write(event);
-    writer.flush(true);
+    checkRecordCountInTable(3);
     writer.close();
+
+    checkRecordCountInTable(3);
   }
 
+  private void checkRecordCountInTable(int expectedCount)
+          throws CommandNeedRetryException, IOException {
+    int count = TestUtil.listRecordsInTable(driver, dbName, tblName).size();
+    Assert.assertEquals(expectedCount, count);
+  }
+
+  /**
+   * Sets up input fields to have same order as table columns,
+   * Also sets the separator on serde to be same as i/p field separator
+   * @throws Exception
+   */
   @Test
   public void testInOrderWrite() throws Exception {
     HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals);

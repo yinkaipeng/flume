@@ -32,6 +32,8 @@ import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
+import org.apache.hadoop.hive.ql.CommandNeedRetryException;
+import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.io.orc.OrcInputFormat;
 import org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat;
 import org.apache.hadoop.hive.ql.io.orc.OrcSerde;
@@ -104,7 +106,9 @@ public class TestUtil {
       tbl.setParameters(tableParams);
       client.createTable(tbl);
 
-      addPartition(client, tbl, partVals);
+      if(partVals!=null && partVals.size() > 0) {
+        addPartition(client, tbl, partVals);
+      }
     } finally {
 //      client.close();
     }
@@ -159,4 +163,24 @@ public class TestUtil {
     TxnDbUtil.prepDb();
     MetaStoreUtils.startMetaStore(port, ShimLoader.getHadoopThriftAuthBridge(), conf);
   }
+
+  public static ArrayList<String> listRecordsInTable(Driver driver, String dbName, String tblName)
+          throws CommandNeedRetryException, IOException {
+    driver.run("select * from " + dbName + "." + tblName);
+    ArrayList<String> res = new ArrayList<String>();
+    driver.getResults(res);
+    return res;
+  }
+
+  public static ArrayList<String> listRecordsInPartition(Driver driver, String dbName,
+                               String tblName, String continent, String country)
+          throws CommandNeedRetryException, IOException {
+    driver.run("select * from " + dbName + "." + tblName + " where continent='"
+            + continent + "' and country='" + country + "'");
+    ArrayList<String> res = new ArrayList<String>();
+    driver.getResults(res);
+    return res;
+  }
+
+
 }
