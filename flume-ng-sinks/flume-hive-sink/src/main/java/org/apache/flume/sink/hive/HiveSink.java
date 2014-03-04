@@ -202,6 +202,10 @@ public class HiveSink extends AbstractSink implements Configurable {
     }
   }
 
+  @VisibleForTesting
+  protected SinkCounter getCounter() {
+    return sinkCounter;
+  }
   private HiveEventSerializer createSerializer(String serializerName)  {
     if(serializerName.compareToIgnoreCase(HiveDelimitedTextSerializer.ALIAS)==0 ||
             serializerName.compareTo(HiveDelimitedTextSerializer.class.getName())==0) {
@@ -335,16 +339,12 @@ public class HiveSink extends AbstractSink implements Configurable {
                                     TimeZone timeZone, boolean needRounding,
                                     int roundUnit, Integer roundValue,
                                     boolean useLocalTime) {
-    String realDB = BucketPath.escapeString(database,headers, timeZone,
-            needRounding, roundUnit, roundValue, useLocalTime);
-    String realTable = BucketPath.escapeString(table,headers, timeZone,
-            needRounding, roundUnit, roundValue, useLocalTime);
     ArrayList<String> realPartVals = Lists.newArrayList();
     for(String partVal : partVals) {
       realPartVals.add(BucketPath.escapeString(partVal, headers, timeZone,
               needRounding, roundUnit, roundValue, useLocalTime));
     }
-    return new HiveEndPoint(metaStoreUri, realDB, realTable, realPartVals);
+    return new HiveEndPoint(metaStoreUri, database, table, realPartVals);
   }
 
   /**
