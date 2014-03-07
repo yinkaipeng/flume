@@ -265,8 +265,8 @@ public class TestHiveSink {
 // + pattern substitution (headers & ts)
 // + counters
 // + multiple writers
-// + use local time
-// +
-// - time rounding etc
+// + use local time (manually verified)
+// - specifying non typeable chars for separator, delimiter
 // - expiration
 // - reconfigure
+// - time rounding

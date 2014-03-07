@@ -86,7 +86,7 @@ public class HiveSink extends AbstractSink implements Configurable {
   private Integer batchSize;
   private Integer maxOpenConnections;
   private boolean autoCreatePartitions;
-  private String serializerName;
+  private String serializerType;
   HiveEventSerializer serializer;
 
   /**
@@ -104,7 +104,6 @@ public class HiveSink extends AbstractSink implements Configurable {
   private int roundUnit;
   private Integer roundValue;
   private SystemClock clock;
-
 
   @VisibleForTesting
   HashMap<HiveEndPoint, HiveWriter> getAllWriters() {
@@ -177,13 +176,13 @@ public class HiveSink extends AbstractSink implements Configurable {
     }
 
     // Serializer
-    serializerName = context.getString("serializer");
-    if(serializerName == null) {
+    serializerType = context.getString("serializer");
+    if(serializerType == null) {
       throw new IllegalArgumentException("serializer config setting is not " +
               "specified for sink " + getName());
     }
 
-    serializer = createSerializer(serializerName);
+    serializer = createSerializer(serializerType);
     serializer.configure(context);
 
 

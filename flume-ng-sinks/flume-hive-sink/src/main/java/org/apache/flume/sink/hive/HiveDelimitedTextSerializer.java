@@ -36,8 +36,9 @@ import java.io.IOException;
 public class HiveDelimitedTextSerializer implements HiveEventSerializer  {
   private String delimiter;
   String[] fieldToColMapping = null;
-  public static String ALIAS = "DELIIMITED";
+  public static String ALIAS = "DELIMITED";
   private Character serdeSeparator = null;
+  public final static String defaultDelimiter = ",";
 
   @Override
   public void write(TransactionBatch txnBatch, Event e)
@@ -52,29 +53,51 @@ public class HiveDelimitedTextSerializer implements HiveEventSerializer  {
       return new DelimitedInputWriter(fieldToColMapping, delimiter, endPoint);
     }
     return new DelimitedInputWriter(fieldToColMapping, delimiter, endPoint
-            , serdeSeparator.charValue());
+            , serdeSeparator);
   }
 
   @Override
   public void configure(Context context) {
-    delimiter = context.getString("serializer.delimiter", ",");
+    delimiter = parseDelimiterSpec(
+            context.getString("serializer.delimiter", defaultDelimiter));
     String fieldNames = context.getString("serializer.fieldnames");
     if (fieldNames==null) {
       throw new IllegalArgumentException("serializer.fieldnames is not specified " +
               "for serializer " + this.getClass().getName() );
     }
     String serdeSeparatorStr = context.getString("serializer.serdeSeparator");
-    if(serdeSeparatorStr!=null) {
-      if(serdeSeparatorStr.length()>1) {
-        throw new IllegalArgumentException("serializer.fieldnames is not specified " +
-                "for serializer " + this.getClass().getName() );
-      }
-      this.serdeSeparator = serdeSeparatorStr.charAt(0);
-    } else {
-      serdeSeparator = null;
-    }
+    this.serdeSeparator = parseSerdeSeparatorSpec(serdeSeparatorStr);
+
     // split, but preserve empty fields (-1)
     fieldToColMapping = fieldNames.trim().split(",",-1);
+  }
+
+  // if delimiter is a double quoted like "\t", drop quotes
+  private static String parseDelimiterSpec(String delimiter) {
+    if(delimiter==null) {
+      return null;
+    }
+    if(  delimiter.charAt(0)=='"'  &&
+         delimiter.charAt(delimiter.length()-1)=='"') {
+      return delimiter.substring(1,delimiter.length()-1);
+    }
+    return delimiter;
+  }
+
+  // if delimiter is a single quoted character like '\t', drop quotes
+  private static  Character parseSerdeSeparatorSpec(String separatorStr) {
+    if(separatorStr==null) {
+      return null;
+    }
+
+    if(  separatorStr.length() == 3    &&
+            separatorStr.charAt(2)=='\''  &&
+            separatorStr.charAt(separatorStr.length()-1)=='\'') {
+      return  separatorStr.charAt(1);
+    }
+
+    throw new IllegalArgumentException("serializer.serdeSeparator spec is invalid " +
+            "for " + ALIAS + " serializer " );
   }
 
 }

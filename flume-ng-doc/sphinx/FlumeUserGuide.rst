@@ -1545,7 +1545,8 @@ This sink streams events directly into the Hive. Events are written using Hive t
 set of events are committed to Hive, they become immediately available to Hive queries. Partitions to which
 flume will stream to can either be pre-created or optionally Flume can create them if they are missing.
 Fields from incoming event data are mapped to corresponding columns in the Hive table using the Flume config.
-Currently only delimited textual data is supported.
+Currently only delimited textual data is supported.  **This sink is currently experimental and not
+recommended for use in production.**
 
 ======================    ============  ======================================================================
 Name                      Default       Description
@@ -1561,7 +1562,7 @@ Name                      Default       Description
 callTimeout               10000         Number of milliseconds allowed for Hive operations, such as open Txn, write, commit, abort.
 batchSize                 5000          Max number of events written to Hive in a single Hive transaction
 txnsPerBatch              1000          The number of desired transactions per Transaction batch.
-maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the oldest connection is closed.
+maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the least recently used connection is closed.
 autoCreatePartitions      true          Flume will automatically create the necessary Hive partitions to stream to
 **serializer**                          Specifies how to parse the incoming data format into fields and map them to columns in the hive table.
                                         Supported serializer names: DELIMITED
@@ -1579,7 +1580,8 @@ DELIMITED: Handles simple delimited textual data.
 =========================    ============  ======================================================================
 Name                         Default       Description
 =========================    ============  ======================================================================
-serializer.delimiter         ,             The field delimiter in the incoming data (type: string)
+serializer.delimiter         ,             The field delimiter in the incoming data. To use special characters surround
+                                           with double quotes like "\t" (type: string)
 **serializer.fieldnames**    --            The mapping from input fields to columns in hive table. Specified as a
                                            comma separated list (no spaces) of hive table columns names, identifying
                                            the input fields in order of their occurrence. To skip fields leave the
@@ -1590,7 +1592,8 @@ serializer.serdeSeparator    ^A            Customizes the separator used by the 
                                            same as the serializer.serdeSeparator and number of fields in serializer.fieldnames
                                            is less than or equal to number of table columns, there can be a gain in efficiency
                                            as the fields in incoming event body do not need to be reordered to match
-                                           order of table columns. (type: single character)
+                                           order of table columns. Use single quotes for special characters like '\t'.
+                                           (type: character)
 =========================    ============  ======================================================================
 
 The following are the escape sequences supported:
@@ -1631,20 +1634,21 @@ Example for agent named a1:
 
 .. code-block:: properties
 
-  a1.channels = c1
-  a1.sinks = k1
-  a1.sinks.k1.type = hive
-  a1.sinks.k1.channel = c1
-  a1.sinks.k1.hive.metastore = thrift://127.0.0.1:9083
-  a1.sinks.k1.hive.database = logsdb
-  a1.sinks.k1.hive.table = weblogs
-  a1.sinks.k1.hive.partition = asia,india,%y-%m-%d-%H-%M
-  a1.sinks.k1.hive.round = true
-  a1.sinks.k1.hive.roundValue = 10
-  a1.sinks.k1.hive.roundUnit = minute
-  a1.sinks.k1.serializer = DELIMITED
-  a1.sinks.k1.serializer.delimiter =\t
-  a1.sinks.k1.serializer.fieldnames =time,,ip,msg
+ a1.channels = c1
+ a1.channels.c1.type = memory
+ a1.sinks = k1
+ a1.sinks.k1.type = hive
+ a1.sinks.k1.channel = c1
+ a1.sinks.k1.hive.metastore = thrift://127.0.0.1:9083
+ a1.sinks.k1.hive.database = logsdb
+ a1.sinks.k1.hive.table = weblogs
+ a1.sinks.k1.hive.partition = asia,india,%y-%m-%d-%H-%M
+ a1.sinks.k1.hive.round = true
+ a1.sinks.k1.hive.roundValue = 10
+ a1.sinks.k1.hive.roundUnit = minute
+ a1.sinks.k1.serializer = DELIMITED
+ a1.sinks.k1.serializer.delimiter = '\t'
+ a1.sinks.k1.serializer.fieldnames =time,,ip,msg
 
 The above configuration will round down the timestamp to the last 10th minute. For example, an event with
 timestamp 11:54:34 AM, June 12, 2012 will cause the hdfs path to become ``/flume/events/2012-06-12/1150/00``.
