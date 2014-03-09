@@ -60,20 +60,22 @@ limitations under the License.
     <elasticsearch.version>0.90.1</elasticsearch.version>
     <hive.version>0.13.0</hive.version>
     <thrift.version>0.9.0</thrift.version>
+    <xalan.verion>2.7.1</xalan.verion>
+    <xerces.version>2.9.1</xerces.version>
   </properties>
 
   <modules>
     <module>flume-ng-core</module>
     <module>flume-ng-configuration</module>
-    <!--<module>flume-ng-embedded-agent</module>-->
+    <module>flume-ng-embedded-agent</module>
     <module>flume-ng-sinks</module>
-    <!--<module>flume-ng-sources</module>-->
+    <module>flume-ng-sources</module>
     <module>flume-ng-node</module>
     <module>flume-ng-dist</module>
     <module>flume-ng-channels</module>
-    <!--<module>flume-ng-legacy-sources</module>-->
+    <module>flume-ng-legacy-sources</module>
     <module>flume-ng-clients</module>
-    <!--<module>flume-ng-sdk</module>-->
+    <module>flume-ng-sdk</module>
     <module>flume-ng-tests</module>
     <module>flume-tools</module>
 	<module>winpkg</module>
@@ -180,6 +182,28 @@ limitations under the License.
             <artifactId>hive-streaming</artifactId>
             <version>${hive.version}</version>
           </dependency>
+          <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-cli</artifactId>
+            <version>${hive.version}</version>
+          </dependency>
+<!-- temprorary - roshan -->
+      <dependency>
+        <groupId>xerces</groupId>
+        <artifactId>xercesImpl</artifactId>
+        <version>${xerces.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>xalan</groupId>
+        <artifactId>xalan</artifactId>
+        <version>${xalan.verion}</version>
+      </dependency>
+      <dependency>
+        <groupId>xalan</groupId>
+        <artifactId>serializer</artifactId>
+        <version>${xalan.verion}</version>
+      </dependency>
+<!-- end temprorary -->
 
           <dependency>
             <groupId>org.apache.hbase</groupId>
@@ -1059,6 +1083,12 @@ limitations under the License.
         <groupId>org.apache.flume.flume-ng-sinks</groupId>
         <artifactId>flume-hdfs-sink</artifactId>
         <version>1.4.0</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.flume.flume-ng-sinks</groupId>
+        <artifactId>flume-hive-sink</artifactId>
+        <version>1.5.0-SNAPSHOT</version>
       </dependency>
 
       <dependency>
