@@ -55,14 +55,12 @@ public class HiveSink extends AbstractSink implements Configurable {
   private static final Logger LOG = LoggerFactory
       .getLogger(HiveSink.class);
 
-  private static final String defaultHiveUser = "flume";
+  private static final String defaultHiveUser = System.getProperty("user.name");
   private static final int defaultMaxOpenConnections = 500;
   private static final int defaultTxnsPerBatch = 1000;
   private static final int defaultBatchSize = 5000;
   private static final int defaultCallTimeout = 10000;
   private static final int defaultIdleTimeout = 0;
-  protected static final String CSV_INPUT = "csv";
-  private static final String defaultInputFormat = CSV_INPUT;
 
   /**
    * Default number of threads available for hive operations

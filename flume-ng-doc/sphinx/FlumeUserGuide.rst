@@ -1553,6 +1553,7 @@ Name                      Default       Description
 ======================    ============  ======================================================================
 **channel**               --
 **type**                  --            The component type name, needs to be ``hive``
+hive.user                 Current user  Username used to connect to Hive. Defaults to System.getProperty("user.name").
 **hive.metastore**        --            Hive metastore URI (eg thrift://a.b.com:9083 )
 **hive.database**         FlumeData     Hive database name
 **hive.table**            --            Hive table name
