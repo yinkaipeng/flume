@@ -1553,7 +1553,7 @@ Name                      Default       Description
 ======================    ============  ======================================================================
 **channel**               --
 **type**                  --            The component type name, needs to be ``hive``
-hive.user                 Current user  Username used to connect to Hive. Defaults to System.getProperty("user.name").
+hive.user                 Current user  Username used to connect to Hive. Defaults to username of flume process.
 **hive.metastore**        --            Hive metastore URI (eg thrift://a.b.com:9083 )
 **hive.database**         FlumeData     Hive database name
 **hive.table**            --            Hive table name
@@ -1582,7 +1582,7 @@ DELIMITED: Handles simple delimited textual data.
 Name                         Default       Description
 =========================    ============  ======================================================================
 serializer.delimiter         ,             The field delimiter in the incoming data. To use special characters surround
-                                           with double quotes like "\t" (type: string)
+                                           with double quotes like "\\t" (type: string)
 **serializer.fieldnames**    --            The mapping from input fields to columns in hive table. Specified as a
                                            comma separated list (no spaces) of hive table columns names, identifying
                                            the input fields in order of their occurrence. To skip fields leave the
@@ -1593,7 +1593,7 @@ serializer.serdeSeparator    ^A            Customizes the separator used by the 
                                            same as the serializer.serdeSeparator and number of fields in serializer.fieldnames
                                            is less than or equal to number of table columns, there can be a gain in efficiency
                                            as the fields in incoming event body do not need to be reordered to match
-                                           order of table columns. Use single quotes for special characters like '\t'.
+                                           order of table columns. Use single quotes for special characters like '\\t'.
                                            (type: character)
 =========================    ============  ======================================================================
 
@@ -1641,6 +1641,7 @@ Example for agent named a1:
  a1.sinks.k1.type = hive
  a1.sinks.k1.channel = c1
  a1.sinks.k1.hive.metastore = thrift://127.0.0.1:9083
+ a1.sinks.k1.hive.user = flume
  a1.sinks.k1.hive.database = logsdb
  a1.sinks.k1.hive.table = weblogs
  a1.sinks.k1.hive.partition = asia,india,%y-%m-%d-%H-%M
