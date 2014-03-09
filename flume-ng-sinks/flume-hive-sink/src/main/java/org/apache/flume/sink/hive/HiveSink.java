@@ -303,6 +303,7 @@ public class HiveSink extends AbstractSink implements Configurable {
         writer = new HiveWriter(endPoint, txnsPerBatch,
                 autoCreatePartitions, callTimeout, idleTimeout, callTimeoutPool,
                 user, serializer, sinkCounter);
+        LOG.info("Created Writer to Hive end point : " + endPoint);
         sinkCounter.incrementConnectionCreatedCount();
         if(allWriters.size() > maxOpenConnections){
           int retired = retireIdleWriters();
@@ -358,11 +359,13 @@ public class HiveSink extends AbstractSink implements Configurable {
     }
     try {
       sinkCounter.incrementConnectionCreatedCount();
+      LOG.info("Closing least used Writer to Hive end point : " + eldest);
       allWriters.remove(eldest).close();
     } catch (IOException e) {
       LOG.warn("Failed to close writer for end point: " + eldest, e);
     } catch (InterruptedException e) {
       LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -386,9 +389,10 @@ public class HiveSink extends AbstractSink implements Configurable {
     for(HiveEndPoint ep : retirees) {
       try {
         sinkCounter.incrementConnectionClosedCount();
+        LOG.info("Closing idle Writer to Hive end point : {}", ep);
         allWriters.remove(ep).close();
       } catch (IOException e) {
-        LOG.warn("Failed to close writer for end point: " + ep, e);
+        LOG.warn("Failed to close writer for end point: {}. Error: "+ ep, e);
       } catch (InterruptedException e) {
         LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
         Thread.currentThread().interrupt();
@@ -405,6 +409,7 @@ public class HiveSink extends AbstractSink implements Configurable {
 
       try {
         HiveWriter w = entry.getValue();
+        LOG.info("Closing Writer to {}", w);
         w.flush(false);
         w.close();
       } catch (Exception ex) {
@@ -436,6 +441,7 @@ public class HiveSink extends AbstractSink implements Configurable {
     allWriters = null;
     sinkCounter.stop();
     super.stop();
+    LOG.info("Hive Sink {} stopped", getName() );
   }
 
   @Override
@@ -447,6 +453,7 @@ public class HiveSink extends AbstractSink implements Configurable {
     this.allWriters = Maps.newHashMap();
     sinkCounter.start();
     super.start();
+    LOG.info("Hive Sink {} started", getName() );
   }
 
 
@@ -457,8 +464,3 @@ public class HiveSink extends AbstractSink implements Configurable {
   }
 
 }
-
-// TODO:
-// input format specification config
-// Handling IO errors in process()
-// useLocalTimeStamp errors

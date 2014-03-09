@@ -144,6 +144,7 @@ class HiveWriter {
     // write the event
     try {
       sinkCounter.incrementEventDrainAttemptCount();
+      LOG.debug("Writing event to {}", endPoint);
       callWithTimeout(new CallRunner<Void>() {
         @Override
         public Void call() throws Exception {
@@ -177,9 +178,14 @@ class HiveWriter {
     if(txnBatch.remainingTransactions() == 0) {
       closeTxnBatch();
       txnBatch = null;
-      txnBatch = nextTxnBatch(txnsPerBatch, recordWriter);
+      if(rollToNext) {
+        txnBatch = nextTxnBatch(txnsPerBatch, recordWriter);
+      }
     }
-    txnBatch.beginNextTransaction(); // does not block
+    if(rollToNext) {
+      LOG.debug("Switching to next Txn for {}", endPoint);
+      txnBatch.beginNextTransaction(); // does not block
+    }
   }
 
   /**
@@ -205,6 +211,7 @@ class HiveWriter {
   }
 
   private void commitTxn() throws IOException, InterruptedException {
+    LOG.debug("Committing Txn to {}", endPoint);
     callWithTimeout(new CallRunner<Void>() {
       @Override
       public Void call() throws Exception {
@@ -226,6 +233,7 @@ class HiveWriter {
 
   private TransactionBatch nextTxnBatch(final int txnsPerBatch, final RecordWriter recordWriter)
           throws IOException, InterruptedException, StreamingException {
+    LOG.debug("Acquiring new Txn Batch for {}", endPoint);
     TransactionBatch batch = callWithTimeout(new CallRunner<TransactionBatch>() {
               @Override
               public TransactionBatch call() throws Exception {
@@ -237,6 +245,7 @@ class HiveWriter {
   }
 
   private void closeTxnBatch() throws IOException, InterruptedException {
+    LOG.debug("Closing Txn Batch to {}", endPoint);
     callWithTimeout(new CallRunner<Void>() {
       @Override
       public Void call() throws Exception {
