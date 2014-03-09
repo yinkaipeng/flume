@@ -89,7 +89,9 @@ public class HiveDelimitedTextSerializer implements HiveEventSerializer  {
     if(separatorStr==null) {
       return null;
     }
-
+    if(  separatorStr.length() == 1) {
+      return separatorStr.charAt(0);
+    }
     if(  separatorStr.length() == 3    &&
             separatorStr.charAt(2)=='\''  &&
             separatorStr.charAt(separatorStr.length()-1)=='\'') {
