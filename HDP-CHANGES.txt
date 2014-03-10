@@ -16,4 +16,5 @@ Improvements:
 
 Bug Fixes:
 ----------------------
+ FLUME-1796 - Upgrade Thrift due to race condition in TThreadSeverPool
 
