@@ -76,7 +76,6 @@ limitations under the License.
     <module>flume-ng-sdk</module>
     <module>flume-ng-tests</module>
     <module>flume-tools</module>
-	<module>winpkg</module>
   </modules>
 
   <profiles>
