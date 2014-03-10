@@ -21,15 +21,14 @@ limitations under the License.
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>flume-parent</artifactId>
+    <artifactId>flume-ng-sinks</artifactId>
     <groupId>org.apache.flume</groupId>
-    <version>1.4.0</version>
+    <version>1.5.0-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.apache.flume</groupId>
-  <artifactId>flume-ng-sinks</artifactId>
-  <name>Flume NG Sinks</name>
-  <packaging>pom</packaging>
+  <groupId>org.apache.flume.flume-ng-sinks</groupId>
+  <artifactId>flume-hive-sink</artifactId>
+  <name>Flume NG Hive Sink</name>
 
   <build>
     <plugins>
@@ -40,12 +39,46 @@ limitations under the License.
     </plugins>
   </build>
 
-  <modules>
-    <module>flume-hdfs-sink</module>
-    <module>flume-irc-sink</module>
-    <module>flume-ng-hbase-sink</module>
-    <module>flume-ng-elasticsearch-sink</module>
-    <module>flume-ng-morphline-solr-sink</module>
-    <module>flume-hive-sink</module>
-  </modules>
+  <dependencies>
+
+    <dependency>
+      <groupId>org.apache.flume</groupId>
+      <artifactId>flume-ng-sdk</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flume</groupId>
+      <artifactId>flume-ng-configuration</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flume</groupId>
+      <artifactId>flume-ng-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-streaming</artifactId>
+      <version>0.13.0-SNAPSHOT</version>
+    </dependency>
+
+  </dependencies>
+
 </project>
