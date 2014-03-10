@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 
+import org.apache.flume.Context;
 import org.apache.hive.streaming.*;
 
 import org.apache.flume.Event;
@@ -49,10 +50,10 @@ class HiveWriter {
       .getLogger(HiveWriter.class);
 
   private final HiveEndPoint endPoint;
+  private HiveEventSerializer serializer;
   private final StreamingConnection connection;
   private final int txnsPerBatch;
   private final RecordWriter recordWriter;
-  private final HiveSink sink;
   private TransactionBatch txnBatch;
 
   private final ExecutorService callTimeoutPool;
@@ -68,15 +69,13 @@ class HiveWriter {
   private long eventCounter;
   private long processSize;
 
-  // flag that the bucket writer was closed due to idling and thus shouldn't be
-  // reopened. Not ideal, but avoids internals of owners
-  protected boolean closed;
+  protected boolean closed; // flag indicating HiveWriter was closed
   private boolean autoCreatePartitions;
 
-  HiveWriter(HiveEndPoint endPoint, int txnsPerBatch, String inputformat,
+  HiveWriter(HiveEndPoint endPoint, int txnsPerBatch,
              boolean autoCreatePartitions, long callTimeout, int idleTimeout,
              ExecutorService callTimeoutPool, String hiveUser,
-             SinkCounter sinkCounter, HiveSink sink)
+             HiveEventSerializer serializer, SinkCounter sinkCounter)
           throws IOException, ClassNotFoundException, InterruptedException
                  , StreamingException {
     this.autoCreatePartitions = autoCreatePartitions;
@@ -87,11 +86,11 @@ class HiveWriter {
     this.endPoint = endPoint;
     this.connection = newConnection(hiveUser);
     this.txnsPerBatch = txnsPerBatch;
-    this.txnBatch = nextTxnBatch();
-    closed = false;
-    lastUsed = System.currentTimeMillis();
-    this.sink = sink;
-    this.recordWriter = createRecordWriter(inputformat, endPoint, sink);
+    this.serializer = serializer;
+    this.recordWriter = serializer.createRecordWriter(endPoint);
+    this.txnBatch = nextTxnBatch(txnsPerBatch, recordWriter);
+    this.closed = false;
+    this.lastUsed = System.currentTimeMillis();
   }
 
   @Override
@@ -136,8 +135,8 @@ class HiveWriter {
       idleFuture = null;
     }
 
-    // If the Streamer was closed due to roll timeout or idle timeout,
-    // force a new bucket writer to be created.
+    // If the Writer was closed due to roll timeout or idle timeout, force
+    // a new bucket writer to be created.
     if (closed) {
       throw new IllegalStateException("This hive streaming writer was closed " +
         "and thus no longer able to write : " + endPoint);
@@ -149,7 +148,8 @@ class HiveWriter {
       callWithTimeout(new CallRunner<Void>() {
         @Override
         public Void call() throws Exception {
-          txnBatch.write(event.getBody()); // could block
+          serializer.write(txnBatch, event);
+//          txnBatch.write(event.getBody()); // could block
           return null;
         }
       });
@@ -160,27 +160,34 @@ class HiveWriter {
       throw new IOException("Write to hive endpoint failed: " + endPoint, e);
     }
 
-    // update statistics
+    // Update Statistics
     processSize += event.getBody().length;
     eventCounter++;
   }
 
   /**
-   * Commits the current Txn. Switch to next Txn in batch or to a new TxnBatch
+   * Commits the current Txn.
+   * If 'rollToNext' is true, will switch to next Txn in batch or to a
+   *       new TxnBatch if current batch is empty
    * TODO: see what to do when there are errors in each IO call stage
    */
-  void flush() throws IOException, InterruptedException, StreamingException {
+  public void flush(boolean rollToNext) throws IOException, InterruptedException, StreamingException {
     lastUsed = System.currentTimeMillis();
     commitTxn();
     if(txnBatch.remainingTransactions() == 0) {
       closeTxnBatch();
       txnBatch = null;
-      txnBatch = nextTxnBatch();
+      txnBatch = nextTxnBatch(txnsPerBatch, recordWriter);
     }
     txnBatch.beginNextTransaction(); // does not block
   }
 
-  void close() throws IOException, InterruptedException {
+  /**
+   * Close the Transaction Batch and connection
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  public void close() throws IOException, InterruptedException {
     closeTxnBatch();
     closeConnection();
     closed = true;
@@ -216,13 +223,16 @@ class HiveWriter {
     });
   }
 
-  private TransactionBatch nextTxnBatch() throws IOException, InterruptedException {
-    return   callWithTimeout(new CallRunner<TransactionBatch>() {
+  private TransactionBatch nextTxnBatch(final int txnsPerBatch, final RecordWriter recordWriter)
+          throws IOException, InterruptedException, StreamingException {
+    TransactionBatch batch = callWithTimeout(new CallRunner<TransactionBatch>() {
               @Override
               public TransactionBatch call() throws Exception {
                 return connection.fetchTransactionBatch(txnsPerBatch , recordWriter); // could block
               }
             });
+    batch.beginNextTransaction();
+    return batch;
   }
 
   private void closeTxnBatch() throws IOException, InterruptedException {
@@ -316,16 +326,6 @@ class HiveWriter {
     T call() throws Exception;
   }
 
-  public RecordWriter createRecordWriter(String inputFormat, HiveEndPoint endPoint
-                                         , HiveSink sink)
-          throws StreamingException, IOException, ClassNotFoundException {
-    if(inputFormat == HiveSink.CSV_INPUT) {
-      String[] fieldToColMapping  = sink.csv_fieldNames.split(",");
-      return new DelimitedInputWriter(fieldToColMapping, sink.csv_delimiter, endPoint);
-    }
-    throw new IllegalArgumentException("inputformat '" + inputFormat +
-            "' is not supported");
-  }
 }
 
 

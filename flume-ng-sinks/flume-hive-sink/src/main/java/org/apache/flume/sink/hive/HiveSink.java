@@ -27,6 +27,7 @@ import org.apache.flume.Channel;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.EventDeliveryException;
+import org.apache.flume.SystemClock;
 import org.apache.flume.Transaction;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.formatter.output.BucketPath;
@@ -85,9 +86,8 @@ public class HiveSink extends AbstractSink implements Configurable {
   private Integer batchSize;
   private Integer maxOpenConnections;
   private boolean autoCreatePartitions;
-  private String inputFormat;
-  protected String csv_delimiter;
-  protected String csv_fieldNames;
+  private String serializerName;
+  HiveEventSerializer serializer;
 
   /**
    * Default timeout for blocking I/O calls in HiveWriter
@@ -103,7 +103,7 @@ public class HiveSink extends AbstractSink implements Configurable {
   private boolean needRounding;
   private int roundUnit;
   private Integer roundValue;
-  private RecordWriter recordWriter;
+  private SystemClock clock;
 
 
   @VisibleForTesting
@@ -145,49 +145,47 @@ public class HiveSink extends AbstractSink implements Configurable {
     maxOpenConnections = context.getInteger("maxOpenConnections", defaultMaxOpenConnections);
     threadPoolSize = defaultThreadPoolSize; // context.getInteger("threadPoolSize", defaultThreadPoolSize);
     autoCreatePartitions =  context.getBoolean("autoCreatePartitions", true);
-    inputFormat = context.getString("input.format");
-    if(inputFormat==null) {
-      throw new IllegalArgumentException("input.format config setting is not " +
-              "specified for sink " + getName());
-    }
-    inputFormat = inputFormat.toLowerCase();
-    if(inputFormat == CSV_INPUT) {
-      csv_delimiter = context.getString("input.csv.delimiter", ",");
-      csv_fieldNames = context.getString("input.csv.fieldnames");
-    }
-
 
     // Timestamp processing
     useLocalTime = context.getBoolean("useLocalTimeStamp", false);
-//    if(useLocalTime) {
-//      clock = new SystemClock();
-//    }
+    if(useLocalTime) {
+      clock = new SystemClock();
+    }
     String tzName = context.getString("timeZone");
     timeZone = (tzName == null) ? null : TimeZone.getTimeZone(tzName);
     needRounding = context.getBoolean("round", false);
 
-    if(needRounding) {
-      String unit = context.getString("roundUnit", "minute");
-      if (unit.equalsIgnoreCase("hour")) {
-        this.roundUnit = Calendar.HOUR_OF_DAY;
-      } else if (unit.equalsIgnoreCase("minute")) {
-        this.roundUnit = Calendar.MINUTE;
-      } else if (unit.equalsIgnoreCase("second")){
-        this.roundUnit = Calendar.SECOND;
-      } else {
-        LOG.warn("Rounding unit is not valid, please set one of " +
-                "minute, hour or second. Rounding will be disabled");
-        needRounding = false;
-      }
-      this.roundValue = context.getInteger("roundValue", 1);
-      if(roundUnit == Calendar.SECOND || roundUnit == Calendar.MINUTE){
-        Preconditions.checkArgument(roundValue > 0 && roundValue <= 60,
-                "Round value must be > 0 and <= 60");
-      } else if (roundUnit == Calendar.HOUR_OF_DAY){
-        Preconditions.checkArgument(roundValue > 0 && roundValue <= 24,
-                "Round value must be > 0 and <= 24");
-      }
+    String unit = context.getString("roundUnit", "minute");
+    if (unit.equalsIgnoreCase("hour")) {
+      this.roundUnit = Calendar.HOUR_OF_DAY;
+    } else if (unit.equalsIgnoreCase("minute")) {
+      this.roundUnit = Calendar.MINUTE;
+    } else if (unit.equalsIgnoreCase("second")){
+      this.roundUnit = Calendar.SECOND;
+    } else {
+      LOG.warn("Rounding unit is not valid, please set one of " +
+              "minute, hour or second. Rounding will be disabled");
+      needRounding = false;
     }
+    this.roundValue = context.getInteger("roundValue", 1);
+    if(roundUnit == Calendar.SECOND || roundUnit == Calendar.MINUTE){
+      Preconditions.checkArgument(roundValue > 0 && roundValue <= 60,
+              "Round value must be > 0 and <= 60");
+    } else if (roundUnit == Calendar.HOUR_OF_DAY){
+      Preconditions.checkArgument(roundValue > 0 && roundValue <= 24,
+              "Round value must be > 0 and <= 24");
+    }
+
+    // Serializer
+    serializerName = context.getString("serializer");
+    if(serializerName == null) {
+      throw new IllegalArgumentException("serializer config setting is not " +
+              "specified for sink " + getName());
+    }
+
+    serializer = createSerializer(serializerName);
+    serializer.configure(context);
+
 
 //    kerbConfPrincipal = context.getString("hdfs.kerberosPrincipal", "");
 //    kerbKeytab = context.getString("hdfs.kerberosKeytab", "");
@@ -201,6 +199,18 @@ public class HiveSink extends AbstractSink implements Configurable {
 
     if (sinkCounter == null) {
       sinkCounter = new SinkCounter(getName());
+    }
+  }
+
+  private HiveEventSerializer createSerializer(String serializerName)  {
+    if(serializerName.compareToIgnoreCase(HiveDelimitedTextSerializer.ALIAS)==0 ||
+            serializerName.compareTo(HiveDelimitedTextSerializer.class.getName())==0) {
+      return new HiveDelimitedTextSerializer();
+    }
+    try {
+      return (HiveEventSerializer) Class.forName(serializerName).newInstance();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Unable to instantiate serializer: " + serializerName + " on sink: " + getName(), e);
     }
   }
 
@@ -254,7 +264,7 @@ public class HiveSink extends AbstractSink implements Configurable {
 
       // 5) Flush all Writers and Commit Channel Txn
       for (HiveWriter writer : activeWriters.values()) {
-        writer.flush();
+        writer.flush(true);
       }
 
       transaction.commit();
@@ -289,9 +299,9 @@ public class HiveSink extends AbstractSink implements Configurable {
     try {
       HiveWriter writer = allWriters.get( endPoint );
       if( writer == null ) {
-        writer = new HiveWriter(endPoint, txnsPerBatch, inputFormat,
+        writer = new HiveWriter(endPoint, txnsPerBatch,
                 autoCreatePartitions, callTimeout, idleTimeout, callTimeoutPool,
-                user, sinkCounter, this);
+                user, serializer, sinkCounter);
         sinkCounter.incrementConnectionCreatedCount();
         if(allWriters.size() > maxOpenConnections){
           int retired = retireIdleWriters();
@@ -397,7 +407,9 @@ public class HiveSink extends AbstractSink implements Configurable {
       LOG.info("Closing {}", entry.getKey());
 
       try {
-        entry.getValue().close();
+        HiveWriter w = entry.getValue();
+        w.flush(false);
+        w.close();
       } catch (Exception ex) {
         LOG.warn("Exception while closing " + entry.getKey() + ". " +
                 "Exception follows.", ex);
@@ -452,3 +464,4 @@ public class HiveSink extends AbstractSink implements Configurable {
 // TODO:
 // input format specification config
 // Handling IO errors in process()
+// useLocalTimeStamp errors

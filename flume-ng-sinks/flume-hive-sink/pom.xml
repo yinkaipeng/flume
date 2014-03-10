@@ -76,7 +76,6 @@ limitations under the License.
     <dependency>
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-streaming</artifactId>
-      <version>0.13.0-SNAPSHOT</version>
     </dependency>
 
   </dependencies>

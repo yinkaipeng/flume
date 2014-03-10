@@ -58,21 +58,22 @@ limitations under the License.
     <publicrepoid>public</publicrepoid>
     <avro.version>1.7.3</avro.version>
     <elasticsearch.version>0.90.1</elasticsearch.version>
-    <hive.version>0.13.0-SNAPSHOT</hive.version>
+    <hive.version>0.13.0</hive.version>
+    <thrift.version>0.9.0</thrift.version>
   </properties>
 
   <modules>
     <module>flume-ng-core</module>
     <module>flume-ng-configuration</module>
-    <module>flume-ng-embedded-agent</module>
+    <!--<module>flume-ng-embedded-agent</module>-->
     <module>flume-ng-sinks</module>
-    <module>flume-ng-sources</module>
+    <!--<module>flume-ng-sources</module>-->
     <module>flume-ng-node</module>
     <module>flume-ng-dist</module>
     <module>flume-ng-channels</module>
-    <module>flume-ng-legacy-sources</module>
+    <!--<module>flume-ng-legacy-sources</module>-->
     <module>flume-ng-clients</module>
-    <module>flume-ng-sdk</module>
+    <!--<module>flume-ng-sdk</module>-->
     <module>flume-ng-tests</module>
     <module>flume-tools</module>
 	<module>winpkg</module>
@@ -98,7 +99,7 @@ limitations under the License.
         <hadoop.version>${hadoop-one.version}</hadoop.version>
         <hbase.version>${hbaseversion}</hbase.version>
         <hadoop.common.artifact.id>hadoop-core</hadoop.common.artifact.id>
-        <thrift.version>0.7.0</thrift.version>
+        <thrift.version>0.9.0</thrift.version>
       </properties>
       <dependencyManagement>
         <dependencies>
@@ -140,7 +141,7 @@ limitations under the License.
         <hadoop.version>${hadoop-two.version}</hadoop.version>
         <hbase.version>${hbaseversion}</hbase.version>
         <hadoop.common.artifact.id>hadoop-common</hadoop.common.artifact.id>
-        <thrift.version>0.8.0</thrift.version>
+        <thrift.version>0.9.0</thrift.version>
       </properties>
       <dependencyManagement>
         <dependencies>

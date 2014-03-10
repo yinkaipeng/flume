@@ -1547,7 +1547,6 @@ flume will stream to can either be pre-created or optionally Flume can create th
 Fields from incoming event data are mapped to corresponding columns in the Hive table using the Flume config.
 Currently only delimited textual data is supported.
 
-
 ======================    ============  ======================================================================
 Name                      Default       Description
 ======================    ============  ======================================================================
@@ -1558,7 +1557,7 @@ Name                      Default       Description
 **hive.table**            --            Hive table name
 **hive.partition**        --            Comma separate list of partition values identifying the partition to write to. May contain escape
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
-                                        then 'Asia,India,2014-02-26-01-21' indicate the continent=Asia,country=India,time=2014-02-26-01-21.
+                                        then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21
 idleTimeout               0             Timeout after which inactive connections get closed
                                         (0 = disable automatic closing of idle files)
 callTimeout               10000         Number of milliseconds allowed for Hive operations, such as open Txn, write, commit, abort.
@@ -1566,16 +1565,35 @@ batchSize                 5000          Max number of events written to Hive in 
 txnsPerBatch              1000          The number of desired transactions per Transaction batch.
 maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the oldest connection is closed.
 autoCreatePartitions      true          Flume will automatically create the necessary Hive partitions to stream to
-**input.format**                        Specifies how to parse the incoming data format
-input.csv.delimiter       ,             The field delimiter in the incoming data
-**input.csv.fieldnames**                The mapping from input fields to columns in hive table. Specified as a
-                                        comma separated list of hive table columns names, identifying the input fields in order of their occurrence.
-                                        To skip fields leave the column name unspecified. Eg. 'time,,ip,message' indicates the 1st,3rd and 4th fields
-                                        in input map to time, ip and message columns in the hive table.
-roundUnit                 second        The unit of the round down value - ``second``, ``minute`` or ``hour``.
+**serializer**                          Specifies how to parse the incoming data format into fields and map them to columns in the hive table.
+                                        Supported serializer names: DELIMITED
+serializer.*                            Depends on the chosen serializer
+roundUnit                 minute        The unit of the round down value - ``second``, ``minute`` or ``hour``.
+roundValue                1             Rounded down to the highest multiple of this (in the unit configured using hive.roundUnit), less than current time
 timeZone                  Local Time    Name of the timezone that should be used for resolving the escape sequences in partition, e.g. America/Los_Angeles.
 useLocalTimeStamp         false         Use the local time (instead of the timestamp from the event header) while replacing the escape sequences.
+======================    ============  ======================================================================
 
+Following serializers are supported:
+
+DELIMITED: Handles simple delimited textual data.
+
+=========================    ============  ======================================================================
+Name                         Default       Description
+=========================    ============  ======================================================================
+serializer.delimiter         ,             The field delimiter in the incoming data (type: string)
+**serializer.fieldnames**    --            The mapping from input fields to columns in hive table. Specified as a
+                                           comma separated list (no spaces) of hive table columns names, identifying
+                                           the input fields in order of their occurrence. To skip fields leave the
+                                           column name unspecified. Eg. 'time,,ip,message' indicates the 1st, 3rd
+                                           and 4th fields in input map to time, ip and message columns in the hive table.
+serializer.serdeSeparator    ^A            Customizes the separator used by the underlying serde. If serializer.fieldnames
+                                           are in same order as the table columns, the serializer.delimiter is
+                                           same as the serializer.serdeSeparator and number of fields in serializer.fieldnames
+                                           is less than or equal to number of table columns, there can be a gain in efficiency
+                                           as the fields in incoming event body do not need to be reordered to match
+                                           order of table columns. (type: single character)
+=========================    ============  ======================================================================
 
 The following are the escape sequences supported:
 
@@ -1610,8 +1628,6 @@ Alias      Description
           "timestamp" must exist among the headers of the event (unless ``useLocalTimeStamp`` is set to ``true``). One way to add
           this automatically is to use the TimestampInterceptor.
 
-serializer.*
-======================  ============  ======================================================================
 
 Example for agent named a1:
 
@@ -1628,9 +1644,9 @@ Example for agent named a1:
   a1.sinks.k1.hive.round = true
   a1.sinks.k1.hive.roundValue = 10
   a1.sinks.k1.hive.roundUnit = minute
-  a1.sinks.k1.inputformat = csv
-  a1.sinks.k1.input.csv.delimiter =\t
-  a1.sinks.k1.input.csv.fieldnames =time,,ip,msg
+  a1.sinks.k1.serializer = DELIMITED
+  a1.sinks.k1.serializer.delimiter =\t
+  a1.sinks.k1.serializer.fieldnames =time,,ip,msg
 
 The above configuration will round down the timestamp to the last 10th minute. For example, an event with
 timestamp 11:54:34 AM, June 12, 2012 will cause the hdfs path to become ``/flume/events/2012-06-12/1150/00``.
