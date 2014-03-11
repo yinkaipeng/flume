@@ -51,8 +51,6 @@ import java.util.Map;
 
 public class TestUtil {
 
-  private final static String jdbcString = "jdbc:derby:;databaseName=metastore_db;create=true";
-  private final static String jdbcDriver = "org.apache.derby.jdbc.EmbeddedDriver";
   private final static String txnMgr = "org.apache.hadoop.hive.ql.lockmgr.DbTxnManager";
 
   /**
@@ -62,8 +60,6 @@ public class TestUtil {
    * @param conf HiveConf to add these values to.
    */
   public static void setConfValues(HiveConf conf) {
-    conf.setVar(HiveConf.ConfVars.HIVE_TXN_JDBC_DRIVER, jdbcDriver);
-    conf.setVar(HiveConf.ConfVars.HIVE_TXN_JDBC_CONNECT_STRING, jdbcString);
     conf.setVar(HiveConf.ConfVars.HIVE_TXN_MANAGER, txnMgr);
     conf.setBoolVar(HiveConf.ConfVars.HIVE_SUPPORT_CONCURRENCY, true);
   }

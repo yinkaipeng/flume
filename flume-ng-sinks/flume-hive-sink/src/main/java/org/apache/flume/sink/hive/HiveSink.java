@@ -336,7 +336,7 @@ public class HiveSink extends AbstractSink implements Configurable {
                                     List<String> partVals, Map<String, String> headers,
                                     TimeZone timeZone, boolean needRounding,
                                     int roundUnit, Integer roundValue,
-                                    boolean useLocalTime) {
+                                    boolean useLocalTime) throws ConnectionError {
     ArrayList<String> realPartVals = Lists.newArrayList();
     for(String partVal : partVals) {
       realPartVals.add(BucketPath.escapeString(partVal, headers, timeZone,
