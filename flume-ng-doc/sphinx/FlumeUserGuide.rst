@@ -1630,6 +1630,14 @@ Alias      Description
           "timestamp" must exist among the headers of the event (unless ``useLocalTimeStamp`` is set to ``true``). One way to add
           this automatically is to use the TimestampInterceptor.
 
+Example Hive table :
+
+.. code-block:: properties
+
+ create table alerts ( id int , msg string )
+     partitioned by (continent string, country string)
+     clustered by (id) into 5 buckets
+     stored as orc;
 
 Example for agent named a1:
 
