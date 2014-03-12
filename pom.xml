@@ -81,7 +81,7 @@ limitations under the License.
   <profiles>
 
 	<profile>
-	<id>winpkg></id>
+	<id>winpkg</id>
 	<modules>
 		<module>winpkg</module>
 	</modules>
