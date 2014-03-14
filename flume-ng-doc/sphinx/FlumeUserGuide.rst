@@ -1555,14 +1555,14 @@ Name                      Default       Description
 **type**                  --            The component type name, needs to be ``hive``
 hive.user                 Current user  Username used to connect to Hive. Defaults to username of flume process.
 **hive.metastore**        --            Hive metastore URI (eg thrift://a.b.com:9083 )
-**hive.database**         FlumeData     Hive database name
+**hive.database**         --            Hive database name
 **hive.table**            --            Hive table name
-**hive.partition**        --            Comma separate list of partition values identifying the partition to write to. May contain escape
+hive.partition            --            Comma separate list of partition values identifying the partition to write to. May contain escape
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
                                         then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21
-callTimeout               10000         Number of milliseconds allowed for Hive operations, such as open Txn, write, commit, abort.
+callTimeout               10000         Number of milliseconds allowed for Hive I/O operations, such as open Txn, write, commit, abort.
 batchSize                 5000          Max number of events written to Hive in a single Hive transaction
-txnsPerBatch              1000          The number of desired transactions per Transaction batch.
+txnsPerBatch              1000          Number of transactions requested per Transaction batch from Hive.
 maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the least recently used connection is closed.
 autoCreatePartitions      true          Flume will automatically create the necessary Hive partitions to stream to
 **serializer**                          Specifies how to parse the incoming data format into fields and map them to columns in the hive table.
@@ -1588,7 +1588,7 @@ serializer.delimiter         ,             The field delimiter in the incoming d
                                            the input fields in order of their occurrence. To skip fields leave the
                                            column name unspecified. Eg. 'time,,ip,message' indicates the 1st, 3rd
                                            and 4th fields in input map to time, ip and message columns in the hive table.
-serializer.serdeSeparator    ^A            Customizes the separator used by the underlying serde. If serializer.fieldnames
+serializer.serdeSeparator    Ctril-A       Customizes the separator used by the underlying serde. If serializer.fieldnames
                                            are in same order as the table columns, the serializer.delimiter is
                                            same as the serializer.serdeSeparator and number of fields in serializer.fieldnames
                                            is less than or equal to number of table columns, there can be a gain in efficiency
@@ -1635,7 +1635,7 @@ Example Hive table :
 .. code-block:: properties
 
  create table alerts ( id int , msg string )
-     partitioned by (continent string, country string)
+     partitioned by (continent string, country string, time string)
      clustered by (id) into 5 buckets
      stored as orc;
 
