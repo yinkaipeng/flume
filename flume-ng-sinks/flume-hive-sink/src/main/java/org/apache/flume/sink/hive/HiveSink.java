@@ -55,7 +55,6 @@ public class HiveSink extends AbstractSink implements Configurable {
   private static final Logger LOG = LoggerFactory
       .getLogger(HiveSink.class);
 
-  private static final String defaultHiveUser = null;
   private static final int defaultMaxOpenConnections = 500;
   private static final int defaultTxnsPerBatch = 1000;
   private static final int defaultBatchSize = 5000;
@@ -118,7 +117,7 @@ public class HiveSink extends AbstractSink implements Configurable {
       throw new IllegalArgumentException("hive.metastore config setting is not " +
               "specified for sink " + getName());
     }
-    proxyUser = context.getString("hive.proxyUser", defaultHiveUser);
+    proxyUser = context.getString("hive.proxyUser");
     database = context.getString("hive.database");
     if(database==null) {
       throw new IllegalArgumentException("hive.database config setting is not " +
@@ -129,12 +128,13 @@ public class HiveSink extends AbstractSink implements Configurable {
       throw new IllegalArgumentException("hive.table config setting is not " +
               "specified for sink " + getName());
     }
+
     String partitions = context.getString("hive.partition");
-    partitionVals = Arrays.asList(partitions.split(","));
-    if(partitionVals==null) {
-      throw new IllegalArgumentException("hive.partition config setting is not " +
-              "specified for sink " + getName());
+    if(partitionVals!=null) {
+      partitionVals = Arrays.asList(partitions.split(","));
     }
+
+
     txnsPerBatch = context.getInteger("txnsPerBatch", defaultTxnsPerBatch);
     batchSize = context.getInteger("batchSize", defaultBatchSize);
     idleTimeout = context.getInteger("idleTimeout", defaultIdleTimeout);
@@ -336,6 +336,10 @@ public class HiveSink extends AbstractSink implements Configurable {
                                     TimeZone timeZone, boolean needRounding,
                                     int roundUnit, Integer roundValue,
                                     boolean useLocalTime) throws ConnectionError {
+    if(partVals==null) {
+      return new HiveEndPoint(metaStoreUri, database, table, null);
+    }
+
     ArrayList<String> realPartVals = Lists.newArrayList();
     for(String partVal : partVals) {
       realPartVals.add(BucketPath.escapeString(partVal, headers, timeZone,

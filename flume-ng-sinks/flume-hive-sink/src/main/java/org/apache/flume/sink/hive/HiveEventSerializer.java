@@ -29,7 +29,8 @@ import org.apache.hive.streaming.TransactionBatch;
 import java.io.IOException;
 
 public interface HiveEventSerializer extends Configurable {
-  public void write(TransactionBatch batch, Event e) throws StreamingException, IOException;
+  public void write(TransactionBatch batch, Event e)
+          throws StreamingException, IOException, InterruptedException;
 
   RecordWriter createRecordWriter(HiveEndPoint endPoint)
           throws StreamingException, IOException, ClassNotFoundException;

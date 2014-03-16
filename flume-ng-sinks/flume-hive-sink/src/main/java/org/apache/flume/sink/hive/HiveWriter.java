@@ -134,8 +134,6 @@ class HiveWriter {
       idleFuture = null;
     }
 
-    // If the Writer was closed due to roll timeout or idle timeout, force
-    // a new bucket writer to be created.
     if (closed) {
       throw new IllegalStateException("This hive streaming writer was closed " +
         "and thus no longer able to write : " + endPoint);
@@ -149,7 +147,6 @@ class HiveWriter {
         @Override
         public Void call() throws Exception {
           serializer.write(txnBatch, event);
-//          txnBatch.write(event.getBody()); // could block
           return null;
         }
       });

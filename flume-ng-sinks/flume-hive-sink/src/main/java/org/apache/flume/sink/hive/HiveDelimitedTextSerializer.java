@@ -42,7 +42,7 @@ public class HiveDelimitedTextSerializer implements HiveEventSerializer  {
 
   @Override
   public void write(TransactionBatch txnBatch, Event e)
-          throws StreamingException, IOException {
+          throws StreamingException, IOException, InterruptedException {
     txnBatch.write(e.getBody());
   }
 

@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class TestHiveSink {
+  // 1)  partitioned table
   final static String dbName = "testing";
   final static String tblName = "alerts";
 
@@ -66,6 +67,12 @@ public class TestHiveSink {
   private static final String PART1_VALUE = "Asia";
   private static final String PART2_VALUE = "India";
   private final ArrayList<String> partitionVals;
+
+  // 2) un-partitioned table
+  final static String dbName2 = "testing2";
+  final static String tblName2 = "alerts2";
+  final String[] colNames2 = {COL1,COL2};
+  private String[] colTypes2 = { "int", "string" };
 
 
   HiveSink sink = new HiveSink();
@@ -122,7 +129,7 @@ public class TestHiveSink {
 
 
   @Test
-  public void testSingleWriterSimple()
+  public void testSingleWriterSimplePartitionedTable()
           throws EventDeliveryException, IOException, CommandNeedRetryException {
     int batchSize = 2;
     Context context = new Context();
@@ -137,7 +144,6 @@ public class TestHiveSink {
 
     Channel channel = startSink(sink, context);
 
-//    Calendar eventDate = Calendar.getInstance();
     List<String> bodies = Lists.newArrayList();
 
     // push the events in two batches
@@ -146,8 +152,6 @@ public class TestHiveSink {
       txn.begin();
       for (int j = 1; j <= batchSize; j++) {
         Event event = new SimpleEvent();
-//        eventDate.clear();
-//        eventDate.set(2011, 01, 1+i, 0, 0+j); // yy mm dd
         String body = i*j + ",blah,This is a log message,other stuff";
         event.setBody(body.getBytes());
         bodies.add(body);
@@ -163,6 +167,53 @@ public class TestHiveSink {
     }
     sink.stop();
     checkRecordCountInTable(4);
+  }
+
+  @Test
+  public void testSingleWriterSimpleUnPartitionedTable()
+          throws Exception {
+
+    TestUtil.createDbAndTable(conf, dbName2, tblName2, null, colNames2, colTypes2, null);
+
+    try {
+      int batchSize = 2;
+      Context context = new Context();
+      context.put("hive.metastore", metaStoreURI);
+      context.put("hive.database", dbName2);
+      context.put("hive.table", tblName2);
+      context.put("autoCreatePartitions","false");
+      context.put("batchSize","" + batchSize);
+      context.put("serializer", HiveDelimitedTextSerializer.ALIAS);
+      context.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
+
+      Channel channel = startSink(sink, context);
+
+      List<String> bodies = Lists.newArrayList();
+
+      // Push the events in two batches
+      for (int i = 0; i < 2; i++) {
+        Transaction txn = channel.getTransaction();
+        txn.begin();
+        for (int j = 1; j <= batchSize; j++) {
+          Event event = new SimpleEvent();
+          String body = i*j + ",blah,This is a log message,other stuff";
+          event.setBody(body.getBytes());
+          bodies.add(body);
+          channel.put(event);
+        }
+        // Execute Sink to process the events
+        txn.commit();
+        txn.close();
+
+        checkRecordCountInTable(0);
+        sink.process();
+        checkRecordCountInTable(4);
+      }
+      sink.stop();
+      checkRecordCountInTable(4);
+    } finally {
+      TestUtil.dropDB(conf, dbName2);
+    }
   }
 
   @Test
