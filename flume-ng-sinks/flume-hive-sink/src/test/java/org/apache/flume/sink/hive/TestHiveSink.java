@@ -192,6 +192,7 @@ public class TestHiveSink {
     context.put("batchSize","" + batchSize);
     context.put("serializer", HiveDelimitedTextSerializer.ALIAS);
     context.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
+    context.put("callTimout",dbName);
 
     Channel channel = startSink(sink, context);
 
@@ -219,7 +220,10 @@ public class TestHiveSink {
       txn.close();
 
 //      checkRecordCountInTable(0);
+      System.out.println("******* Processing batch " + i);
       sink.process();
+      System.out.println("******* Done");
+
 //      checkRecordCountInTable(4);
     }
     // verify counters

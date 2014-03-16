@@ -1553,10 +1553,10 @@ Name                      Default       Description
 ======================    ============  ======================================================================
 **channel**               --
 **type**                  --            The component type name, needs to be ``hive``
-hive.user                 Current user  Username used to connect to Hive. Defaults to username of flume process.
 **hive.metastore**        --            Hive metastore URI (eg thrift://a.b.com:9083 )
 **hive.database**         --            Hive database name
 **hive.table**            --            Hive table name
+hive.proxyUser            --            Username on behalf of whom to connect to Hive and HDFS. If null, connects as user of flume process.
 hive.partition            --            Comma separate list of partition values identifying the partition to write to. May contain escape
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
                                         then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21

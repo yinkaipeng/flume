@@ -221,12 +221,12 @@ class HiveWriter {
     });
   }
 
-  private StreamingConnection newConnection(final String hiveUser)
+  private StreamingConnection newConnection(final String proxyUser)
           throws IOException, InterruptedException {
     return  callWithTimeout(new CallRunner<StreamingConnection>() {
       @Override
       public StreamingConnection call() throws Exception {
-        return endPoint.newConnection(hiveUser, autoCreatePartitions); // could block
+        return endPoint.newConnection(proxyUser, autoCreatePartitions); // could block
       }
     });
   }

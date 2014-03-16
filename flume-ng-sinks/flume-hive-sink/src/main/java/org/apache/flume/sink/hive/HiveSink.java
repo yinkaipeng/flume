@@ -55,7 +55,7 @@ public class HiveSink extends AbstractSink implements Configurable {
   private static final Logger LOG = LoggerFactory
       .getLogger(HiveSink.class);
 
-  private static final String defaultHiveUser = System.getProperty("user.name");
+  private static final String defaultHiveUser = null;
   private static final int defaultMaxOpenConnections = 500;
   private static final int defaultTxnsPerBatch = 1000;
   private static final int defaultBatchSize = 5000;
@@ -76,7 +76,7 @@ public class HiveSink extends AbstractSink implements Configurable {
   private SinkCounter sinkCounter;
   private volatile int idleTimeout;
   private String metaStoreUri;
-  private String user;
+  private String proxyUser;
   private String database;
   private String table;
   private List<String> partitionVals;
@@ -118,7 +118,7 @@ public class HiveSink extends AbstractSink implements Configurable {
       throw new IllegalArgumentException("hive.metastore config setting is not " +
               "specified for sink " + getName());
     }
-    user = context.getString("hive.user", defaultHiveUser);
+    proxyUser = context.getString("hive.proxyUser", defaultHiveUser);
     database = context.getString("hive.database");
     if(database==null) {
       throw new IllegalArgumentException("hive.database config setting is not " +
@@ -186,7 +186,6 @@ public class HiveSink extends AbstractSink implements Configurable {
 
 //    kerbConfPrincipal = context.getString("hdfs.kerberosPrincipal", "");
 //    kerbKeytab = context.getString("hdfs.kerberosKeytab", "");
-//    proxyUserName = context.getString("hdfs.proxyUser", "");
 
     Preconditions.checkArgument(batchSize > 0, "batchSize must be greater than 0");
 
@@ -302,7 +301,7 @@ public class HiveSink extends AbstractSink implements Configurable {
       if( writer == null ) {
         writer = new HiveWriter(endPoint, txnsPerBatch,
                 autoCreatePartitions, callTimeout, idleTimeout, callTimeoutPool,
-                user, serializer, sinkCounter);
+                proxyUser, serializer, sinkCounter);
         LOG.info("Created Writer to Hive end point : " + endPoint);
         sinkCounter.incrementConnectionCreatedCount();
         if(allWriters.size() > maxOpenConnections){
