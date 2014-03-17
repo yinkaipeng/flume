@@ -1560,11 +1560,11 @@ hive.proxyUser            --            Username on behalf of whom to connect to
 hive.partition            --            Comma separate list of partition values identifying the partition to write to. May contain escape
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
                                         then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21
-callTimeout               10000         Number of milliseconds allowed for Hive I/O operations, such as open Txn, write, commit, abort.
-batchSize                 5000          Max number of events written to Hive in a single Hive transaction
-txnsPerBatch              1000          Number of transactions requested per Transaction batch from Hive.
-maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the least recently used connection is closed.
+hive.txnsPerBatchAsk      1000          Number of transactions requested per Transaction batch from Hive.
 autoCreatePartitions      true          Flume will automatically create the necessary Hive partitions to stream to
+batchSize                 5000          Max number of events written to Hive in a single Hive transaction
+maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the least recently used connection is closed.
+callTimeout               10000         Number of milliseconds allowed for Hive & HDFS I/O operations, such as openTxn, write, commit, abort.
 **serializer**                          Specifies how to parse the incoming data format into fields and map them to columns in the hive table.
                                         Supported serializer names: DELIMITED
 serializer.*                            Depends on the chosen serializer
@@ -1588,7 +1588,7 @@ serializer.delimiter         ,             The field delimiter in the incoming d
                                            the input fields in order of their occurrence. To skip fields leave the
                                            column name unspecified. Eg. 'time,,ip,message' indicates the 1st, 3rd
                                            and 4th fields in input map to time, ip and message columns in the hive table.
-serializer.serdeSeparator    Ctril-A       Customizes the separator used by the underlying serde. If serializer.fieldnames
+serializer.serdeSeparator    Ctrl-A        Customizes the separator used by the underlying serde. If serializer.fieldnames
                                            are in same order as the table columns, the serializer.delimiter is
                                            same as the serializer.serdeSeparator and number of fields in serializer.fieldnames
                                            is less than or equal to number of table columns, there can be a gain in efficiency

@@ -79,7 +79,7 @@ public class HiveSink extends AbstractSink implements Configurable {
   private String database;
   private String table;
   private List<String> partitionVals;
-  private Integer txnsPerBatch;
+  private Integer txnsPerBatchAsk;
   private Integer batchSize;
   private Integer maxOpenConnections;
   private boolean autoCreatePartitions;
@@ -135,7 +135,7 @@ public class HiveSink extends AbstractSink implements Configurable {
     }
 
 
-    txnsPerBatch = context.getInteger("txnsPerBatch", defaultTxnsPerBatch);
+    txnsPerBatchAsk = context.getInteger("hive.txnsPerBatchAsk", defaultTxnsPerBatch);
     batchSize = context.getInteger("batchSize", defaultBatchSize);
     idleTimeout = context.getInteger("idleTimeout", defaultIdleTimeout);
     callTimeout = context.getInteger("callTimeout", defaultCallTimeout);
@@ -299,7 +299,7 @@ public class HiveSink extends AbstractSink implements Configurable {
     try {
       HiveWriter writer = allWriters.get( endPoint );
       if( writer == null ) {
-        writer = new HiveWriter(endPoint, txnsPerBatch,
+        writer = new HiveWriter(endPoint, txnsPerBatchAsk,
                 autoCreatePartitions, callTimeout, idleTimeout, callTimeoutPool,
                 proxyUser, serializer, sinkCounter);
         LOG.info("Created Writer to Hive end point : " + endPoint);
