@@ -130,7 +130,7 @@ public class HiveSink extends AbstractSink implements Configurable {
     }
 
     String partitions = context.getString("hive.partition");
-    if(partitionVals!=null) {
+    if(partitions!=null) {
       partitionVals = Arrays.asList(partitions.split(","));
     }
 
@@ -299,10 +299,10 @@ public class HiveSink extends AbstractSink implements Configurable {
     try {
       HiveWriter writer = allWriters.get( endPoint );
       if( writer == null ) {
+        LOG.info("Creating Writer to Hive end point : " + endPoint);
         writer = new HiveWriter(endPoint, txnsPerBatchAsk,
                 autoCreatePartitions, callTimeout, idleTimeout, callTimeoutPool,
                 proxyUser, serializer, sinkCounter);
-        LOG.info("Created Writer to Hive end point : " + endPoint);
         sinkCounter.incrementConnectionCreatedCount();
         if(allWriters.size() > maxOpenConnections){
           int retired = retireIdleWriters();
@@ -408,16 +408,15 @@ public class HiveSink extends AbstractSink implements Configurable {
   public void stop() {
     // do not constrain close() calls with a timeout
     for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
-      LOG.info("Closing {}", entry.getKey());
-
       try {
         HiveWriter w = entry.getValue();
-        LOG.info("Closing Writer to {}", w);
+        LOG.info("Flushing writer to {}", w);
         w.flush(false);
+        LOG.info("Closing writer to {}", w);
         w.close();
       } catch (Exception ex) {
-        LOG.warn("Exception while closing " + entry.getKey() + ". " +
-                "Exception follows.", ex);
+        LOG.warn("Error while closing writer to " + entry.getKey() +
+                ". Exception follows.", ex);
         if (ex instanceof InterruptedException) {
           Thread.currentThread().interrupt();
         }

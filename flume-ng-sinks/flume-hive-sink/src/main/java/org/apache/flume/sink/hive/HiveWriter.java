@@ -198,6 +198,7 @@ class HiveWriter {
   }
 
   private void closeConnection() throws IOException, InterruptedException {
+    LOG.info("Closing Txn to end point : {}", endPoint);
     callWithTimeout(new CallRunner<Void>() {
       @Override
       public Void call() throws Exception {
@@ -237,6 +238,7 @@ class HiveWriter {
                 return connection.fetchTransactionBatch(txnsPerBatch , recordWriter); // could block
               }
             });
+    LOG.debug("Switching to first Txn in batch for end point {}", endPoint);
     batch.beginNextTransaction();
     return batch;
   }
