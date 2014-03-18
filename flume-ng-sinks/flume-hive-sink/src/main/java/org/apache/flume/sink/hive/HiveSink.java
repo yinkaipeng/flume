@@ -117,7 +117,7 @@ public class HiveSink extends AbstractSink implements Configurable {
       throw new IllegalArgumentException("hive.metastore config setting is not " +
               "specified for sink " + getName());
     }
-    proxyUser = context.getString("hive.proxyUser");
+    proxyUser = null; // context.getString("hive.proxyUser"); not supported by hive api yet
     database = context.getString("hive.database");
     if(database==null) {
       throw new IllegalArgumentException("hive.database config setting is not " +
