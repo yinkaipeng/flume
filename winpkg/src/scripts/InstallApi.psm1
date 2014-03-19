@@ -430,7 +430,9 @@ function CreateAndConfigureHadoopService(
     }
     else
     {
-        Write-Log "Service `"$service`" already exists, skipping service creation"
+        Write-Log "Service `"$service`" already exists, Removing `"$service`""
+        StopAndDeleteHadoopService $service
+        CreateAndConfigureHadoopService $service $hdpResourcesDir $serviceBinDir $serviceCredential
     }
 }
 
