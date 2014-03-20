@@ -34,11 +34,12 @@ import java.io.IOException;
  */
 
 public class HiveDelimitedTextSerializer implements HiveEventSerializer  {
+  public static final String ALIAS = "DELIMITED";
+  public static final String defaultDelimiter = ",";
+
   private String delimiter;
   String[] fieldToColMapping = null;
-  public static String ALIAS = "DELIMITED";
   private Character serdeSeparator = null;
-  public final static String defaultDelimiter = ",";
 
   @Override
   public void write(TransactionBatch txnBatch, Event e)

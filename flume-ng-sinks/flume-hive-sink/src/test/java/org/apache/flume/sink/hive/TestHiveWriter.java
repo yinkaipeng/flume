@@ -183,7 +183,7 @@ public class TestHiveWriter {
   public void testInOrderWrite() throws Exception {
     HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals);
     SinkCounter sinkCounter = new SinkCounter(this.getClass().getName());
-    int timeout = 10000; // msec
+    int timeout = 5000; // msec
 
     HiveDelimitedTextSerializer serializer2 = new HiveDelimitedTextSerializer();
     Context ctx = new Context();

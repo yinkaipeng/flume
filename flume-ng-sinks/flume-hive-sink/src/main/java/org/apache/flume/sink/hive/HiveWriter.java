@@ -224,7 +224,7 @@ class HiveWriter {
     return  callWithTimeout(new CallRunner<StreamingConnection>() {
       @Override
       public StreamingConnection call() throws Exception {
-        return endPoint.newConnection(proxyUser, autoCreatePartitions); // could block
+        return endPoint.newConnection(autoCreatePartitions); // could block
       }
     });
   }
