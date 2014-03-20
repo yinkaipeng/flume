@@ -1656,11 +1656,11 @@ Example for agent named a1:
  a1.sinks.k1.hive.roundValue = 10
  a1.sinks.k1.hive.roundUnit = minute
  a1.sinks.k1.serializer = DELIMITED
- a1.sinks.k1.serializer.delimiter = '\t'
+ a1.sinks.k1.serializer.delimiter = "\t"
  a1.sinks.k1.serializer.fieldnames =time,,ip,msg
 
 The above configuration will round down the timestamp to the last 10th minute. For example, an event with
-timestamp 11:54:34 AM, June 12, 2012 will cause the hdfs path to become ``/flume/events/2012-06-12/1150/00``.
+timestamp 11:54:34 AM, June 12, 2012 will evaluate to the partition (continent='asia',country='india',time='2012-06-12-11-50'.
 
 
 Logger Sink
