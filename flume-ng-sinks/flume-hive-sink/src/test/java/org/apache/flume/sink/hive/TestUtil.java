@@ -84,7 +84,7 @@ public class TestUtil {
       StorageDescriptor sd = new StorageDescriptor();
       sd.setCols(getTableColumns(colNames, colTypes));
       sd.setNumBuckets(10);
-      if(partVals!=null && !partVals.isEmpty()) {
+      if(partNames!=null && partNames.length!=0) {
         tbl.setPartitionKeys(getPartitionKeys(partNames));
       }
 
