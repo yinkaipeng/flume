@@ -82,7 +82,7 @@ public class TestHiveSink {
 
 
   private final int port ;
-  final String metaStoreURI ;
+  final String metaStoreURI;
 
 
   private static final Logger LOG = LoggerFactory.getLogger(HiveSink.class);
@@ -92,17 +92,17 @@ public class TestHiveSink {
     partitionVals.add(PART1_VALUE);
     partitionVals.add(PART2_VALUE);
 
-//    port = TestUtil.findFreePort();
-//    metaStoreURI = "thrift://localhost:" + port;
-    port = 9083;
-    metaStoreURI = "thrift://172.16.0.21:" + port;
+    port = TestUtil.findFreePort();
+    metaStoreURI = "thrift://localhost:" + port;
+//    port = 9083;
+//    metaStoreURI = "thrift://172.16.0.21:" + port;
 
     conf = new HiveConf(this.getClass());
     TestUtil.setConfValues(conf);
-    conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
+//    conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
 
     // 1) Start Metastore on a diff thread
-//    TestUtil.startLocalMetaStore(port, conf);
+    TestUtil.startLocalMetaStore(port, conf);
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
@@ -173,7 +173,7 @@ public class TestHiveSink {
   @Test
   public void testSingleWriterSimpleUnPartitionedTable()
           throws Exception {
-
+    TestUtil.dropDB(conf, dbName2);
     TestUtil.createDbAndTable(conf, dbName2, tblName2, null, colNames2, colTypes2, null);
 
     try {
@@ -316,12 +316,5 @@ public class TestHiveSink {
 
 //TODO: Serializer needs to discard/ignore extra fields in the end
 // tests: for
-// + add partition
 // + pattern substitution (headers & ts)
-// + counters
-// + multiple writers
-// + use local time (manually verified)
-// - specifying non typeable chars for separator, delimiter
 // - expiration
-// - reconfigure
-// - time rounding

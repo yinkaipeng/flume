@@ -111,8 +111,7 @@ public class HiveSink extends AbstractSink implements Configurable {
   @Override
   public void configure(Context context) {
 
-    metaStoreUri = Preconditions.checkNotNull( context.getString("hive.metastore"),
-                   "hive.metastore is required");
+    metaStoreUri = context.getString("hive.metastore");
     if(metaStoreUri==null) {
       throw new IllegalArgumentException("hive.metastore config setting is not " +
               "specified for sink " + getName());
