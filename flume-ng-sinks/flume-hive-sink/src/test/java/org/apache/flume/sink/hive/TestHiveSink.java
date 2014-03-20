@@ -92,16 +92,17 @@ public class TestHiveSink {
     partitionVals.add(PART1_VALUE);
     partitionVals.add(PART2_VALUE);
 
-//    port = 9083;
-    port = TestUtil.findFreePort();
-    metaStoreURI = "thrift://localhost:" + port;
+//    port = TestUtil.findFreePort();
+//    metaStoreURI = "thrift://localhost:" + port;
+    port = 9083;
+    metaStoreURI = "thrift://172.16.0.21:" + port;
 
     conf = new HiveConf(this.getClass());
     TestUtil.setConfValues(conf);
     conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
 
     // 1) Start Metastore on a diff thread
-    TestUtil.startLocalMetaStore(port, conf);
+//    TestUtil.startLocalMetaStore(port, conf);
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
@@ -228,22 +229,21 @@ public class TestHiveSink {
     String PART2_VALUE = "%y-%m-%d-%k";
 
     String tblName = "hourlydata";
-    TestUtil.dropDB(conf, dbName);
-    TestUtil.createDbAndTable(conf, dbName, tblName, partitionVals, colNames,
+    TestUtil.dropDB(conf, dbName2);
+    TestUtil.createDbAndTable(conf, dbName2, tblName2, partitionVals, colNames,
             colTypes, partNames);
 
     int batchSize = 2;
     Context context = new Context();
     context.put("hive.metastore",metaStoreURI);
-    context.put("hive.database",dbName);
-    context.put("hive.table",tblName);
+    context.put("hive.database",dbName2);
+    context.put("hive.table",tblName2);
     context.put("hive.partition", PART1_VALUE + "," + PART2_VALUE);
     context.put("autoCreatePartitions","true");
     context.put("useLocalTimeStamp", "false");
     context.put("batchSize","" + batchSize);
     context.put("serializer", HiveDelimitedTextSerializer.ALIAS);
     context.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
-    context.put("callTimout",dbName);
 
     Channel channel = startSink(sink, context);
 
