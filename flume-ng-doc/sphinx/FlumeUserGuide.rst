@@ -1576,6 +1576,7 @@ useLocalTimeStamp         false         Use the local time (instead of the times
 Following serializers are supported:
 
 DELIMITED: Handles simple delimited textual data.
+Internally uses LazySimpleSerde but is independent of the Serde of the Hive table.
 
 =========================    ============  ======================================================================
 Name                         Default       Description
@@ -1593,8 +1594,10 @@ serializer.serdeSeparator    Ctrl-A        Customizes the separator used by the 
                                            is less than or equal to number of table columns, there can be a gain in efficiency
                                            as the fields in incoming event body do not need to be reordered to match
                                            order of table columns. Use single quotes for special characters like '\\t'.
-                                           (type: character)
+                                           Ensure input fields do not contain this character. Preferably set it to same
+                                           character as serializer.delimiter if the latter is a single character (type: character)
 =========================    ============  ======================================================================
+
 
 The following are the escape sequences supported:
 
@@ -1657,6 +1660,7 @@ Example for agent named a1:
  a1.sinks.k1.hive.roundUnit = minute
  a1.sinks.k1.serializer = DELIMITED
  a1.sinks.k1.serializer.delimiter = "\t"
+ a1.sinks.k1.serializer.serdeSeparator = '\t'
  a1.sinks.k1.serializer.fieldnames =time,,ip,msg
 
 The above configuration will round down the timestamp to the last 10th minute. For example, an event with
