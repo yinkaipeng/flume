@@ -131,8 +131,8 @@ Function GetHbaseHome() {
 }
 
 
-Function GetJavaLibraryPath ($cmd, $flumeClassPath) {
-    $flumeCoreJar = $flumeClassPath.Split(";") | ? { $_ -match "flume-ng-core.*jar" }
+Function GetJavaLibraryPath ($cmd, $flumeLibDir) {
+    $flumeCoreJar = EnumerateJars( $flumeLibDir ) | ? { $_ -match "flume-ng-core.*jar" }
     $output = & "$cmd" -classpath $flumeCoreJar org.apache.flume.tools.GetJavaProperty java.library.path
 
     # look for the line that has the desired property value
@@ -298,12 +298,11 @@ foreach ($opt in $javaPropertiesArr) {
 
 [string]$javaClassPath='"' + $conf + '"'
 [string]$flumeLibJars=""
-# add Flumehome\lib\* to class path
-foreach ($path in Get-ChildItem $FlumeHome\lib) {
-  $fullPath = $path.FullName
-  $javaClassPath = "$javaClassPath;""$fullPath"""
-  $flumeLibJars = "$flumeLibJars;""$fullPath"""
-}
+[string]$flumeLibDir = Resolve-Path "$FlumeHome\lib"
+
+# Add FlumeHome\lib\* to class path
+$javaClassPath = "$javaClassPath;""$flumeLibDir\*"""
+$flumeLibJars = "$flumeLibDir\*"""
 
 # Add classpath from cmd line & FLUME_CLASSPATH in flume-env.ps1
 if ( $FLUME_CLASSPATH )  {
@@ -336,7 +335,6 @@ foreach($plugin in  $pluginsPath.Split(";") )  {
   }
 }
 
-
 # Add Hadoop classpath &  java.library.path
 $hadoopHome = GetHadoopHome
 if("$hadoopHome" -ne "") {
@@ -348,7 +346,7 @@ if("$hadoopHome" -ne "") {
       $javaClassPath = "$javaClassPath;""$path"""
     }
 
-    foreach ( $path in GetJavaLibraryPath $hadoopCmd  $flumeLibJars ) {
+    foreach ( $path in GetJavaLibraryPath $hadoopCmd  $flumeLibDir ) {
        $javaLibraryPath = "$javaLibraryPath""$path"";"
     }
   } else {
@@ -369,12 +367,11 @@ if( "$hbaseHome" -ne "" ) {
       }
       $javaClassPath = "$javaClassPath;""$hbaseHome\conf"""
 
-      foreach ( $path in GetJavaLibraryPath $hbaseCmd  $flumeLibJars ) {
+      foreach ( $path in GetJavaLibraryPath $hbaseCmd  $flumeLibDir ) {
           $javaLibraryPath = "$javaLibraryPath""$path"";"
       }
     } else {
         Write-Host "WARN: $hbaseCmd not be found. Unable to include HBase classpath and java.library.path"
     }
 }
-
 runFlume $javaClassPath $javaLibraryPath $javaOptions $class $javaProcessArgumentList
