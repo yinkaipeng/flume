@@ -122,15 +122,10 @@ public class TestHiveWriter {
     HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout, timeout
             , callTimeoutPool, "flumetest", serializer, sinkCounter);
 
-    SimpleEvent event = new SimpleEvent();
-    event.setBody("1,xyz,Hello world,abc".getBytes());
-    writer.write(event);
-    event.setBody("2,xyz,Hello world,abc".getBytes());
-    writer.write(event);
-    event.setBody("3,xyz,Hello world,abc".getBytes());
-    writer.write(event);
+    writeEvents(writer,3);
     writer.flush(false);
     writer.close();
+    checkRecordCountInTable(3);
   }
 
   @Test
@@ -244,4 +239,72 @@ public class TestHiveWriter {
 
   }
 
+
+  @Test
+  public void testSecondWriterBeforeFirstCommits() throws Exception {
+    // here we open a new writer while the first is still writing (not committed)
+    HiveEndPoint endPoint1 = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals);
+    ArrayList<String> partVals2 = new ArrayList<String>(2);
+    partVals2.add(PART1_VALUE);
+    partVals2.add("Nepal");
+    HiveEndPoint endPoint2 = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals2);
+
+    SinkCounter sinkCounter1 = new SinkCounter(this.getClass().getName());
+    SinkCounter sinkCounter2 = new SinkCounter(this.getClass().getName());
+
+    HiveWriter writer1 = new HiveWriter(endPoint1, 10, true, timeout, timeout
+            , callTimeoutPool, "flumetest", serializer, sinkCounter1);
+
+    writeEvents(writer1, 3);
+
+    HiveWriter writer2 = new HiveWriter(endPoint2, 10, true, timeout, timeout
+            , callTimeoutPool, "flumetest", serializer, sinkCounter2);
+    writeEvents(writer2, 3);
+    writer2.flush(false); // commit
+
+    writer1.flush(false); // commit
+    writer1.close();
+
+    writer2.close();
+  }
+
+
+  @Test
+  public void testSecondWriterAfterFirstCommits() throws Exception {
+    // here we open a new writer after the first writer has committed one txn
+    HiveEndPoint endPoint1 = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals);
+    ArrayList<String> partVals2 = new ArrayList<String>(2);
+    partVals2.add(PART1_VALUE);
+    partVals2.add("Nepal");
+    HiveEndPoint endPoint2 = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals2);
+
+    SinkCounter sinkCounter1 = new SinkCounter(this.getClass().getName());
+    SinkCounter sinkCounter2 = new SinkCounter(this.getClass().getName());
+
+    HiveWriter writer1 = new HiveWriter(endPoint1, 10, true, timeout, timeout
+            , callTimeoutPool, "flumetest", serializer, sinkCounter1);
+
+    writeEvents(writer1, 3);
+
+    writer1.flush(false); // commit
+
+
+    HiveWriter writer2 = new HiveWriter(endPoint2, 10, true, timeout, timeout
+            , callTimeoutPool, "flumetest", serializer, sinkCounter2);
+    writeEvents(writer2, 3);
+    writer2.flush(false); // commit
+
+
+    writer1.close();
+    writer2.close();
+  }
+
+
+  private void writeEvents(HiveWriter writer, int count) throws IOException, InterruptedException {
+    SimpleEvent event = new SimpleEvent();
+    for (int i = 1; i <= count; i++) {
+      event.setBody((i + ",xyz,Hello world,abc").getBytes());
+      writer.write(event);
+    }
+  }
 }

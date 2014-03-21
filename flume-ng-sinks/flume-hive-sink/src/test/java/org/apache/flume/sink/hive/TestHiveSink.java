@@ -230,14 +230,14 @@ public class TestHiveSink {
 
     String tblName = "hourlydata";
     TestUtil.dropDB(conf, dbName2);
-    TestUtil.createDbAndTable(conf, dbName2, tblName2, partitionVals, colNames,
+    TestUtil.createDbAndTable(conf, dbName2, tblName, partitionVals, colNames,
             colTypes, partNames);
 
     int batchSize = 2;
     Context context = new Context();
     context.put("hive.metastore",metaStoreURI);
     context.put("hive.database",dbName2);
-    context.put("hive.table",tblName2);
+    context.put("hive.table",tblName);
     context.put("hive.partition", PART1_VALUE + "," + PART2_VALUE);
     context.put("autoCreatePartitions","true");
     context.put("useLocalTimeStamp", "false");
