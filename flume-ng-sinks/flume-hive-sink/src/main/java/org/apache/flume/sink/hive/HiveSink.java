@@ -46,9 +46,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TimeZone;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HiveSink extends AbstractSink implements Configurable {
 
@@ -60,15 +63,9 @@ public class HiveSink extends AbstractSink implements Configurable {
   private static final int defaultBatchSize = 5000;
   private static final int defaultCallTimeout = 10000;
   private static final int defaultIdleTimeout = 0;
+  private static final int defautHeartBeatInterval = 240; // seconds
 
-  /**
-   * Default number of threads available for hive operations
-   * such as write/connect/close/flush
-   * These tasks are done in a separate thread in
-   * the case that they take too long. In which
-   * case we retry after a bit
-   */
-  private static final int defaultThreadPoolSize = 1;
+
 
   HashMap<HiveEndPoint, HiveWriter> allWriters;
 
@@ -90,7 +87,7 @@ public class HiveSink extends AbstractSink implements Configurable {
    * Default timeout for blocking I/O calls in HiveWriter
    */
   private Integer callTimeout;
-  private Integer threadPoolSize;
+  private Integer heartBeatInterval;
 
   private ExecutorService callTimeoutPool;
 
@@ -101,6 +98,8 @@ public class HiveSink extends AbstractSink implements Configurable {
   private int roundUnit;
   private Integer roundValue;
   private SystemClock clock;
+  Timer heartBeatTimer = new Timer();
+  private AtomicBoolean timeToSendHeartBeat = new AtomicBoolean(false);
 
   @VisibleForTesting
   HashMap<HiveEndPoint, HiveWriter> getAllWriters() {
@@ -135,11 +134,32 @@ public class HiveSink extends AbstractSink implements Configurable {
 
 
     txnsPerBatchAsk = context.getInteger("hive.txnsPerBatchAsk", defaultTxnsPerBatch);
+    if(txnsPerBatchAsk<0) {
+      LOG.warn(getName() + ". hive.txnsPerBatchAsk must be  positive number. Defaulting to " + defaultTxnsPerBatch);
+      txnsPerBatchAsk = defaultTxnsPerBatch;
+    }
     batchSize = context.getInteger("batchSize", defaultBatchSize);
+    if(batchSize<0) {
+      LOG.warn(getName() + ". batchSize must be  positive number. Defaulting to " + defaultBatchSize);
+      batchSize = defaultBatchSize;
+    }
     idleTimeout = context.getInteger("idleTimeout", defaultIdleTimeout);
+    if(idleTimeout<0) {
+      LOG.warn(getName() + ". idleTimeout must be  positive number. Defaulting to " + defaultIdleTimeout);
+      idleTimeout = defaultIdleTimeout;
+    }
     callTimeout = context.getInteger("callTimeout", defaultCallTimeout);
+    if(callTimeout<0) {
+      LOG.warn(getName() + ". callTimeout must be  positive number. Defaulting to " + defaultCallTimeout);
+      callTimeout = defaultCallTimeout;
+    }
+
+    heartBeatInterval = context.getInteger("heartBeatInterval", defautHeartBeatInterval);
+    if(heartBeatInterval<0) {
+      LOG.warn(getName() + ". heartBeatInterval must be  positive number. Defaulting to " + defautHeartBeatInterval);
+      heartBeatInterval = defautHeartBeatInterval;
+    }
     maxOpenConnections = context.getInteger("maxOpenConnections", defaultMaxOpenConnections);
-    threadPoolSize = defaultThreadPoolSize; // context.getInteger("threadPoolSize", defaultThreadPoolSize);
     autoCreatePartitions =  context.getBoolean("autoCreatePartitions", true);
 
     // Timestamp processing
@@ -159,7 +179,7 @@ public class HiveSink extends AbstractSink implements Configurable {
     } else if (unit.equalsIgnoreCase("second")){
       this.roundUnit = Calendar.SECOND;
     } else {
-      LOG.warn("Rounding unit is not valid, please set one of " +
+      LOG.warn(getName() + ". Rounding unit is not valid, please set one of " +
               "minute, hour or second. Rounding will be disabled");
       needRounding = false;
     }
@@ -225,7 +245,9 @@ public class HiveSink extends AbstractSink implements Configurable {
 
     Channel channel = getChannel();
     Transaction transaction = channel.getTransaction();
-
+    if(timeToSendHeartBeat.compareAndSet(true, false)) {
+      enableHeartBeatOnAllWriters();
+    }
     transaction.begin();
     try {
       int txnEventCount = 0;
@@ -292,6 +314,12 @@ public class HiveSink extends AbstractSink implements Configurable {
     }
   }
 
+  private void enableHeartBeatOnAllWriters() {
+    for (HiveWriter writer : allWriters.values()) {
+      writer.setHearbeatNeeded();
+    }
+  }
+
   private HiveWriter getOrCreateWriter(HashMap<HiveEndPoint, HiveWriter> activeWriters,
                                        HiveEndPoint endPoint)
           throws IOException, InterruptedException, ClassNotFoundException, StreamingException {
@@ -299,9 +327,9 @@ public class HiveSink extends AbstractSink implements Configurable {
       HiveWriter writer = allWriters.get( endPoint );
       if( writer == null ) {
         LOG.info("Creating Writer to Hive end point : " + endPoint);
-        writer = new HiveWriter(endPoint, txnsPerBatchAsk,
-                autoCreatePartitions, callTimeout, idleTimeout, callTimeoutPool,
-                proxyUser, serializer, sinkCounter);
+        writer = new HiveWriter(endPoint, txnsPerBatchAsk, autoCreatePartitions,
+                callTimeout, callTimeoutPool, proxyUser, serializer, sinkCounter);
+
         sinkCounter.incrementConnectionCreatedCount();
         if(allWriters.size() > maxOpenConnections){
           int retired = retireIdleWriters();
@@ -429,7 +457,7 @@ public class HiveSink extends AbstractSink implements Configurable {
       try {
         while (execService.isTerminated() == false) {
           execService.awaitTermination(
-                  Math.max(defaultCallTimeout, callTimeout), TimeUnit.MILLISECONDS);
+                Math.max(defaultCallTimeout, callTimeout), TimeUnit.MILLISECONDS);
         }
       } catch (InterruptedException ex) {
         LOG.warn("shutdown interrupted on " + execService, ex);
@@ -437,7 +465,6 @@ public class HiveSink extends AbstractSink implements Configurable {
     }
 
     callTimeoutPool = null;
-
     allWriters.clear();
     allWriters = null;
     sinkCounter.stop();
@@ -448,13 +475,27 @@ public class HiveSink extends AbstractSink implements Configurable {
   @Override
   public void start() {
     String timeoutName = "hive-" + getName() + "-call-runner-%d";
-    callTimeoutPool = Executors.newFixedThreadPool(threadPoolSize,
+    // call timeout pool needs only 1 thd as sink is effectively single threaded
+    callTimeoutPool = Executors.newFixedThreadPool(1,
             new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
 
     this.allWriters = Maps.newHashMap();
     sinkCounter.start();
     super.start();
+    setupHeartBeatTimer();
     LOG.info("Hive Sink {} started", getName() );
+  }
+
+  private void setupHeartBeatTimer() {
+    if(heartBeatInterval>0) {
+      heartBeatTimer.schedule(new TimerTask() {
+        @Override
+        public void run() {
+          timeToSendHeartBeat.set(true);
+          setupHeartBeatTimer();
+        }
+      }, heartBeatInterval * 1000);
+    }
   }
 
 

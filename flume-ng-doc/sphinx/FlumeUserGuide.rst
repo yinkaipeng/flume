@@ -1560,10 +1560,12 @@ hive.partition            --            Comma separate list of partition values 
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
                                         then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21
 hive.txnsPerBatchAsk      1000          Number of transactions requested per Transaction batch from Hive.
+heartBeatInterval         240           (In seconds) Interval between consecutive heartbeats sent to Hive to keep transactions from expiring.
+                                        Set this value to 0 to disable heartbeats.
 autoCreatePartitions      true          Flume will automatically create the necessary Hive partitions to stream to
 batchSize                 5000          Max number of events written to Hive in a single Hive transaction
 maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the least recently used connection is closed.
-callTimeout               10000         Number of milliseconds allowed for Hive & HDFS I/O operations, such as openTxn, write, commit, abort.
+callTimeout               10000         (In milliseconds) Timeout for Hive & HDFS I/O operations, such as openTxn, write, commit, abort.
 **serializer**                          Specifies how to parse the incoming data format into fields and map them to columns in the hive table.
                                         Supported serializer names: DELIMITED
 serializer.*                            Depends on the chosen serializer
@@ -1581,21 +1583,21 @@ Internally uses LazySimpleSerde but is independent of the Serde of the Hive tabl
 =========================    ============  ======================================================================
 Name                         Default       Description
 =========================    ============  ======================================================================
-serializer.delimiter         ,             The field delimiter in the incoming data. To use special characters surround
-                                           with double quotes like "\\t" (type: string)
+serializer.delimiter         ,             (type: string) The field delimiter in the incoming data. To use special characters
+                                           surround with double quotes like "\\t"
 **serializer.fieldnames**    --            The mapping from input fields to columns in hive table. Specified as a
                                            comma separated list (no spaces) of hive table columns names, identifying
                                            the input fields in order of their occurrence. To skip fields leave the
                                            column name unspecified. Eg. 'time,,ip,message' indicates the 1st, 3rd
                                            and 4th fields in input map to time, ip and message columns in the hive table.
-serializer.serdeSeparator    Ctrl-A        Customizes the separator used by the underlying serde. If serializer.fieldnames
-                                           are in same order as the table columns, the serializer.delimiter is
+serializer.serdeSeparator    Ctrl-A        (type: character) Customizes the separator used by the underlying serde. If fields in
+                                           serializer.fieldnames are in same order as table columns, the serializer.delimiter is
                                            same as the serializer.serdeSeparator and number of fields in serializer.fieldnames
                                            is less than or equal to number of table columns, there can be a gain in efficiency
                                            as the fields in incoming event body do not need to be reordered to match
                                            order of table columns. Use single quotes for special characters like '\\t'.
-                                           Ensure input fields do not contain this character. Preferably set it to same
-                                           character as serializer.delimiter if the latter is a single character (type: character)
+                                           Ensure input fields do not contain this character. If serializer.delimiter is a
+                                           single character, preferably set this to the same character
 =========================    ============  ======================================================================
 
 

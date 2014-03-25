@@ -21,6 +21,7 @@
 package org.apache.flume.sink.hive;
 
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.IMetaStoreClient;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -37,7 +38,6 @@ import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.io.orc.OrcInputFormat;
 import org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat;
 import org.apache.hadoop.hive.ql.io.orc.OrcSerde;
-import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.shims.ShimLoader;
@@ -69,8 +69,7 @@ public class TestUtil {
                                       String[] colNames, String[] colTypes,
                                       String[] partNames)
           throws Exception {
-    Hive hive = Hive.get(conf);
-    IMetaStoreClient client = hive.getMSC();
+    IMetaStoreClient client = new HiveMetaStoreClient(conf);
 
     try {
       Database db = new Database();
@@ -108,20 +107,20 @@ public class TestUtil {
         addPartition(client, tbl, partVals);
       }
     } finally {
-//      client.close();
+      client.close();
     }
   }
 
   // delete db and all tables in it
   public static void dropDB(HiveConf conf, String databaseName) throws HiveException, MetaException {
-    Hive hive = Hive.get(conf);
-    IMetaStoreClient client = hive.getMSC();
+    IMetaStoreClient client = new HiveMetaStoreClient(conf);
     try {
       for(String table : client.listTableNamesByFilter(databaseName, "", (short)-1)) {
         client.dropTable(databaseName, table, true, true);
       }
       client.dropDatabase(databaseName);
     } catch (TException e) {
+      client.close();
     }
   }
 

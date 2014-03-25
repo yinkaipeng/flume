@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 import org.apache.hive.streaming.*;
@@ -58,7 +59,6 @@ class HiveWriter {
   private final ExecutorService callTimeoutPool;
 
   private final long callTimeout;
-  private final int idleTimeout;
   private volatile ScheduledFuture<Void> idleFuture;
 
   private long lastUsed; // time of last flush on this writer
@@ -71,15 +71,16 @@ class HiveWriter {
   protected boolean closed; // flag indicating HiveWriter was closed
   private boolean autoCreatePartitions;
 
+  private boolean hearbeatNeeded = false;
+
   HiveWriter(HiveEndPoint endPoint, int txnsPerBatch,
-             boolean autoCreatePartitions, long callTimeout, int idleTimeout,
+             boolean autoCreatePartitions, long callTimeout,
              ExecutorService callTimeoutPool, String hiveUser,
              HiveEventSerializer serializer, SinkCounter sinkCounter)
           throws IOException, ClassNotFoundException, InterruptedException
                  , StreamingException {
     this.autoCreatePartitions = autoCreatePartitions;
     this.sinkCounter = sinkCounter;
-    this.idleTimeout = idleTimeout;
     this.callTimeout = callTimeout;
     this.callTimeoutPool = callTimeoutPool;
     this.endPoint = endPoint;
@@ -105,6 +106,11 @@ class HiveWriter {
     processSize = 0;
     batchCounter = 0;
   }
+
+  void setHearbeatNeeded() {
+    hearbeatNeeded = true;
+  }
+
 
 
   /**
@@ -170,6 +176,10 @@ class HiveWriter {
    */
   public void flush(boolean rollToNext)
           throws IOException, InterruptedException, StreamingException {
+    if(hearbeatNeeded) {
+      hearbeatNeeded = false;
+      heartBeat();
+    }
     lastUsed = System.currentTimeMillis();
     commitTxn();
     if(txnBatch.remainingTransactions() == 0) {
@@ -182,6 +192,29 @@ class HiveWriter {
     if(rollToNext) {
       LOG.debug("Switching to next Txn for {}", endPoint);
       txnBatch.beginNextTransaction(); // does not block
+    }
+  }
+
+  /** Queues up a heartbeat request on the current and remaining txns using the
+   *  heartbeatThdPool and returns immediately
+   */
+  public void heartBeat() throws InterruptedException {
+    // 1) schedule the heartbeat on one thread in pool
+    try {
+      callWithTimeout(new CallRunner<Void>() {
+        @Override
+        public Void call() throws Exception {
+          try {
+            LOG.debug("Sending heartbeat on batch " + txnBatch);
+            txnBatch.heartbeat();
+          } catch (StreamingException e) {
+            LOG.warn("Heartbeat error on batch " + txnBatch, e);
+          }
+          return null;
+        }
+      });
+    } catch (IOException e) {
+      LOG.warn("I/O error during heartbeat on batch " + txnBatch, e);
     }
   }
 
@@ -336,7 +369,3 @@ class HiveWriter {
   }
 
 }
-
-
-// whats batchCounter ?
-// need id for TxnBatch for error reporting

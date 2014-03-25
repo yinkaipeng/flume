@@ -77,7 +77,6 @@ public class TestHiveSink {
 
   HiveSink sink = new HiveSink();
 
-  private final Driver driver;
   private final HiveConf conf;
 
 
@@ -106,7 +105,6 @@ public class TestHiveSink {
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
-    driver = new Driver(conf);
   }
 
 
@@ -142,6 +140,7 @@ public class TestHiveSink {
     context.put("batchSize","" + batchSize);
     context.put("serializer", HiveDelimitedTextSerializer.ALIAS);
     context.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
+    context.put("heartBeatInterval", "0");
 
     Channel channel = startSink(sink, context);
 
@@ -186,6 +185,7 @@ public class TestHiveSink {
       context.put("batchSize","" + batchSize);
       context.put("serializer", HiveDelimitedTextSerializer.ALIAS);
       context.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
+      context.put("heartBeatInterval", "0");
 
       Channel channel = startSink(sink, context);
 
@@ -244,6 +244,7 @@ public class TestHiveSink {
     context.put("batchSize","" + batchSize);
     context.put("serializer", HiveDelimitedTextSerializer.ALIAS);
     context.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
+    context.put("heartBeatInterval", "0");
 
     Channel channel = startSink(sink, context);
 
@@ -271,10 +272,7 @@ public class TestHiveSink {
       txn.close();
 
 //      checkRecordCountInTable(0);
-      System.out.println("******* Processing batch " + i);
       sink.process();
-      System.out.println("******* Done");
-
 //      checkRecordCountInTable(4);
     }
     // verify counters
@@ -295,6 +293,57 @@ public class TestHiveSink {
     Assert.assertEquals(4, counter.getEventDrainAttemptCount());
     Assert.assertEquals(4, counter.getEventDrainSuccessCount() );
 
+  }
+
+  @Test
+  public void testHeartBeat()
+          throws EventDeliveryException, IOException, CommandNeedRetryException {
+    int batchSize = 2;
+    Context context = new Context();
+    context.put("hive.metastore", metaStoreURI);
+    context.put("hive.database", dbName);
+    context.put("hive.table", tblName);
+    context.put("hive.partition", PART1_VALUE + "," + PART2_VALUE);
+    context.put("autoCreatePartitions","true");
+    context.put("batchSize","" + batchSize);
+    context.put("serializer", HiveDelimitedTextSerializer.ALIAS);
+    context.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
+    context.put("hive.txnsPerBatchAsk", "20");
+    context.put("heartBeatInterval", "5"); // in seconds
+
+    Channel channel = startSink(sink, context);
+
+    List<String> bodies = Lists.newArrayList();
+
+    // push the events in two batches
+    for (int i = 0; i < 3; i++) {
+      Transaction txn = channel.getTransaction();
+      txn.begin();
+      for (int j = 1; j <= batchSize; j++) {
+        Event event = new SimpleEvent();
+        String body = i*j + ",blah,This is a log message,other stuff";
+        event.setBody(body.getBytes());
+        bodies.add(body);
+        channel.put(event);
+      }
+      // execute sink to process the events
+      txn.commit();
+      txn.close();
+
+      checkRecordCountInTable(0);
+      sink.process();
+      checkRecordCountInTable(4);
+      sleep(4000); // allow heartbeat to happen
+    }
+    sink.stop();
+    checkRecordCountInTable(4);
+  }
+
+  private void sleep(int n) {
+    try {
+      Thread.sleep(n);
+    } catch (InterruptedException e) {
+    }
   }
 
   private static Channel startSink(HiveSink sink, Context context) {
