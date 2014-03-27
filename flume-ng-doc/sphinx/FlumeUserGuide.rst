@@ -1560,7 +1560,7 @@ hive.partition            --            Comma separate list of partition values 
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
                                         then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21
 hive.txnsPerBatchAsk      1000          Number of transactions requested per Transaction batch from Hive.
-heartBeatInterval         240           (In seconds) Interval between consecutive heartbeats sent to Hive to keep transactions from expiring.
+heartBeatInterval         240           (In seconds) Interval between consecutive heartbeats sent to Hive to keep unused transactions from expiring.
                                         Set this value to 0 to disable heartbeats.
 autoCreatePartitions      true          Flume will automatically create the necessary Hive partitions to stream to
 batchSize                 5000          Max number of events written to Hive in a single Hive transaction

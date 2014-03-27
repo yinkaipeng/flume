@@ -27,8 +27,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 
 import org.apache.hive.streaming.*;
 
@@ -88,7 +86,7 @@ class HiveWriter {
     this.txnsPerBatch = txnsPerBatch;
     this.serializer = serializer;
     this.recordWriter = serializer.createRecordWriter(endPoint);
-    this.txnBatch = nextTxnBatch(txnsPerBatch, recordWriter);
+    this.txnBatch = nextTxnBatch(recordWriter);
     this.closed = false;
     this.lastUsed = System.currentTimeMillis();
   }
@@ -186,7 +184,7 @@ class HiveWriter {
       closeTxnBatch();
       txnBatch = null;
       if(rollToNext) {
-        txnBatch = nextTxnBatch(txnsPerBatch, recordWriter);
+        txnBatch = nextTxnBatch(recordWriter);
       }
     }
     if(rollToNext) {
@@ -231,7 +229,7 @@ class HiveWriter {
   }
 
   private void closeConnection() throws IOException, InterruptedException {
-    LOG.info("Closing Txn to end point : {}", endPoint);
+    LOG.info("Closing connection to end point : {}", endPoint);
     callWithTimeout(new CallRunner<Void>() {
       @Override
       public Void call() throws Exception {
@@ -242,7 +240,7 @@ class HiveWriter {
   }
 
   private void commitTxn() throws IOException, InterruptedException {
-    LOG.debug("Committing Txn to {}", endPoint);
+    LOG.debug("Committing Txn id {} to {}", txnBatch.getCurrentTxnId() , endPoint);
     callWithTimeout(new CallRunner<Void>() {
       @Override
       public Void call() throws Exception {
@@ -262,22 +260,22 @@ class HiveWriter {
     });
   }
 
-  private TransactionBatch nextTxnBatch(final int txnsPerBatch, final RecordWriter recordWriter)
+  private TransactionBatch nextTxnBatch(final RecordWriter recordWriter)
           throws IOException, InterruptedException, StreamingException {
-    LOG.debug("Acquiring new Txn Batch for {}", endPoint);
+    LOG.debug("Fetching new Txn Batch for {}", endPoint);
     TransactionBatch batch = callWithTimeout(new CallRunner<TransactionBatch>() {
               @Override
               public TransactionBatch call() throws Exception {
-                return connection.fetchTransactionBatch(txnsPerBatch , recordWriter); // could block
+                return connection.fetchTransactionBatch(txnsPerBatch, recordWriter); // could block
               }
             });
-    LOG.debug("Switching to first Txn in batch for end point {}", endPoint);
+    LOG.debug("Acquired {}. Switching to first txn", batch);
     batch.beginNextTransaction();
     return batch;
   }
 
   private void closeTxnBatch() throws IOException, InterruptedException {
-    LOG.debug("Closing Txn Batch to {}", endPoint);
+    LOG.debug("Closing Txn Batch {}", txnBatch);
     callWithTimeout(new CallRunner<Void>() {
       @Override
       public Void call() throws Exception {
