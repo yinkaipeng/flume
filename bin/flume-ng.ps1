@@ -130,6 +130,22 @@ Function GetHbaseHome() {
     return $Null
 }
 
+Function GetHiveHome() {
+    if($env:HIVE_HOME) {
+        return $env:HIVE_HOME
+    }
+
+    #Searches for hive.cmd in the HIVE_HOME, current directory and path
+    [String[]] $hivePaths = (".;$env:PATH").Split(";") |
+                               ? { "$_" -ne "" -and (Test-Path $_) } |
+                               ? { Test-Path (Join-Path $_ "hive.cmd") }
+
+    if($hivePaths -ne $Null) {
+        return $hivePaths[0]
+    }
+    Write-Host "WARN: HIVE_HOME not found"
+    return $Null
+}
 
 Function GetJavaLibraryPath ($cmd, $flumeLibDir) {
     $flumeCoreJar = EnumerateJars( $flumeLibDir ) | ? { $_ -match "flume-ng-core.*jar" }
@@ -294,7 +310,7 @@ foreach ($opt in $javaPropertiesArr) {
 }
 
 ########### Setup Classpath ###############
-# flume\conf ; flume_home\lib\* ; cmdline ; env.ps1 ; plugins.d ; hadoop.cpath ; hbase.cpath
+# flume\conf ; flume_home\lib\* ; cmdline ; env.ps1 ; plugins.d ; hadoop.cpath ; hbase.cpath ; hive.cpath
 
 [string]$javaClassPath='"' + $conf + '"'
 [string]$flumeLibJars=""
@@ -374,4 +390,17 @@ if( "$hbaseHome" -ne "" ) {
         Write-Host "WARN: $hbaseCmd not be found. Unable to include HBase classpath and java.library.path"
     }
 }
+
+# Add Hive classpath
+$hiveHome = GetHiveHome
+if( "$hiveHome" -ne "" ) {
+    Write-Host "Including Hive libraries found via ($hiveHome) for Hive access"
+    $hiveLib = "$hiveHome\lib"
+    if( Test-Path $hiveLib ) {
+      $javaClassPath = "$javaClassPath;""$hiveLib\*"""
+    } else {
+        Write-Host "WARN: $hiveLib not be found. Unable to include Hive into classpath"
+    }
+}
+
 runFlume $javaClassPath $javaLibraryPath $javaOptions $class $javaProcessArgumentList
