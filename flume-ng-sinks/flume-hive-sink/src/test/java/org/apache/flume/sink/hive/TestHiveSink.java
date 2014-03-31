@@ -79,6 +79,7 @@ public class TestHiveSink {
 
   private final HiveConf conf;
 
+  private final Driver driver;
 
   private final int port ;
   final String metaStoreURI;
@@ -105,6 +106,7 @@ public class TestHiveSink {
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
+    driver = new Driver(conf);
   }
 
 
@@ -334,6 +336,47 @@ public class TestHiveSink {
       sink.process();
       checkRecordCountInTable(4);
       sleep(4000); // allow heartbeat to happen
+    }
+    sink.stop();
+    checkRecordCountInTable(4);
+  }
+
+  @Test
+  public void testJsonSerializer() throws Exception {
+    int batchSize = 2;
+    Context context = new Context();
+    context.put("hive.metastore","thrift://hdp.example.com:9083");
+    context.put("hive.database",dbName);
+    context.put("hive.table",tblName);
+    context.put("hive.partition", PART1_VALUE + "," + PART2_VALUE);
+    context.put("autoCreatePartitions","true");
+    context.put("batchSize","" + batchSize);
+    context.put("serializer", HiveJsonSerializer.ALIAS);
+    context.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
+    context.put("heartBeatInterval", "0");
+
+    Channel channel = startSink(sink, context);
+
+    List<String> bodies = Lists.newArrayList();
+
+    // push the events in two batches
+    for (int i = 0; i < 2; i++) {
+      Transaction txn = channel.getTransaction();
+      txn.begin();
+      for (int j = 1; j <= batchSize; j++) {
+        Event event = new SimpleEvent();
+        String body = "{\"id\" : 1, \"msg\" : \"using json serializer\"}";
+        event.setBody(body.getBytes());
+        bodies.add(body);
+        channel.put(event);
+      }
+      // execute sink to process the events
+      txn.commit();
+      txn.close();
+
+      checkRecordCountInTable(0);
+      sink.process();
+      checkRecordCountInTable(4);
     }
     sink.stop();
     checkRecordCountInTable(4);

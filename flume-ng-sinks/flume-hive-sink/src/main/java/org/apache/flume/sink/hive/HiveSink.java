@@ -225,7 +225,11 @@ public class HiveSink extends AbstractSink implements Configurable {
     if(serializerName.compareToIgnoreCase(HiveDelimitedTextSerializer.ALIAS)==0 ||
             serializerName.compareTo(HiveDelimitedTextSerializer.class.getName())==0) {
       return new HiveDelimitedTextSerializer();
+    } else if (serializerName.compareToIgnoreCase(HiveJsonSerializer.ALIAS)==0 ||
+            serializerName.compareTo(HiveJsonSerializer.class.getName())==0) {
+      return new HiveJsonSerializer();
     }
+
     try {
       return (HiveEventSerializer) Class.forName(serializerName).newInstance();
     } catch (Exception e) {

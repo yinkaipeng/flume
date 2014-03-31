@@ -1567,7 +1567,7 @@ batchSize                 15000         Max number of events written to Hive in 
 maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the least recently used connection is closed.
 callTimeout               10000         (In milliseconds) Timeout for Hive & HDFS I/O operations, such as openTxn, write, commit, abort.
 **serializer**                          Specifies how to parse the incoming data format into fields and map them to columns in the hive table.
-                                        Supported serializer names: DELIMITED
+                                        Supported serializer names: DELIMITED and JSON
 serializer.*                            Depends on the chosen serializer
 roundUnit                 minute        The unit of the round down value - ``second``, ``minute`` or ``hour``.
 roundValue                1             Rounded down to the highest multiple of this (in the unit configured using hive.roundUnit), less than current time
@@ -1576,6 +1576,10 @@ useLocalTimeStamp         false         Use the local time (instead of the times
 ======================    ============  ======================================================================
 
 Following serializers are supported:
+
+JSON: Handles UTF8 encoded Json (strict syntax) and requires no additional configration. Object names
+in the JSON are mapped directly to columns with the same name in the Hive table.
+Internally uses org.apache.hive.hcatalog.data.JsonSerDe but is independent of the Serde of the Hive table.
 
 DELIMITED: Handles simple delimited textual data.
 Internally uses LazySimpleSerde but is independent of the Serde of the Hive table.
