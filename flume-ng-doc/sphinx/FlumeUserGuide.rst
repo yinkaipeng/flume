@@ -1559,11 +1559,11 @@ Name                      Default       Description
 hive.partition            --            Comma separate list of partition values identifying the partition to write to. May contain escape
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
                                         then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21
-hive.txnsPerBatchAsk      1000          Number of transactions requested per Transaction batch from Hive.
+hive.txnsPerBatchAsk      100           Number of transactions requested per Transaction batch from Hive.
 heartBeatInterval         240           (In seconds) Interval between consecutive heartbeats sent to Hive to keep unused transactions from expiring.
                                         Set this value to 0 to disable heartbeats.
 autoCreatePartitions      true          Flume will automatically create the necessary Hive partitions to stream to
-batchSize                 5000          Max number of events written to Hive in a single Hive transaction
+batchSize                 15000         Max number of events written to Hive in a single Hive transaction
 maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the least recently used connection is closed.
 callTimeout               10000         (In milliseconds) Timeout for Hive & HDFS I/O operations, such as openTxn, write, commit, abort.
 **serializer**                          Specifies how to parse the incoming data format into fields and map them to columns in the hive table.

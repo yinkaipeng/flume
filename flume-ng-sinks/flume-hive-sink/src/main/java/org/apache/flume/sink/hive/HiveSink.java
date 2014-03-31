@@ -59,8 +59,8 @@ public class HiveSink extends AbstractSink implements Configurable {
       .getLogger(HiveSink.class);
 
   private static final int defaultMaxOpenConnections = 500;
-  private static final int defaultTxnsPerBatch = 1000;
-  private static final int defaultBatchSize = 5000;
+  private static final int defaultTxnsPerBatch = 100;
+  private static final int defaultBatchSize = 15000;
   private static final int defaultCallTimeout = 10000;
   private static final int defaultIdleTimeout = 0;
   private static final int defautHeartBeatInterval = 240; // seconds
