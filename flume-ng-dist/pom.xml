@@ -118,10 +118,6 @@
       <artifactId>flume-ng-elasticsearch-sink</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.flume.flume-ng-sinks</groupId>
-      <artifactId>flume-ng-morphline-solr-sink</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.apache.flume.flume-ng-sources</groupId>
       <artifactId>flume-scribe-source</artifactId>
     </dependency>
@@ -151,5 +147,22 @@
       <artifactId>flume-tools</artifactId>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>not-windows</id>
+      <activation>
+        <os>
+          <family>!Windows</family>
+        </os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.flume.flume-ng-sinks</groupId>
+          <artifactId>flume-ng-morphline-solr-sink</artifactId>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 
 </project>

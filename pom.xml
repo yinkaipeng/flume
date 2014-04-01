@@ -266,6 +266,15 @@ limitations under the License.
           <family>!Windows</family>
         </os>
       </activation>
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.flume.flume-ng-sinks</groupId>
+            <artifactId>flume-ng-morphline-solr-sink</artifactId>
+            <version>1.4.0</version>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
     </profile>
 
     <profile>
@@ -1085,12 +1094,6 @@ limitations under the License.
       <dependency>
         <groupId>org.apache.flume.flume-ng-sinks</groupId>
         <artifactId>flume-ng-elasticsearch-sink</artifactId>
-        <version>1.4.0</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.flume.flume-ng-sinks</groupId>
-        <artifactId>flume-ng-morphline-solr-sink</artifactId>
         <version>1.4.0</version>
       </dependency>
 
