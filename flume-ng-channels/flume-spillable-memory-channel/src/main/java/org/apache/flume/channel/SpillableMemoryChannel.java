@@ -585,7 +585,7 @@ public class SpillableMemoryChannel extends FileChannel {
    * <li>overflowTimeout = type int. Number of seconds to wait on a full memory before deciding to enable overflow
    */
   @Override
-  public void configure(Context context) {
+  public synchronized void configure(Context context) {
 
     if (getLifecycleState() == LifecycleState.START    // does not support reconfig when running
             || getLifecycleState() == LifecycleState.ERROR)
@@ -764,6 +764,10 @@ public class SpillableMemoryChannel extends FileChannel {
 
   @Override
   public synchronized void start() {
+    if(getLifecycleState() == LifecycleState.START) {
+      return;
+    }
+
     super.start();
     int overFlowCount = super.getDepth();
     if (drainOrder.isEmpty()) {
