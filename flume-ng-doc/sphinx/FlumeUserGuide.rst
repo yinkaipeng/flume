@@ -1545,8 +1545,8 @@ This sink streams events directly into the Hive. Events are written using Hive t
 set of events are committed to Hive, they become immediately available to Hive queries. Partitions to which
 flume will stream to can either be pre-created or optionally Flume can create them if they are missing.
 Fields from incoming event data are mapped to corresponding columns in the Hive table using the Flume config.
-Currently only delimited textual data is supported.  **This sink is currently experimental and not
-recommended for use in production.**
+Currently only events with delimited text or JSON is supported.  **This sink is provided as a preview feature
+and not recommended for use in production.**
 
 ======================    ============  ======================================================================
 Name                      Default       Description
