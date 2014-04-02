@@ -1541,12 +1541,12 @@ timestamp 11:54:34 AM, June 12, 2012 will cause the hdfs path to become ``/flume
 Hive Sink
 ~~~~~~~~~
 
-This sink streams events directly into the Hive. Events are written using Hive transactions. As soon as a
-set of events are committed to Hive, they become immediately available to Hive queries. Partitions to which
-flume will stream to can either be pre-created or optionally Flume can create them if they are missing.
-Fields from incoming event data are mapped to corresponding columns in the Hive table using the Flume config.
-Currently only events with delimited text or JSON is supported.  **This sink is provided as a preview feature
-and not recommended for use in production.**
+This sink streams events containing delimited text or JSON data directly into a Hive table or partition. 
+Events are written using Hive transactions. As soon as a set of events are committed to Hive, they become 
+immediately visible to Hive queries. Partitions to which flume will stream to can either be pre-created 
+or, optionally, Flume can create them if they are missing. Fields from incoming event data are mapped to 
+corresponding columns in the Hive table. **This sink is provided as a preview feature and not recommended
+for use in production.**
 
 ======================    ============  ======================================================================
 Name                      Default       Description
@@ -1559,50 +1559,55 @@ Name                      Default       Description
 hive.partition            --            Comma separate list of partition values identifying the partition to write to. May contain escape
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
                                         then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21
-hive.txnsPerBatchAsk      100           Number of transactions requested per Transaction batch from Hive.
+hive.txnsPerBatchAsk      100           Hive grants a *batch of transactions* instead of single transactions to streaming clients like Flume.
+                                        This setting configures the number of desired transactions per Transaction Batch. Data from all 
+                                        transactions in a single batch end up in a single file. Flume will write a maximum of batchSize events
+                                        in each transaction in the batch. This setting in conjunction with batchSize provides control over the
+                                        size of each file. Note that eventually Hive will transparently compact these files into larger files.
 heartBeatInterval         240           (In seconds) Interval between consecutive heartbeats sent to Hive to keep unused transactions from expiring.
                                         Set this value to 0 to disable heartbeats.
 autoCreatePartitions      true          Flume will automatically create the necessary Hive partitions to stream to
 batchSize                 15000         Max number of events written to Hive in a single Hive transaction
 maxOpenConnections        500           Allow only this number of open connections. If this number is exceeded, the least recently used connection is closed.
 callTimeout               10000         (In milliseconds) Timeout for Hive & HDFS I/O operations, such as openTxn, write, commit, abort.
-**serializer**                          Specifies how to parse the incoming data format into fields and map them to columns in the hive table.
-                                        Supported serializer names: DELIMITED and JSON
-serializer.*                            Depends on the chosen serializer
+**serializer**                          Serializer is responsible for parsing out field from the event and mapping them to columns in the hive table.
+                                        Choice of serializer depends upon the format of the data in the event. Supported serializers: DELIMITED and JSON
 roundUnit                 minute        The unit of the round down value - ``second``, ``minute`` or ``hour``.
 roundValue                1             Rounded down to the highest multiple of this (in the unit configured using hive.roundUnit), less than current time
 timeZone                  Local Time    Name of the timezone that should be used for resolving the escape sequences in partition, e.g. America/Los_Angeles.
 useLocalTimeStamp         false         Use the local time (instead of the timestamp from the event header) while replacing the escape sequences.
 ======================    ============  ======================================================================
 
-Following serializers are supported:
+Following serializers are provided for Hive sink:
 
-JSON: Handles UTF8 encoded Json (strict syntax) and requires no additional configration. Object names
+**JSON**: Handles UTF8 encoded Json (strict syntax) events and requires no configration. Object names
 in the JSON are mapped directly to columns with the same name in the Hive table.
 Internally uses org.apache.hive.hcatalog.data.JsonSerDe but is independent of the Serde of the Hive table.
+This serializer requires HCatalog to be installed.
 
-DELIMITED: Handles simple delimited textual data.
+**DELIMITED**: Handles simple delimited textual events.
 Internally uses LazySimpleSerde but is independent of the Serde of the Hive table.
 
-=========================    ============  ======================================================================
-Name                         Default       Description
-=========================    ============  ======================================================================
-serializer.delimiter         ,             (type: string) The field delimiter in the incoming data. To use special characters
-                                           surround with double quotes like "\\t"
-**serializer.fieldnames**    --            The mapping from input fields to columns in hive table. Specified as a
-                                           comma separated list (no spaces) of hive table columns names, identifying
-                                           the input fields in order of their occurrence. To skip fields leave the
-                                           column name unspecified. Eg. 'time,,ip,message' indicates the 1st, 3rd
-                                           and 4th fields in input map to time, ip and message columns in the hive table.
-serializer.serdeSeparator    Ctrl-A        (type: character) Customizes the separator used by the underlying serde. If fields in
-                                           serializer.fieldnames are in same order as table columns, the serializer.delimiter is
-                                           same as the serializer.serdeSeparator and number of fields in serializer.fieldnames
-                                           is less than or equal to number of table columns, there can be a gain in efficiency
-                                           as the fields in incoming event body do not need to be reordered to match
-                                           order of table columns. Use single quotes for special characters like '\\t'.
-                                           Ensure input fields do not contain this character. If serializer.delimiter is a
-                                           single character, preferably set this to the same character
-=========================    ============  ======================================================================
+==========================    ============  ======================================================================
+Name                          Default       Description
+==========================    ============  ======================================================================
+serializer.delimiter          ,             (Type: string) The field delimiter in the incoming data. To use special 
+                                            characters, surround them with double quotes like "\\t"
+**serializer.fieldnames**     --            The mapping from input fields to columns in hive table. Specified as a
+                                            comma separated list (no spaces) of hive table columns names, identifying
+                                            the input fields in order of their occurrence. To skip fields leave the
+                                            column name unspecified. Eg. 'time,,ip,message' indicates the 1st, 3rd
+                                            and 4th fields in input map to time, ip and message columns in the hive table.
+serializer.serdeSeparator     Ctrl-A        (Type: character) Customizes the separator used by underlying serde. There
+                                            can be a gain in efficiency if the fields in serializer.fieldnames are in
+                                            same order as table columns, the serializer.delimiter is same as the
+                                            serializer.serdeSeparator and number of fields in serializer.fieldnames
+                                            is less than or equal to number of table columns, as the fields in incoming
+                                            event body do not need to be reordered to match order of table columns.
+                                            Use single quotes for special characters like '\\t'.
+                                            Ensure input fields do not contain this character. NOTE: If serializer.delimiter
+                                            is a single character, preferably set this to the same character
+==========================    ============  ======================================================================
 
 
 The following are the escape sequences supported:
