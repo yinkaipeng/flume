@@ -375,9 +375,9 @@ if("$hadoopHome" -ne "") {
 # Add HBase classpath  & java.library.path
 $hbaseHome = GetHbaseHome
 if( "$hbaseHome" -ne "" ) {
-    Write-Host "Including HBase libraries found via ($hbaseHome) for HBase access"
     $hbaseCmd = "$hbaseHome\bin\hbase.cmd"
     if( Test-Path $hbaseCmd ) {
+      Write-Host "Including HBase libraries found via ($hbaseHome) for HBase access"
       foreach ( $path in GetClassPath $hbaseCmd ) {
           $javaClassPath = "$javaClassPath;""$path"""
       }
@@ -394,12 +394,20 @@ if( "$hbaseHome" -ne "" ) {
 # Add Hive classpath
 $hiveHome = GetHiveHome
 if( "$hiveHome" -ne "" ) {
-    Write-Host "Including Hive libraries found via ($hiveHome) for Hive access"
     $hiveLib = "$hiveHome\lib"
     if( Test-Path $hiveLib ) {
+      Write-Host "Including Hive libraries found via ($hiveHome) for Hive access"
       $javaClassPath = "$javaClassPath;""$hiveLib\*"""
     } else {
-        Write-Host "WARN: $hiveLib not be found. Unable to include Hive into classpath"
+      Write-Host "WARN: $hiveLib not be found. Unable to include Hive into classpath"
+    }
+
+    $hcatLib = "$hiveHome\hcatalog\share\hcatalog"
+    if( Test-Path $hcatLib ) {
+    Write-Host "Including HCatalog libraries found via ($hiveHome) for Hive access"
+      $javaClassPath = "$javaClassPath;""$hcatLib\*"""
+    } else {
+        Write-Host "WARN: $hcatLib not be found. Unable to include HCatalog into classpath"
     }
 }
 
