@@ -66,4 +66,7 @@ public class SpoolDirectorySourceConfigurationConstants {
 
   public static final String INPUT_CHARSET = "inputCharset";
   public static final String DEFAULT_INPUT_CHARSET = "UTF-8";
+
+  public static final Integer DEFAULT_MAX_BACKOFF = 4000;  
+  public static final String MAX_BACKOFF = "maxBackoff";
 }
