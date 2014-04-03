@@ -5,17 +5,17 @@ New Features:
 -----------------------
  FLUME-1227 - Introduce some sort of SpillableChannel
  FLUME-1734 - Hive Sink based on the new Hive Streaming support
- FLUME-2226 - Refactor BlobHandler out of morphline sink and into HTTP source
- FLUME-2227 - Move BlobDeserializer from Morphline Sink to flume-ng-core
 
 Un supported Features:
 -----------------------
- Async HBase Sink is not currently supported due to issue with AsyncHbase library
+ Async HBase Sink is not currently supported due to issues with AsyncHbase library
 
 Improvements:
 -----------------------
+ FLUME-2226 - Refactor BlobHandler out of morphline sink and into HTTP source
+ FLUME-2227 - Move BlobDeserializer from Morphline Sink to flume-ng-core
 
 Bug Fixes:
 ----------------------
  FLUME-1796 - Upgrade Thrift due to race condition in TThreadSeverPool
-
+ FLUME-2255 - Spooling Directory Source cannot handle channel exceptions
