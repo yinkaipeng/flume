@@ -20,7 +20,10 @@
 
 package org.apache.flume.sink.hive;
 
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RawLocalFileSystem;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.IMetaStoreClient;
@@ -42,9 +45,14 @@ import org.apache.hadoop.hive.ql.io.orc.OrcSerde;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.shims.ShimLoader;
+import org.apache.hadoop.util.Shell;
 import org.apache.thrift.TException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +71,7 @@ public class TestUtil {
   public static void setConfValues(HiveConf conf) {
     conf.setVar(HiveConf.ConfVars.HIVE_TXN_MANAGER, txnMgr);
     conf.setBoolVar(HiveConf.ConfVars.HIVE_SUPPORT_CONCURRENCY, true);
+    conf.set("fs.raw.impl", RawFileSystem.class.getName());
   }
 
   public static void createDbAndTable(HiveConf conf, String databaseName,
@@ -73,9 +82,10 @@ public class TestUtil {
     IMetaStoreClient client = new HiveMetaStoreClient(conf);
 
     try {
-      Database db = new Database();
+      String dbUri = "raw://" + dbLocation;
+              Database db = new Database();
       db.setName(databaseName);
-      db.setLocationUri(dbLocation);
+      db.setLocationUri(dbUri);
       client.createDatabase(db);
 
       Table tbl = new Table();
@@ -85,7 +95,7 @@ public class TestUtil {
       StorageDescriptor sd = new StorageDescriptor();
       sd.setCols(getTableColumns(colNames, colTypes));
       sd.setNumBuckets(10);
-      sd.setLocation(dbLocation + Path.SEPARATOR + tableName);
+      sd.setLocation(dbUri + Path.SEPARATOR + tableName);
       if(partNames!=null && partNames.length!=0) {
         tbl.setPartitionKeys(getPartitionKeys(partNames));
       }
@@ -203,5 +213,52 @@ public class TestUtil {
     return res;
   }
 
+
+  public static class RawFileSystem extends RawLocalFileSystem {
+    private static final URI NAME;
+    static {
+      try {
+        NAME = new URI("raw:///");
+      } catch (URISyntaxException se) {
+        throw new IllegalArgumentException("bad uri", se);
+      }
+    }
+
+    @Override
+    public URI getUri() {
+      return NAME;
+    }
+
+    static String execCommand(File f, String... cmd) throws IOException {
+      String[] args = new String[cmd.length + 1];
+      System.arraycopy(cmd, 0, args, 0, cmd.length);
+      args[cmd.length] = f.getCanonicalPath();
+      String output = Shell.execCommand(args);
+      return output;
+    }
+
+    @Override
+    public FileStatus getFileStatus(Path path) throws IOException {
+      File file = pathToFile(path);
+      if (!file.exists()) {
+        throw new FileNotFoundException("Can't find " + path);
+      }
+      // get close enough
+      short mod = 0;
+      if (file.canRead()) {
+        mod |= 0444;
+      }
+      if (file.canWrite()) {
+        mod |= 0200;
+      }
+      if (file.canExecute()) {
+        mod |= 0111;
+      }
+      ShimLoader.getHadoopShims();
+      return new FileStatus(file.length(), file.isDirectory(), 1, 1024,
+              file.lastModified(), file.lastModified(),
+              FsPermission.createImmutable(mod), "owen", "users", path);
+    }
+  }
 
 }

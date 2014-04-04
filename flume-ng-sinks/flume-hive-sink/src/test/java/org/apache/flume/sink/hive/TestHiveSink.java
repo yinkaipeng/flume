@@ -354,7 +354,7 @@ public class TestHiveSink {
   public void testJsonSerializer() throws Exception {
     int batchSize = 2;
     Context context = new Context();
-    context.put("hive.metastore","thrift://hdp.example.com:9083");
+    context.put("hive.metastore",metaStoreURI);
     context.put("hive.database",dbName);
     context.put("hive.table",tblName);
     context.put("hive.partition", PART1_VALUE + "," + PART2_VALUE);
