@@ -27,17 +27,17 @@ import org.apache.flume.instrumentation.SinkCounter;
 import org.apache.hadoop.hive.cli.CliSessionState;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.CommandNeedRetryException;
-import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hive.streaming.HiveEndPoint;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestHiveWriter {
   final static String dbName = "testing";
@@ -66,6 +66,10 @@ public class TestHiveWriter {
   private ExecutorService callTimeoutPool;
   int timeout = 10000; // msec
 
+  @Rule
+  public TemporaryFolder dbFolder = new TemporaryFolder();
+
+
   public TestHiveWriter() throws Exception {
     partVals = new ArrayList<String>(2);
     partVals.add(PART1_VALUE);
@@ -92,7 +96,9 @@ public class TestHiveWriter {
   public void setUp() throws Exception {
     // 1) Setup tables
     TestUtil.dropDB(conf, dbName);
-    TestUtil.createDbAndTable(conf,dbName, tblName, partVals, colNames, colTypes, partNames);
+    String dbLocation = dbFolder.newFolder(dbName).getCanonicalPath() + ".db";
+    TestUtil.createDbAndTable(conf,dbName, tblName, partVals, colNames, colTypes
+            , partNames, dbLocation);
 
     // 2) Setup serializer
     Context ctx = new Context();

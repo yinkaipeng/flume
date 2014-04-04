@@ -20,6 +20,7 @@
 
 package org.apache.flume.sink.hive;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.IMetaStoreClient;
@@ -67,13 +68,14 @@ public class TestUtil {
   public static void createDbAndTable(HiveConf conf, String databaseName,
                                       String tableName, List<String> partVals,
                                       String[] colNames, String[] colTypes,
-                                      String[] partNames)
+                                      String[] partNames, String dbLocation)
           throws Exception {
     IMetaStoreClient client = new HiveMetaStoreClient(conf);
 
     try {
       Database db = new Database();
       db.setName(databaseName);
+      db.setLocationUri(dbLocation);
       client.createDatabase(db);
 
       Table tbl = new Table();
@@ -83,6 +85,7 @@ public class TestUtil {
       StorageDescriptor sd = new StorageDescriptor();
       sd.setCols(getTableColumns(colNames, colTypes));
       sd.setNumBuckets(10);
+      sd.setLocation(dbLocation + Path.SEPARATOR + tableName);
       if(partNames!=null && partNames.length!=0) {
         tbl.setPartitionKeys(getPartitionKeys(partNames));
       }
@@ -130,9 +133,30 @@ public class TestUtil {
     Partition part = new Partition();
     part.setDbName(tbl.getDbName());
     part.setTableName(tbl.getTableName());
-    part.setSd(tbl.getSd());
+    StorageDescriptor sd = new StorageDescriptor(tbl.getSd());
+    sd.setLocation(sd.getLocation() + Path.SEPARATOR + makePartPath(tbl.getPartitionKeys(), partValues));
+    part.setSd(sd);
     part.setValues(partValues);
     client.add_partition(part);
+  }
+
+  private static String makePartPath(List<FieldSchema> partKeys, List<String> partVals) {
+    if(partKeys.size()!=partVals.size()) {
+      throw new IllegalArgumentException("Partition values:" + partVals +
+              ", does not match the partition Keys in table :" + partKeys );
+    }
+    StringBuffer buff = new StringBuffer(partKeys.size()*20);
+    int i=0;
+    for(FieldSchema schema : partKeys) {
+      buff.append(schema.getName());
+      buff.append("=");
+      buff.append(partVals.get(i));
+      if(i!=partKeys.size()-1) {
+        buff.append(Path.SEPARATOR);
+      }
+      ++i;
+    }
+    return buff.toString();
   }
 
   private static List<FieldSchema> getTableColumns(String[] colNames, String[] colTypes) {

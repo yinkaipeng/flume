@@ -40,7 +40,9 @@ import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +76,6 @@ public class TestHiveSink {
   final String[] colNames2 = {COL1,COL2};
   private String[] colTypes2 = { "int", "string" };
 
-
   HiveSink sink = new HiveSink();
 
   private final HiveConf conf;
@@ -83,6 +84,9 @@ public class TestHiveSink {
 
   private final int port ;
   final String metaStoreURI;
+
+  @Rule
+  public TemporaryFolder dbFolder = new TemporaryFolder();
 
 
   private static final Logger LOG = LoggerFactory.getLogger(HiveSink.class);
@@ -107,6 +111,7 @@ public class TestHiveSink {
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
     driver = new Driver(conf);
+
   }
 
 
@@ -119,8 +124,9 @@ public class TestHiveSink {
     sink = new HiveSink();
     sink.setName("HiveSink-" + UUID.randomUUID().toString());
 
+    String dbLocation = dbFolder.newFolder(dbName).getCanonicalPath() + ".db";
     TestUtil.createDbAndTable(conf, dbName, tblName, partitionVals, colNames,
-            colTypes, partNames);
+            colTypes, partNames, dbLocation);
   }
 
   @After
@@ -175,7 +181,9 @@ public class TestHiveSink {
   public void testSingleWriterSimpleUnPartitionedTable()
           throws Exception {
     TestUtil.dropDB(conf, dbName2);
-    TestUtil.createDbAndTable(conf, dbName2, tblName2, null, colNames2, colTypes2, null);
+    String dbLocation = dbFolder.newFolder(dbName2).getCanonicalPath() + ".db";
+    TestUtil.createDbAndTable(conf, dbName2, tblName2, null, colNames2, colTypes2
+            , null, dbLocation);
 
     try {
       int batchSize = 2;
@@ -232,8 +240,9 @@ public class TestHiveSink {
 
     String tblName = "hourlydata";
     TestUtil.dropDB(conf, dbName2);
+    String dbLocation = dbFolder.newFolder(dbName2).getCanonicalPath() + ".db";
     TestUtil.createDbAndTable(conf, dbName2, tblName, partitionVals, colNames,
-            colTypes, partNames);
+            colTypes, partNames, dbLocation);
 
     int batchSize = 2;
     Context context = new Context();
@@ -405,8 +414,3 @@ public class TestHiveSink {
 //    Assert.assertEquals(expectedCount, count);
   }
 }
-
-//TODO: Serializer needs to discard/ignore extra fields in the end
-// tests: for
-// + pattern substitution (headers & ts)
-// - expiration
