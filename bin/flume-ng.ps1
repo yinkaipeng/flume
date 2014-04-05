@@ -161,26 +161,7 @@ Function GetJavaLibraryPath ($cmd, $flumeLibDir) {
 
 Function GetClassPath ($cmd) {
     $output = & "$cmd" "classpath"
-
-    # drop unwanted items in classpath
-    $classPath = @()
-    foreach( $path in $output.Split(";") | ? { $_ -notmatch "slf4j-(api|log4j12).*jar" } )
-    {
-      $path = $path -replace "\\$" , ""  # trailing \ is a problem if followed by a double quote
-      if($path[$path.Length-1] -ne '*') {
-        $classPath += $path
-      } else {
-        if( !(Test-Path $path)) {
-           Write-Host "WARN: Ignoring from classpath the invalid path $path"
-           continue
-        }
-        foreach($jar in  EnumerateJars $path) {
-          $classPath += $jar
-        }
-      }
-
-    }
-    return $classPath;
+	return $output;
 }
 
 Function GetJavaPath {
