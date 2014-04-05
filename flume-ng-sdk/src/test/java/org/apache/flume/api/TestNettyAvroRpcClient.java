@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.lang.management.ThreadInfo;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.apache.avro.ipc.Server;
@@ -335,6 +337,7 @@ public class TestNettyAvroRpcClient {
   }
 
   @Test
+  @Ignore
   public void spinThreadsCrazily() throws IOException {
 
     int initThreadCount = ManagementFactory.getThreadMXBean().getThreadCount();
