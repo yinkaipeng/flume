@@ -35,12 +35,10 @@ import org.apache.flume.channel.file.FileChannelConfiguration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
-@Ignore
 public class TestSpillableMemoryChannel {
 
   private SpillableMemoryChannel channel;
@@ -829,6 +827,11 @@ public class TestSpillableMemoryChannel {
     params.put("overflowTimeout", "3");
     startChannel(params);
 
+    if( runningWindows() ) {
+      org.junit.Assume.assumeTrue(true);
+      return;
+    }
+
     ArrayList<Thread> sinks = createSinkThreads(sinkCount, eventCount, batchSize);
 
     ArrayList<Thread> sources = createSourceThreads(sourceCount
@@ -850,6 +853,10 @@ public class TestSpillableMemoryChannel {
     System.out.println(channel.memQueue.size());
 
     System.out.println("done");
+  }
+
+  private static boolean runningWindows() {
+    return System.getProperty( "os.name" ).startsWith( "Windows" );
   }
 
   static class StopWatch {
