@@ -4,7 +4,7 @@
 New Features:
 -----------------------
  FLUME-1227 - Introduce some sort of SpillableChannel
- FLUME-1734 - Hive Sink based on the new Hive Streaming support
+ FLUME-1734 - Hive Sink based on the new Hive Streaming support (Linux only)
 
 Un supported Features:
 -----------------------
