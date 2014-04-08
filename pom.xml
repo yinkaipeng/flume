@@ -273,6 +273,23 @@ limitations under the License.
             <artifactId>flume-ng-morphline-solr-sink</artifactId>
             <version>1.4.0</version>
           </dependency>
+          <dependency>
+            <groupId>org.apache.flume.flume-ng-sinks</groupId>
+            <artifactId>flume-hive-sink</artifactId>
+            <version>1.4.0</version>
+          </dependency>
+
+          <dependency>
+            <groupId>org.apache.hive.hcatalog</groupId>
+            <artifactId>hive-hcatalog-streaming</artifactId>
+            <version>${hive.version}</version>
+          </dependency>
+
+          <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-cli</artifactId>
+            <version>${hive.version}</version>
+          </dependency>
         </dependencies>
       </dependencyManagement>
     </profile>
@@ -1075,12 +1092,6 @@ limitations under the License.
 
       <dependency>
         <groupId>org.apache.flume.flume-ng-sinks</groupId>
-        <artifactId>flume-hive-sink</artifactId>
-        <version>1.4.0</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.flume.flume-ng-sinks</groupId>
         <artifactId>flume-irc-sink</artifactId>
         <version>1.4.0</version>
       </dependency>
@@ -1198,18 +1209,6 @@ limitations under the License.
         <groupId>org.apache.solr</groupId>
         <artifactId>solr-cell</artifactId>
         <version>4.3.0</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hive.hcatalog</groupId>
-        <artifactId>hive-hcatalog-streaming</artifactId>
-        <version>${hive.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hive</groupId>
-        <artifactId>hive-cli</artifactId>
-        <version>${hive.version}</version>
       </dependency>
 
     </dependencies>

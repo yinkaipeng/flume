@@ -45,7 +45,6 @@ limitations under the License.
     <module>flume-irc-sink</module>
     <module>flume-ng-hbase-sink</module>
     <module>flume-ng-elasticsearch-sink</module>
-    <module>flume-hive-sink</module>
   </modules>
 
   <profiles>
@@ -58,6 +57,7 @@ limitations under the License.
       </activation>
       <modules>
         <module>flume-ng-morphline-solr-sink</module>
+        <module>flume-hive-sink</module>
       </modules>
     </profile>
   </profiles>
