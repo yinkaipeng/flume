@@ -21,10 +21,10 @@ package org.apache.flume.sink.hive;
 
 import org.apache.flume.Event;
 import org.apache.flume.conf.Configurable;
-import org.apache.hive.streaming.HiveEndPoint;
-import org.apache.hive.streaming.RecordWriter;
-import org.apache.hive.streaming.StreamingException;
-import org.apache.hive.streaming.TransactionBatch;
+import org.apache.hive.hcatalog.streaming.HiveEndPoint;
+import org.apache.hive.hcatalog.streaming.RecordWriter;
+import org.apache.hive.hcatalog.streaming.StreamingException;
+import org.apache.hive.hcatalog.streaming.TransactionBatch;
 
 import java.io.IOException;
 

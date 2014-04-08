@@ -21,11 +21,11 @@ package org.apache.flume.sink.hive;
 
 import org.apache.flume.Context;
 import org.apache.flume.Event;
-import org.apache.hive.streaming.DelimitedInputWriter;
-import org.apache.hive.streaming.HiveEndPoint;
-import org.apache.hive.streaming.RecordWriter;
-import org.apache.hive.streaming.StreamingException;
-import org.apache.hive.streaming.TransactionBatch;
+import org.apache.hive.hcatalog.streaming.DelimitedInputWriter;
+import org.apache.hive.hcatalog.streaming.HiveEndPoint;
+import org.apache.hive.hcatalog.streaming.RecordWriter;
+import org.apache.hive.hcatalog.streaming.StreamingException;
+import org.apache.hive.hcatalog.streaming.TransactionBatch;
 
 import java.io.IOException;
 
@@ -53,7 +53,7 @@ public class HiveDelimitedTextSerializer implements HiveEventSerializer  {
     if(serdeSeparator==null) {
       return new DelimitedInputWriter(fieldToColMapping, delimiter, endPoint);
     }
-    return new DelimitedInputWriter(fieldToColMapping, delimiter, endPoint
+    return new DelimitedInputWriter(fieldToColMapping, delimiter, endPoint, null
             , serdeSeparator);
   }
 

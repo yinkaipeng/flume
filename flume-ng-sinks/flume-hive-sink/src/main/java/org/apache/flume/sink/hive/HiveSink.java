@@ -33,7 +33,7 @@ import org.apache.flume.conf.Configurable;
 import org.apache.flume.formatter.output.BucketPath;
 import org.apache.flume.instrumentation.SinkCounter;
 import org.apache.flume.sink.AbstractSink;
-import org.apache.hive.streaming.*;
+import org.apache.hive.hcatalog.streaming.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +114,9 @@ public class HiveSink extends AbstractSink implements Configurable {
     if(metaStoreUri==null) {
       throw new IllegalArgumentException("hive.metastore config setting is not " +
               "specified for sink " + getName());
+    }
+    if (metaStoreUri.equalsIgnoreCase("null")) { // for testing support
+      metaStoreUri = null;
     }
     proxyUser = null; // context.getString("hive.proxyUser"); not supported by hive api yet
     database = context.getString("hive.database");

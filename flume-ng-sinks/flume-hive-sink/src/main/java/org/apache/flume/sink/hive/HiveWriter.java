@@ -28,7 +28,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.hive.streaming.*;
+import org.apache.hive.hcatalog.streaming.*;
 
 import org.apache.flume.Event;
 

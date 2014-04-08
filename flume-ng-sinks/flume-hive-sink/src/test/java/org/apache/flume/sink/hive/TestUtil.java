@@ -185,15 +185,15 @@ public class TestUtil {
     return fields;
   }
 
-  public static int findFreePort() throws IOException {
-    return  MetaStoreUtils.findFreePort();
-  }
-
-  public static void startLocalMetaStore(int port, HiveConf conf) throws Exception {
-    TxnDbUtil.cleanDb();
-    TxnDbUtil.prepDb();
-    MetaStoreUtils.startMetaStore(port, ShimLoader.getHadoopThriftAuthBridge(), conf);
-  }
+//  public static int findFreePort() throws IOException {
+//    return  MetaStoreUtils.findFreePort();
+//  }
+//
+//  public static void startLocalMetaStore(int port, HiveConf conf) throws Exception {
+//    TxnDbUtil.cleanDb();
+//    TxnDbUtil.prepDb();
+////    MetaStoreUtils.startMetaStore(port, ShimLoader.getHadoopThriftAuthBridge(), conf);
+//  }
 
   public static ArrayList<String> listRecordsInTable(Driver driver, String dbName, String tblName)
           throws CommandNeedRetryException, IOException {

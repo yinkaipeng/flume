@@ -28,7 +28,7 @@ import org.apache.hadoop.hive.cli.CliSessionState;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.CommandNeedRetryException;
 import org.apache.hadoop.hive.ql.session.SessionState;
-import org.apache.hive.streaming.HiveEndPoint;
+import org.apache.hive.hcatalog.streaming.HiveEndPoint;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -75,8 +75,10 @@ public class TestHiveWriter {
     partVals.add(PART1_VALUE);
     partVals.add(PART2_VALUE);
 
-    port = TestUtil.findFreePort();
-    metaStoreURI = "thrift://localhost:" + port;
+    port = 9083;
+    metaStoreURI = null;
+//    port = TestUtil.findFreePort();
+//    metaStoreURI = "thrift://localhost:" + port;
 
     int callTimeoutPoolSize = 1;
     callTimeoutPool = Executors.newFixedThreadPool(callTimeoutPoolSize,
@@ -85,8 +87,10 @@ public class TestHiveWriter {
     // 1) Start metastore
     conf = new HiveConf(this.getClass());
     TestUtil.setConfValues(conf);
-    conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
-    TestUtil.startLocalMetaStore(port, conf);
+    if(metaStoreURI!=null) {
+      conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
+    }
+//    TestUtil.startLocalMetaStore(port, conf);
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));

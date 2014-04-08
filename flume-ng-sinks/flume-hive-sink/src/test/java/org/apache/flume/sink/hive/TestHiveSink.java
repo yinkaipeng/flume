@@ -96,9 +96,11 @@ public class TestHiveSink {
     partitionVals.add(PART1_VALUE);
     partitionVals.add(PART2_VALUE);
 
-    port = TestUtil.findFreePort();
-    metaStoreURI = "thrift://localhost:" + port;
-//    port = 9083;
+    port = 9083;
+    metaStoreURI = "null";
+//    port = TestUtil.findFreePort();
+//    metaStoreURI = "thrift://localhost:" + port;
+
 //    metaStoreURI = "thrift://172.16.0.21:" + port;
 
     conf = new HiveConf(this.getClass());
@@ -106,7 +108,7 @@ public class TestHiveSink {
 //    conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
 
     // 1) Start Metastore on a diff thread
-    TestUtil.startLocalMetaStore(port, conf);
+//    TestUtil.startLocalMetaStore(port, conf);
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
@@ -140,7 +142,7 @@ public class TestHiveSink {
           throws EventDeliveryException, IOException, CommandNeedRetryException {
     int batchSize = 2;
     Context context = new Context();
-    context.put("hive.metastore",metaStoreURI);
+    context.put("hive.metastore", metaStoreURI);
     context.put("hive.database",dbName);
     context.put("hive.table",tblName);
     context.put("hive.partition", PART1_VALUE + "," + PART2_VALUE);
