@@ -9,6 +9,7 @@ New Features:
 Unsupported Features:
 -----------------------
  Async HBase Sink is not currently supported due to issues with AsyncHbase library
+ FLUME-2224 - Disable File channel dual checkpointing on Windows
 
 Improvements:
 -----------------------
@@ -30,5 +31,4 @@ Bug Fixes:
  FLUME-2058 - TestFlumeEventQueue in FileChannel  fails on Windows
  FLUME-2068 - File Channel issue - recovering from BadCheckpoint exception on Windows
  FLUME-2136 - Fix intermittent test failure in TestMonitoredCounterGroup on Windows
- FLUME-2150 -  Fix TestFileChannelEncryption failure on Windows
-
+ FLUME-2150 - Fix TestFileChannelEncryption failure on Windows

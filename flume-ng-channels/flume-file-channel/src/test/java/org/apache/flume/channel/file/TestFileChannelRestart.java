@@ -26,10 +26,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.flume.Transaction;
 import org.apache.flume.channel.file.proto.ProtosFactory;
 import org.fest.reflect.exception.ReflectionError;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,11 +75,13 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test
   public void testFastReplayV1() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestRestart(true, true, true, true);
   }
 
   @Test
   public void testFastReplayV2() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestRestart(false, true, true, true);
   }
 
@@ -145,11 +144,15 @@ public class TestFileChannelRestart extends TestFileChannelBase {
   @Test
   public void testRestartWhenMetaDataExistsButCheckpointDoesNotWithBackup()
       throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestRestartWhenMetaDataExistsButCheckpointDoesNot(true);
   }
 
   private void doTestRestartWhenMetaDataExistsButCheckpointDoesNot(
       boolean backup) throws Exception {
+    // checkpoint deletion cannot be forced on Windows
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
+
     Map<String, String> overrides = Maps.newHashMap();
     overrides.put(FileChannelConfiguration.USE_DUAL_CHECKPOINTS, String.valueOf(backup));
     channel = createFileChannel(overrides);
@@ -182,8 +185,8 @@ public class TestFileChannelRestart extends TestFileChannelBase {
   }
 
   @Test
-  public void testRestartWhenCheckpointExistsButMetaDoesNotWithBackup() throws
-      Exception{
+  public void testRestartWhenCheckpointExistsButMetaDoesNotWithBackup() throws Exception{
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestRestartWhenCheckpointExistsButMetaDoesNot(true);
   }
 
@@ -225,6 +228,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test
   public void testRestartWhenNoCheckpointExistsWithBackup() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestRestartWhenNoCheckpointExists(true);
   }
 
@@ -262,6 +266,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test
   public void testBadCheckpointVersionWithBackup() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestBadCheckpointVersion(true);
   }
 
@@ -300,6 +305,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test
   public void testBadCheckpointMetaVersionWithBackup() throws Exception {
+    Assume.assumeTrue(!System.getProperty("os.name").toLowerCase().contains("win"));
     doTestBadCheckpointMetaVersion(true);
   }
 
@@ -342,6 +348,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
   @Test
   public void testDifferingOrderIDCheckpointAndMetaVersionWithBackup() throws
       Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestDifferingOrderIDCheckpointAndMetaVersion(true);
   }
 
@@ -383,10 +390,12 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test
   public void testIncompleteCheckpointWithCheckpoint() throws Exception{
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestIncompleteCheckpoint(true);
   }
 
   private void doTestIncompleteCheckpoint(boolean backup) throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     Map<String, String> overrides = Maps.newHashMap();
     overrides.put(FileChannelConfiguration.USE_DUAL_CHECKPOINTS, String.valueOf(backup));
     channel = createFileChannel(overrides);
@@ -421,6 +430,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test
   public void testCorruptInflightPutsWithBackup() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestCorruptInflights("inflightputs", true);
   }
 
@@ -431,6 +441,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test
   public void testCorruptInflightTakesWithBackup() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestCorruptInflights("inflighttakes", true);
   }
 
@@ -487,8 +498,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
     compareInputAndOut(in, out);
   }
 
-  private void doTestCorruptInflights(String name,
-    boolean backup) throws Exception {
+  private void doTestCorruptInflights(String name, boolean backup) throws Exception {
     Map<String, String> overrides = Maps.newHashMap();
     overrides.put(FileChannelConfiguration.USE_DUAL_CHECKPOINTS, String.valueOf(backup));
     channel = createFileChannel(overrides);
@@ -534,6 +544,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test
   public void testTruncatedCheckpointMetaWithBackup() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestTruncatedCheckpointMeta(true);
   }
 
@@ -571,6 +582,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test
   public void testCorruptCheckpointMetaWithBackup() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     doTestCorruptCheckpointMeta(true);
   }
 
@@ -695,6 +707,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
   // backup.
   @Test
   public void testBackupUsedEnsureNoFullReplay() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     File dataDir = Files.createTempDir();
     File tempBackup = Files.createTempDir();
     Map<String, String> overrides = Maps.newHashMap();
@@ -751,6 +764,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
   //Make sure data files required by the backup checkpoint are not deleted.
   @Test
   public void testDataFilesRequiredByBackupNotDeleted() throws Exception {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     Map<String, String> overrides = Maps.newHashMap();
     overrides.put(FileChannelConfiguration.USE_DUAL_CHECKPOINTS, "true");
     overrides.put(FileChannelConfiguration.MAX_FILE_SIZE, "1000");
@@ -810,6 +824,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
 
   @Test (expected = IOException.class)
   public void testSlowBackup() throws Throwable {
+    Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));
     Map<String, String> overrides = Maps.newHashMap();
     overrides.put(FileChannelConfiguration.USE_DUAL_CHECKPOINTS, "true");
     overrides.put(FileChannelConfiguration.MAX_FILE_SIZE, "1000");
