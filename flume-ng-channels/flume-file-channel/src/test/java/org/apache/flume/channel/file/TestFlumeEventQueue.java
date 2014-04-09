@@ -53,11 +53,14 @@ public class TestFlumeEventQueue {
     File checkpoint;
     File inflightTakes;
     File inflightPuts;
-    EventQueueBackingStoreSupplier() {
+    EventQueueBackingStoreSupplier() throws IOException {
       baseDir = Files.createTempDir();
-      checkpoint = new File(baseDir, "checkpoint");
-      inflightTakes = new File(baseDir, "inflightputs");
-      inflightPuts =  new File(baseDir, "inflighttakes");
+      checkpoint = File.createTempFile("checkpoint","test", baseDir);
+      FileUtils.forceDeleteOnExit(checkpoint);
+      inflightTakes =  File.createTempFile("inflightputs","test", baseDir);
+      FileUtils.forceDeleteOnExit(inflightTakes);
+      inflightPuts =   File.createTempFile("inflighttakes","test", baseDir);
+      FileUtils.forceDeleteOnExit(inflightPuts);
     }
     File getCheckpoint() {
       return checkpoint;
@@ -115,8 +118,8 @@ public class TestFlumeEventQueue {
   @Test
   public void testCapacity() throws Exception {
     backingStore.close();
-    File checkpoint = backingStoreSupplier.getCheckpoint();
-    Assert.assertTrue(checkpoint.delete());
+    File checkpoint = File.createTempFile("checkpoint","test");
+    FileUtils.forceDeleteOnExit(checkpoint);
     backingStore = new EventQueueBackingStoreFileV2(checkpoint, 1, "test");
     queue = new FlumeEventQueue(backingStore,
         backingStoreSupplier.getInflightTakes(),
@@ -127,8 +130,8 @@ public class TestFlumeEventQueue {
   @Test(expected=IllegalArgumentException.class)
   public void testInvalidCapacityZero() throws Exception {
     backingStore.close();
-    File checkpoint = backingStoreSupplier.getCheckpoint();
-    Assert.assertTrue(checkpoint.delete());
+    File checkpoint = File.createTempFile("checkpoint","test");
+    FileUtils.forceDeleteOnExit(checkpoint);
     backingStore = new EventQueueBackingStoreFileV2(checkpoint, 0, "test");
     queue = new FlumeEventQueue(backingStore,
         backingStoreSupplier.getInflightTakes(),
@@ -137,8 +140,8 @@ public class TestFlumeEventQueue {
   @Test(expected=IllegalArgumentException.class)
   public void testInvalidCapacityNegative() throws Exception {
     backingStore.close();
-    File checkpoint = backingStoreSupplier.getCheckpoint();
-    Assert.assertTrue(checkpoint.delete());
+    File checkpoint = File.createTempFile("checkpoint","test");
+    FileUtils.forceDeleteOnExit(checkpoint);
     backingStore = new EventQueueBackingStoreFileV2(checkpoint, -1, "test");
     queue = new FlumeEventQueue(backingStore,
         backingStoreSupplier.getInflightTakes(),

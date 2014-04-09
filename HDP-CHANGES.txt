@@ -23,4 +23,4 @@ Bug Fixes:
  FLUME-2218 - TestFileChannelIntegrityTool tests failing on Windows
  FLUME-2151 - Update TestExecSource to use native commands on Windows
  FLUME-2137 - Fix StagedInstall.java to invoke the correct startup script on Windows
-
+ FLUME-2058 - TestFlumeEventQueue in FileChannel  fails on Windows
