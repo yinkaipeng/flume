@@ -19,3 +19,4 @@ Bug Fixes:
 ----------------------
  FLUME-1796 - Upgrade Thrift due to race condition in TThreadSeverPool
  FLUME-2255 - Spooling Directory Source cannot handle channel exceptions
+ FLUME-2145 - TestCheckpointRebuilder.testFastReplay fails on Windows

@@ -24,6 +24,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -59,14 +60,17 @@ public class TestCheckpointRebuilder extends TestFileChannelBase {
     Assert.assertTrue(channel.isOpen());
     Set<String> in = fillChannel(channel, "checkpointBulder");
     channel.stop();
+    checkpointDir = new File(baseDir, "chkpt2");
     File checkpointFile = new File(checkpointDir, "checkpoint");
     File metaDataFile = Serialization.getMetaDataFile(checkpointFile);
     File inflightTakesFile = new File(checkpointDir, "inflighttakes");
     File inflightPutsFile = new File(checkpointDir, "inflightputs");
-    Assert.assertTrue(checkpointFile.delete());
-    Assert.assertTrue(metaDataFile.delete());
-    Assert.assertTrue(inflightTakesFile.delete());
-    Assert.assertTrue(inflightPutsFile.delete());
+    FileUtils.forceDeleteOnExit(checkpointFile);
+    FileUtils.forceDeleteOnExit(metaDataFile);
+    FileUtils.forceDeleteOnExit(inflightPutsFile);
+    FileUtils.forceDeleteOnExit(inflightTakesFile);
+    checkpointDir.mkdirs();
+    FileUtils.forceDeleteOnExit(checkpointDir);
     EventQueueBackingStore backingStore =
         EventQueueBackingStoreFactory.get(checkpointFile, 50,
             "test");
