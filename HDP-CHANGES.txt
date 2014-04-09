@@ -6,7 +6,7 @@ New Features:
  FLUME-1227 - Introduce some sort of SpillableChannel
  FLUME-1734 - Hive Sink based on the new Hive Streaming support (Linux only)
 
-Un supported Features:
+Unsupported Features:
 -----------------------
  Async HBase Sink is not currently supported due to issues with AsyncHbase library
 
@@ -15,6 +15,8 @@ Improvements:
  FLUME-2226 - Refactor BlobHandler out of morphline sink and into HTTP source
  FLUME-2227 - Move BlobDeserializer from Morphline Sink to flume-ng-core
  FLUME-2135 - Add zip to the build distribution for Windows support
+ FLUME-1334 - Flume start script for Windows
+ FLUME-2148 - Add flume-env.ps1 for Windows
 
 Bug Fixes:
 ----------------------
