@@ -14,6 +14,7 @@ Improvements:
 -----------------------
  FLUME-2226 - Refactor BlobHandler out of morphline sink and into HTTP source
  FLUME-2227 - Move BlobDeserializer from Morphline Sink to flume-ng-core
+ FLUME-2135 - Add zip to the build distribution for Windows support
 
 Bug Fixes:
 ----------------------
