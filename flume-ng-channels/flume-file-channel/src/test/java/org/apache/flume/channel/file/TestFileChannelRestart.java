@@ -124,8 +124,8 @@ public class TestFileChannelRestart extends TestFileChannelBase {
     }
     channel.stop();
     if(deleteCheckpoint) {
-      File checkpoint = new File(checkpointDir, "checkpoint");
-      Assert.assertTrue(checkpoint.delete());
+      File checkpoint =  Log.getLatestCheckpointFile(checkpointDir);
+      checkpoint.delete();
       File checkpointMetaData = Serialization.getMetaDataFile(checkpoint);
       Assert.assertTrue(checkpointMetaData.delete());
     }
@@ -162,7 +162,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
       Thread.sleep(2000);
     }
     channel.stop();
-    File checkpoint = new File(checkpointDir, "checkpoint");
+    File checkpoint =  Log.getLatestCheckpointFile(checkpointDir);
     Assert.assertTrue(checkpoint.delete());
     File checkpointMetaData = Serialization.getMetaDataFile(checkpoint);
     Assert.assertTrue(checkpointMetaData.exists());
@@ -202,15 +202,17 @@ public class TestFileChannelRestart extends TestFileChannelBase {
       Thread.sleep(2000);
     }
     channel.stop();
-    File checkpoint = new File(checkpointDir, "checkpoint");
+    File checkpoint =  Log.getLatestCheckpointFile(checkpointDir);
     File checkpointMetaData = Serialization.getMetaDataFile(checkpoint);
     Assert.assertTrue(checkpointMetaData.delete());
     Assert.assertTrue(checkpoint.exists());
     channel = createFileChannel(overrides);
     channel.start();
     Assert.assertTrue(channel.isOpen());
-    Assert.assertTrue(checkpoint.exists());
-    Assert.assertTrue(checkpointMetaData.exists());
+    File newCheckPt = Log.getLatestCheckpointFile(checkpointDir);
+    Assert.assertTrue(checkpoint.getAbsolutePath() != newCheckPt.getAbsolutePath()); // newer checkPt should exist
+    Assert.assertFalse(checkpointMetaData.exists()); // old meta data should be gone
+    Assert.assertTrue(Serialization.getMetaDataFile(newCheckPt).exists());
     Assert.assertTrue(!backup || channel.checkpointBackupRestored());
     Set<String> out = consumeChannel(channel);
     compareInputAndOut(in, out);
@@ -240,14 +242,13 @@ public class TestFileChannelRestart extends TestFileChannelBase {
       Thread.sleep(2000);
     }
     channel.stop();
-    File checkpoint = new File(checkpointDir, "checkpoint");
-    File checkpointMetaData = Serialization.getMetaDataFile(checkpoint);
-    Assert.assertTrue(checkpointMetaData.delete());
-    Assert.assertTrue(checkpoint.delete());
+    checkpointDir = Files.createTempDir();
+    FileUtils.forceDeleteOnExit(checkpointDir);
     channel = createFileChannel(overrides);
     channel.start();
     Assert.assertTrue(channel.isOpen());
-    Assert.assertTrue(checkpoint.exists());
+    File checkpoint = Log.getLatestCheckpointFile(checkpointDir);
+    File checkpointMetaData = Serialization.getMetaDataFile(checkpoint);
     Assert.assertTrue(checkpointMetaData.exists());
     Assert.assertTrue(!backup || channel.checkpointBackupRestored());
     Set<String> out = consumeChannel(channel);
@@ -316,7 +317,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
       Thread.sleep(2000);
     }
     channel.stop();
-    File checkpoint = new File(checkpointDir, "checkpoint");
+    File checkpoint = Log.getLatestCheckpointFile(checkpointDir);
     FileInputStream is = new FileInputStream(Serialization.getMetaDataFile(checkpoint));
     ProtosFactory.Checkpoint meta = ProtosFactory.Checkpoint.parseDelimitedFrom(is);
     Assert.assertNotNull(meta);
@@ -358,7 +359,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
       Thread.sleep(2000);
     }
     channel.stop();
-    File checkpoint = new File(checkpointDir, "checkpoint");
+    File checkpoint = Log.getLatestCheckpointFile(checkpointDir);
     FileInputStream is = new FileInputStream(Serialization.getMetaDataFile(checkpoint));
     ProtosFactory.Checkpoint meta = ProtosFactory.Checkpoint.parseDelimitedFrom(is);
     Assert.assertNotNull(meta);
@@ -466,7 +467,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
     forceCheckpoint(channel);
     channel.stop();
     if (shouldCorruptCheckpoint) {
-      File checkpoint = new File(checkpointDir, "checkpoint");
+      File checkpoint = Log.getLatestCheckpointFile(checkpointDir);
       RandomAccessFile writer = new RandomAccessFile(
         Serialization.getMetaDataFile(checkpoint), "rw");
       writer.seek(10);
@@ -622,7 +623,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
     Assert.assertEquals(100, in.size());
     forceCheckpoint(channel);
     channel.stop();
-    File checkpoint = new File(checkpointDir, "checkpoint");
+    File checkpoint = Log.getLatestCheckpointFile(checkpointDir);
     RandomAccessFile writer = new RandomAccessFile(checkpoint, "rw");
     writer.seek(EventQueueBackingStoreFile.INDEX_VERSION *
       Serialization.SIZE_OF_LONG);
@@ -649,7 +650,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
     Assert.assertEquals(100, in.size());
     forceCheckpoint(channel);
     channel.stop();
-    File checkpoint = new File(checkpointDir, "checkpoint");
+    File checkpoint = Log.getLatestCheckpointFile(checkpointDir);
     RandomAccessFile writer = new RandomAccessFile(checkpoint, "rw");
     writer.seek(EventQueueBackingStoreFile.INDEX_CHECKPOINT_MARKER *
       Serialization.SIZE_OF_LONG);
