@@ -86,7 +86,7 @@ public class Serialization {
     if (!checkpointDir.isDirectory()) {
       return false;
     }
-
+    boolean result = true;
     File[] files = checkpointDir.listFiles();
     if(files == null) {
       return false;
@@ -110,13 +110,14 @@ public class Serialization {
         LOG.info(builder.toString());
         LOG.error("Error while attempting to delete: " +
             file.getAbsolutePath());
-        return false;
+        result = false;
+      } else {
+        builder.append(", ").append(file.getName());
       }
-      builder.append(", ").append(file.getName());
     }
     builder.append(".");
     LOG.info(builder.toString());
-    return true;
+    return result;
   }
 
   /**

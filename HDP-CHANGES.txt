@@ -24,3 +24,4 @@ Bug Fixes:
  FLUME-2151 - Update TestExecSource to use native commands on Windows
  FLUME-2137 - Fix StagedInstall.java to invoke the correct startup script on Windows
  FLUME-2058 - TestFlumeEventQueue in FileChannel  fails on Windows
+ FLUME-2068 - File Channel issue - recovering from BadCheckpoint exception on Windows

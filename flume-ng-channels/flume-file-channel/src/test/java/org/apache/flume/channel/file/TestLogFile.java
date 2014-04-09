@@ -89,6 +89,7 @@ public class TestLogFile {
   }
   @Test
   public void testWriterFailsWithDirectory() throws IOException {
+    logFileWriter.close();
     FileUtils.deleteQuietly(dataFile);
     Assert.assertFalse(dataFile.exists());
     Assert.assertTrue(dataFile.mkdirs());
@@ -260,6 +261,7 @@ public class TestLogFile {
   @Test
   public void testWriteDelimitedTo() throws IOException {
     if(dataFile.isFile()) {
+      logFileWriter.close();
       Assert.assertTrue(dataFile.delete());
     }
     Assert.assertTrue(dataFile.createNewFile());

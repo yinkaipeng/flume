@@ -36,21 +36,14 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.security.Key;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -133,6 +126,26 @@ public class Log {
   private int rollbackCount;
 
   private final List<File> pendingDeletes = Lists.newArrayList();
+
+  private String checkpointFileName = "checkpoint";
+
+  public File getNewCheckPointFile(File checkpointDir) {
+    checkpointFileName = "checkpoint_" + System.currentTimeMillis();
+    return new File(checkpointDir,checkpointFileName);
+  }
+
+  public static File getLatestCheckpointFile(File checkpointDir) {
+    String[] checkpoints  = checkpointDir.list(new FilenameFilter() {
+      @Override
+      public boolean accept(File dir, String name) {
+        return name.startsWith("checkpoint") &&  !name.endsWith("meta");
+      }
+    });
+    if(checkpoints.length==0)
+      return null;
+    Arrays.sort(checkpoints);
+    return new File(checkpointDir, checkpoints[checkpoints.length-1]);
+  }
 
   static class Builder {
     private long bCheckpointInterval;
@@ -392,7 +405,9 @@ public class Log {
        * Read the checkpoint (in memory queue) from one of two alternating
        * locations. We will read the last one written to disk.
        */
-      File checkpointFile = new File(checkpointDir, "checkpoint");
+      File checkpointFile = getLatestCheckpointFile(checkpointDir);
+      if(checkpointFile == null)
+          checkpointFile = getNewCheckPointFile(checkpointDir);
       if(shouldFastReplay) {
         if(checkpointFile.exists()) {
           LOGGER.debug("Disabling fast full replay because checkpoint " +
@@ -441,10 +456,8 @@ public class Log {
         if (!backupRestored) {
           LOGGER.warn("Checkpoint may not have completed successfully. "
               + "Forcing full replay, this may take a while.", ex);
-          if (!Serialization.deleteAllFiles(checkpointDir, EXCLUDES)) {
-            throw new IOException("Could not delete files in checkpoint " +
-                "directory to recover from a corrupt or incomplete checkpoint");
-          }
+          Serialization.deleteAllFiles(checkpointDir, EXCLUDES); // on Windows checkpoints may not get deleted
+          checkpointFile = getNewCheckPointFile(checkpointDir);
         }
         backingStore = EventQueueBackingStoreFactory.get(checkpointFile,
             backupCheckpointDir,

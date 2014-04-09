@@ -42,6 +42,7 @@ public class TestFileChannelBase {
   @Before
   public void setup() throws Exception {
     baseDir = Files.createTempDir();
+    FileUtils.forceDeleteOnExit(baseDir);
     checkpointDir = new File(baseDir, "chkpt");
     backupDir = new File(baseDir, "backup");
     Assert.assertTrue(checkpointDir.mkdirs() || checkpointDir.isDirectory());
@@ -62,7 +63,6 @@ public class TestFileChannelBase {
     if (channel != null && channel.isOpen()) {
       channel.stop();
     }
-    FileUtils.deleteQuietly(baseDir);
   }
 
   protected Context createContext() {

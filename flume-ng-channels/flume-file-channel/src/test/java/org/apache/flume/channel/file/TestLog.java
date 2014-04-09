@@ -368,8 +368,8 @@ public class TestLog {
     log.commitPut(transactionID);
     log.close();
     if(useFastReplay) {
-      FileUtils.deleteQuietly(checkpointDir);
-      Assert.assertTrue(checkpointDir.mkdir());
+      checkpointDir = Files.createTempDir();
+      FileUtils.forceDeleteOnExit(checkpointDir);
     }
     List<File> logFiles = Lists.newArrayList();
     for (int i = 0; i < dataDirs.length; i++) {
