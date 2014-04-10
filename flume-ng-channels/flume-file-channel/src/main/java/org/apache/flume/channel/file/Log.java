@@ -456,6 +456,12 @@ public class Log {
         if (!backupRestored) {
           LOGGER.warn("Checkpoint may not have completed successfully. "
               + "Forcing full replay, this may take a while.", ex);
+          if(queue!=null) {
+            queue.close();
+          }
+          if (backingStore!=null) {
+            backingStore.close();
+          }
           Serialization.deleteAllFiles(checkpointDir, EXCLUDES); // on Windows checkpoints may not get deleted
           checkpointFile = getNewCheckPointFile(checkpointDir);
         }
