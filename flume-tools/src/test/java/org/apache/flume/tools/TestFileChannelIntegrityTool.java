@@ -95,8 +95,12 @@ public class TestFileChannelIntegrityTool {
 
   @AfterClass
   public static void tearDownClass() throws Exception {
-    FileUtils.deleteDirectory(origCheckpointDir);
-    FileUtils.deleteDirectory(origDataDir);
+    try {
+      FileUtils.deleteDirectory(origCheckpointDir);
+    } catch (Exception e) {}
+    try {
+      FileUtils.deleteDirectory(origDataDir);
+    } catch (Exception e) {}
   }
 
   @Test

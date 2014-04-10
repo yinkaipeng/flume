@@ -33,3 +33,4 @@ Bug Fixes:
  FLUME-2136 - Fix intermittent test failure in TestMonitoredCounterGroup on Windows
  FLUME-2150 - Fix TestFileChannelEncryption failure on Windows
  FLUME-2358 - File Channel needs to close BackingStore & EventQueue before deleting files in checkpoint directory
+ FLUME-2359 - TestFileChannelIntegrityTool throws exception on class teardown on Windows
