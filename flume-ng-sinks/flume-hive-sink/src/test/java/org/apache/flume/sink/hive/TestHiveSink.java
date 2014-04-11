@@ -34,6 +34,7 @@ import org.apache.flume.instrumentation.SinkCounter;
 import org.apache.hadoop.hive.cli.CliSessionState;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.api.MetaException;
+import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
 import org.apache.hadoop.hive.ql.CommandNeedRetryException;
 import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -108,6 +109,8 @@ public class TestHiveSink {
 //    conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
 
     // 1) Start Metastore on a diff thread
+    TxnDbUtil.cleanDb();
+    TxnDbUtil.prepDb();
 //    TestUtil.startLocalMetaStore(port, conf);
 
     // 2) Setup Hive client
