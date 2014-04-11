@@ -452,6 +452,7 @@ public class Log {
             backupRestored = EventQueueBackingStoreFile.restoreBackup(
               checkpointDir, backupCheckpointDir);
           }
+          checkpointFile = Log.getLatestCheckpointFile(checkpointDir);
         }
         if (!backupRestored) {
           LOGGER.warn("Checkpoint may not have completed successfully. "
