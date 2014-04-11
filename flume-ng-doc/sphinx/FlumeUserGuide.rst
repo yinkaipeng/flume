@@ -1648,7 +1648,7 @@ Example Hive table :
 
 .. code-block:: properties
 
- create table alerts ( id int , msg string )
+ create table weblogs ( id int , msg string )
      partitioned by (continent string, country string, time string)
      clustered by (id) into 5 buckets
      stored as orc;
