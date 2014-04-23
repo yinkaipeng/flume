@@ -414,10 +414,37 @@ function CreateAndConfigureHadoopService(
         }
 
         Write-Log "Adding service $service"
-        $s = New-Service -Name "$service" -BinaryPathName "$serviceBinDir\$service.exe" -Credential $serviceCredential -DisplayName "Apache Hadoop $service"
-        if ( $s -eq $null )
+        if ($serviceCredential.Password.get_Length() -ne 0)
         {
-            throw "CreateAndConfigureHadoopService: Service `"$service`" creation failed"
+            $s = New-Service -Name "$service" -BinaryPathName "$serviceBinDir\$service.exe" -Credential $serviceCredential -DisplayName "Apache Hadoop $service"
+            if ( $s -eq $null )
+            {
+                throw "CreateAndConfigureHadoopService: Service `"$service`" creation failed"
+            }
+        }
+        else
+        {
+            # Separately handle case when password is not provided
+            # this path is used for creating services that run under (AD) Managed Service Account
+            # for them password is not provided and in that case service cannot be created using New-Service commandlet
+            $serviceUserName = $serviceCredential.UserName
+            $cred = $serviceCredential.UserName.Split("\")
+
+            # Throw exception if domain is not specified
+            if (($cred.Length -lt 2) -or ($cred[0] -eq "."))
+            {
+                throw "Environment is not AD or domain is not specified"
+            }
+
+            $cmd="$ENV:WINDIR\system32\sc.exe create `"$service`" binPath= `"$serviceBinDir\$service.exe`" obj= $serviceUserName DisplayName= `"Apache Hadoop $service`" "
+            try
+            {
+                Invoke-CmdChk $cmd
+            }
+            catch
+            {
+                throw "CreateAndConfigureHadoopService: Service `"$service`" creation failed"
+            }
         }
 
         $cmd="$ENV:WINDIR\system32\sc.exe failure $service reset= 30 actions= restart/5000"
