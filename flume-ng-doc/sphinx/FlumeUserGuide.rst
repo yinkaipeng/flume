@@ -1663,21 +1663,29 @@ Example for agent named a1:
  a1.sinks.k1.type = hive
  a1.sinks.k1.channel = c1
  a1.sinks.k1.hive.metastore = thrift://127.0.0.1:9083
- a1.sinks.k1.hive.user = flume
  a1.sinks.k1.hive.database = logsdb
  a1.sinks.k1.hive.table = weblogs
- a1.sinks.k1.hive.partition = asia,india,%y-%m-%d-%H-%M
- a1.sinks.k1.hive.round = true
- a1.sinks.k1.hive.roundValue = 10
- a1.sinks.k1.hive.roundUnit = minute
+ a1.sinks.k1.hive.partition = asia,%{country},%y-%m-%d-%H-%M
+ a1.sinks.k1.useLocalTimeStamp = false
+ a1.sinks.k1.round = true
+ a1.sinks.k1.roundValue = 10
+ a1.sinks.k1.roundUnit = minute
  a1.sinks.k1.serializer = DELIMITED
  a1.sinks.k1.serializer.delimiter = "\t"
  a1.sinks.k1.serializer.serdeSeparator = '\t'
- a1.sinks.k1.serializer.fieldnames =time,,ip,msg
+ a1.sinks.k1.serializer.fieldnames =id,,msg
+
 
 The above configuration will round down the timestamp to the last 10th minute. For example, an event with
-timestamp 11:54:34 AM, June 12, 2012 will evaluate to the partition (continent='asia',country='india',time='2012-06-12-11-50'.
+timestamp header set to 11:54:34 AM, June 12, 2012 and 'country' header set to 'india' will evaluate to the 
+partition (continent='asia',country='india',time='2012-06-12-11-50'.
 
+Sample CSV input :
+
+.. code-block:: properties
+
+ 55,uninteresting field,A message field that is to be captured
+ 56,uninteresting field again,Another message that is to be captured
 
 Logger Sink
 ~~~~~~~~~~~
