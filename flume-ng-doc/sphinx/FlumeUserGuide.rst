@@ -1678,14 +1678,9 @@ Example for agent named a1:
 
 The above configuration will round down the timestamp to the last 10th minute. For example, an event with
 timestamp header set to 11:54:34 AM, June 12, 2012 and 'country' header set to 'india' will evaluate to the 
-partition (continent='asia',country='india',time='2012-06-12-11-50'.
+partition (continent='asia',country='india',time='2012-06-12-11-50'. The serializer is configured to
+accept tab separated input containing three fields and to skip the second field.
 
-Sample CSV input :
-
-.. code-block:: properties
-
- 55,uninteresting field,A message field that is to be captured
- 56,uninteresting field again,Another message that is to be captured
 
 Logger Sink
 ~~~~~~~~~~~
