@@ -88,6 +88,17 @@ limitations under the License.
       </modules>
     </profile>
 
+    <profile>
+      <id>not-windows</id>
+      <activation>
+        <os>
+          <family>!Windows</family>
+        </os>
+      </activation>
+      <modules>
+        <module>flume-ng-morphline-solr-sink</module>
+      </modules>
+    </profile>
 
   </profiles>
 
