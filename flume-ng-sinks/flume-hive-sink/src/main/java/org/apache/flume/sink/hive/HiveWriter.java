@@ -128,7 +128,6 @@ class HiveWriter {
     }
 
     // write the event
-    sinkCounter.incrementEventDrainAttemptCount();
     try {
       timedCall(new CallRunner1<Void>() {
         @Override
@@ -158,7 +157,7 @@ class HiveWriter {
    *       new TxnBatch if current Txn batch is exhausted
    */
   public void flush(boolean rollToNext)
-          throws CommitFailure, InterruptedException {
+          throws CommitFailure, TxnBatchFailure, TxnFailure, InterruptedException {
     //0 Heart beat on TxnBatch
     if(hearbeatNeeded) {
       hearbeatNeeded = false;
@@ -182,10 +181,8 @@ class HiveWriter {
         LOG.debug("Switching to next Txn for {}", endPoint);
         txnBatch.beginNextTransaction(); // does not block
       }
-    } catch (IOException e) {
-      throw new CommitFailure(endPoint, txnBatch.getCurrentTxnId(), e);
     } catch (StreamingException e) {
-      throw new CommitFailure(endPoint, txnBatch.getCurrentTxnId(), e);
+      throw new TxnFailure(txnBatch, e);
     }
   }
 
@@ -230,7 +227,7 @@ class HiveWriter {
     closed = true;
   }
 
-  private void closeConnection() throws InterruptedException {
+  public void closeConnection() throws InterruptedException {
     LOG.info("Closing connection to EndPoint : {}", endPoint);
     try {
       timedCall(new CallRunner1<Void>() {
@@ -303,19 +300,25 @@ class HiveWriter {
   }
 
   private TransactionBatch nextTxnBatch(final RecordWriter recordWriter)
-          throws IOException, InterruptedException, StreamingException {
+          throws InterruptedException, TxnBatchFailure {
     LOG.debug("Fetching new Txn Batch for {}", endPoint);
-    TransactionBatch batch = callWithTimeout(new CallRunner<TransactionBatch>() {
-              @Override
-              public TransactionBatch call() throws Exception {
-                return connection.fetchTransactionBatch(txnsPerBatch, recordWriter); // could block
-              }
-            });
-    LOG.info("Acquired Txn Batch {}. Switching to first txn", batch);
-    batch.beginNextTransaction();
+    TransactionBatch batch = null;
+    try {
+      batch = timedCall(new CallRunner1<TransactionBatch>() {
+        @Override
+        public TransactionBatch call() throws InterruptedException, StreamingException {
+          return connection.fetchTransactionBatch(txnsPerBatch, recordWriter); // could block
+        }
+      });
+      LOG.info("Acquired Txn Batch {}. Switching to first txn", batch);
+      batch.beginNextTransaction();
+    } catch (TimeoutException e) {
+      throw new TxnBatchFailure(endPoint, e);
+    } catch (StreamingException e) {
+      throw new TxnBatchFailure(endPoint, e);
+    }
     return batch;
   }
-
 
   private void closeTxnBatch() throws InterruptedException {
     try {
@@ -334,57 +337,6 @@ class HiveWriter {
       // Suppressing exceptions as we don't care for errors on batch close
     }
   }
-
-//  /**
-//   * If the current thread has been interrupted, then throws an
-//   * exception.
-//   * @throws InterruptedException
-//   */
-//  private static void checkAndThrowInterruptedException()
-//          throws InterruptedException {
-//    if (Thread.currentThread().interrupted()) {
-//      throw new InterruptedException("Timed out before Hive call was made. "
-//              + "Your callTimeout might be set too low or Hive calls are "
-//              + "taking too long.");
-//    }
-//  }
-//
-
-
-
-//  private <T> T timedCall(final CallRunner1<T> callRunner)
-//          throws TimeoutException, InterruptedException, ExecutionException {
-//    Future<T> future = callTimeoutPool.submit(new Callable<T>() {
-//      @Override
-//      public T call() throws StreamingException, InterruptedException, TimeoutException {
-//        return callRunner.call();
-//      }
-//    });
-//
-//    try {
-//      if (callTimeout > 0) {
-//        return future.get(callTimeout, TimeUnit.MILLISECONDS);
-//      } else {
-//        return future.get();
-//      }
-//    } catch (TimeoutException eT) {
-//      future.cancel(true);
-//      sinkCounter.incrementConnectionFailedCount();
-//      throw eT;
-//    } catch (ExecutionException e1) {
-//      sinkCounter.incrementConnectionFailedCount();
-//      Throwable cause = e1.getCause();
-//      if (cause instanceof RuntimeException) {
-//        throw (RuntimeException) cause;
-//      } else if (cause instanceof InterruptedException) {
-//        throw (InterruptedException) cause;
-//      } else if (cause instanceof Error) {
-//        throw (Error)cause;
-//      } else {
-//        throw e1;
-//      }
-//    }
-//  }
 
   private <T> T timedCall(final CallRunner1<T> callRunner)
           throws TimeoutException, InterruptedException, StreamingException {
@@ -487,16 +439,9 @@ class HiveWriter {
     T call() throws Exception;
   }
 
-//  private interface CallRunner0<T> {
-//    T call();
-//  }
 
   private interface CallRunner1<T> {
     T call() throws StreamingException, InterruptedException;
-  }
-
-  private interface CallRunner2<X extends Exception> {
-    void call() throws StreamingException, InterruptedException, X;
   }
 
 
@@ -524,4 +469,15 @@ class HiveWriter {
     }
   }
 
+  public static class TxnBatchFailure extends Failure {
+    public TxnBatchFailure(HiveEndPoint ep, Throwable cause) {
+      super("Failed acquiring Transaction Batch from EndPoint: " + ep, cause);
+    }
+  }
+
+  private class TxnFailure extends Failure {
+    public TxnFailure(TransactionBatch txnBatch, Throwable cause) {
+      super("Failed switching to next Txn in TxnBatch " + txnBatch, cause);
+    }
+  }
 }

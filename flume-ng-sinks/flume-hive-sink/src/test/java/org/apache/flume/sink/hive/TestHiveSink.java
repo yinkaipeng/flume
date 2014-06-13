@@ -83,7 +83,7 @@ public class TestHiveSink {
 
   private final Driver driver;
 
-  private final int port ;
+  private final int port  = 9083;
   final String metaStoreURI;
 
   @Rule
@@ -97,21 +97,14 @@ public class TestHiveSink {
     partitionVals.add(PART1_VALUE);
     partitionVals.add(PART2_VALUE);
 
-    port = 9083;
     metaStoreURI = "null";
-//    port = TestUtil.findFreePort();
-//    metaStoreURI = "thrift://localhost:" + port;
-
-//    metaStoreURI = "thrift://172.16.0.21:" + port;
 
     conf = new HiveConf(this.getClass());
     TestUtil.setConfValues(conf);
-//    conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
 
-    // 1) Start Metastore on a diff thread
+    // 1) prepare hive
     TxnDbUtil.cleanDb();
     TxnDbUtil.prepDb();
-//    TestUtil.startLocalMetaStore(port, conf);
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
@@ -123,8 +116,6 @@ public class TestHiveSink {
   @Before
   public void setUp() throws Exception {
     TestUtil.dropDB(conf, dbName);
-
-    LOG.debug("Starting...");
 
     sink = new HiveSink();
     sink.setName("HiveSink-" + UUID.randomUUID().toString());
@@ -143,7 +134,10 @@ public class TestHiveSink {
   @Test
   public void testSingleWriterSimplePartitionedTable()
           throws EventDeliveryException, IOException, CommandNeedRetryException {
+    int totalRecords = 4;
     int batchSize = 2;
+    int batchCount = totalRecords / batchSize;
+
     Context context = new Context();
     context.put("hive.metastore", metaStoreURI);
     context.put("hive.database",dbName);
@@ -160,26 +154,26 @@ public class TestHiveSink {
     List<String> bodies = Lists.newArrayList();
 
     // push the events in two batches
-    for (int i = 0; i < 2; i++) {
-      Transaction txn = channel.getTransaction();
-      txn.begin();
-      for (int j = 1; j <= batchSize; j++) {
-        Event event = new SimpleEvent();
-        String body = i*j + ",blah,This is a log message,other stuff";
-        event.setBody(body.getBytes());
-        bodies.add(body);
-        channel.put(event);
-      }
-      // execute sink to process the events
-      txn.commit();
-      txn.close();
+    Transaction txn = channel.getTransaction();
+    txn.begin();
+    for (int j = 1; j <= totalRecords; j++) {
+      Event event = new SimpleEvent();
+      String body = j + ",blah,This is a log message,other stuff";
+      event.setBody(body.getBytes());
+      bodies.add(body);
+      channel.put(event);
+    }
+    // execute sink to process the events
+    txn.commit();
+    txn.close();
 
-      checkRecordCountInTable(0);
+
+    checkRecordCountInTable(0, dbName, tblName);
+    for (int i = 0; i < batchCount ; i++) {
       sink.process();
-      checkRecordCountInTable(4);
     }
     sink.stop();
-    checkRecordCountInTable(4);
+    checkRecordCountInTable(totalRecords, dbName, tblName);
   }
 
   @Test
@@ -191,7 +185,10 @@ public class TestHiveSink {
             , null, dbLocation);
 
     try {
+      int totalRecords = 4;
       int batchSize = 2;
+      int batchCount = totalRecords / batchSize;
+
       Context context = new Context();
       context.put("hive.metastore", metaStoreURI);
       context.put("hive.database", dbName2);
@@ -207,26 +204,28 @@ public class TestHiveSink {
       List<String> bodies = Lists.newArrayList();
 
       // Push the events in two batches
-      for (int i = 0; i < 2; i++) {
-        Transaction txn = channel.getTransaction();
-        txn.begin();
-        for (int j = 1; j <= batchSize; j++) {
-          Event event = new SimpleEvent();
-          String body = i*j + ",blah,This is a log message,other stuff";
-          event.setBody(body.getBytes());
-          bodies.add(body);
-          channel.put(event);
-        }
-        // Execute Sink to process the events
-        txn.commit();
-        txn.close();
-
-        checkRecordCountInTable(0);
-        sink.process();
-        checkRecordCountInTable(4);
+      Transaction txn = channel.getTransaction();
+      txn.begin();
+      for (int j = 1; j <= totalRecords; j++) {
+        Event event = new SimpleEvent();
+        String body = j + ",blah,This is a log message,other stuff";
+        event.setBody(body.getBytes());
+        bodies.add(body);
+        channel.put(event);
       }
+
+      txn.commit();
+      txn.close();
+
+      checkRecordCountInTable(0, dbName2, tblName2);
+      for (int i = 0; i < batchCount ; i++) {
+        sink.process();
+      }
+
+      // check before & after  stopping sink
+      checkRecordCountInTable(totalRecords, dbName2, tblName2);
       sink.stop();
-      checkRecordCountInTable(4);
+      checkRecordCountInTable(totalRecords, dbName2, tblName2);
     } finally {
       TestUtil.dropDB(conf, dbName2);
     }
@@ -249,7 +248,10 @@ public class TestHiveSink {
     TestUtil.createDbAndTable(conf, dbName2, tblName, partitionVals, colNames,
             colTypes, partNames, dbLocation);
 
+    int totalRecords = 4;
     int batchSize = 2;
+    int batchCount = totalRecords / batchSize;
+
     Context context = new Context();
     context.put("hive.metastore",metaStoreURI);
     context.put("hive.database",dbName2);
@@ -268,39 +270,33 @@ public class TestHiveSink {
     List<String> bodies = Lists.newArrayList();
 
     // push events in two batches - two per batch. each batch is diff hour
-    for (int i = 0; i < 2; i++) {
-      Transaction txn = channel.getTransaction();
-      txn.begin();
-      for (int j = 1; j <= batchSize; j++) {
-        Event event = new SimpleEvent();
-        String body = i*j + ",blah,This is a log message,other stuff";
-        event.setBody(body.getBytes());
-        eventDate.clear();
-        eventDate.set(2014, 03, 03, i, 1); // yy mm dd hh mm
-        event.getHeaders().put( "timestamp",
-                String.valueOf(eventDate.getTimeInMillis()) );
-        event.getHeaders().put( PART1_NAME, "Asia" );
-        bodies.add(body);
-        channel.put(event);
-      }
-      // execute sink to process the events
-      txn.commit();
-      txn.close();
-
-//      checkRecordCountInTable(0);
-      sink.process();
-//      checkRecordCountInTable(4);
+    Transaction txn = channel.getTransaction();
+    txn.begin();
+    for (int j = 1; j <= totalRecords; j++) {
+      Event event = new SimpleEvent();
+      String body = j + ",blah,This is a log message,other stuff";
+      event.setBody(body.getBytes());
+      eventDate.clear();
+      eventDate.set(2014, 03, 03, j%batchCount, 1); // yy mm dd hh mm
+      event.getHeaders().put( "timestamp",
+              String.valueOf(eventDate.getTimeInMillis()) );
+      event.getHeaders().put( PART1_NAME, "Asia" );
+      bodies.add(body);
+      channel.put(event);
     }
+    // execute sink to process the events
+    txn.commit();
+    txn.close();
+
+    checkRecordCountInTable(0, dbName2, tblName);
+    for (int i = 0; i < batchCount ; i++) {
+      sink.process();
+    }
+    checkRecordCountInTable(totalRecords, dbName2, tblName);
+    sink.stop();
+
     // verify counters
     SinkCounter counter = sink.getCounter();
-    Assert.assertEquals(2, counter.getConnectionCreatedCount() );
-    Assert.assertEquals(0, counter.getConnectionClosedCount());
-
-    // stop sink and verify data
-    sink.stop();
-    checkRecordCountInTable(4);
-
-    // verify counters
     Assert.assertEquals(2, counter.getConnectionCreatedCount());
     Assert.assertEquals(2, counter.getConnectionClosedCount());
     Assert.assertEquals(2, counter.getBatchCompleteCount());
@@ -315,6 +311,8 @@ public class TestHiveSink {
   public void testHeartBeat()
           throws EventDeliveryException, IOException, CommandNeedRetryException {
     int batchSize = 2;
+    int batchCount = 3;
+    int totalRecords = batchCount*batchSize;
     Context context = new Context();
     context.put("hive.metastore", metaStoreURI);
     context.put("hive.database", dbName);
@@ -325,14 +323,14 @@ public class TestHiveSink {
     context.put("serializer", HiveDelimitedTextSerializer.ALIAS);
     context.put("serializer.fieldnames", COL1 + ",," + COL2 + ",");
     context.put("hive.txnsPerBatchAsk", "20");
-    context.put("heartBeatInterval", "5"); // in seconds
+    context.put("heartBeatInterval", "3"); // heartbeat in seconds
 
     Channel channel = startSink(sink, context);
 
     List<String> bodies = Lists.newArrayList();
 
     // push the events in two batches
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < batchCount; i++) {
       Transaction txn = channel.getTransaction();
       txn.begin();
       for (int j = 1; j <= batchSize; j++) {
@@ -346,18 +344,19 @@ public class TestHiveSink {
       txn.commit();
       txn.close();
 
-      checkRecordCountInTable(0);
       sink.process();
-      checkRecordCountInTable(4);
-      sleep(4000); // allow heartbeat to happen
+      sleep(3000); // allow heartbeat to happen
     }
+
     sink.stop();
-    checkRecordCountInTable(4);
+    checkRecordCountInTable(totalRecords, dbName, tblName);
   }
 
   @Test
   public void testJsonSerializer() throws Exception {
     int batchSize = 2;
+    int batchCount = 2;
+    int totalRecords = batchCount*batchSize;
     Context context = new Context();
     context.put("hive.metastore",metaStoreURI);
     context.put("hive.database",dbName);
@@ -374,7 +373,7 @@ public class TestHiveSink {
     List<String> bodies = Lists.newArrayList();
 
     // push the events in two batches
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < batchCount; i++) {
       Transaction txn = channel.getTransaction();
       txn.begin();
       for (int j = 1; j <= batchSize; j++) {
@@ -388,12 +387,11 @@ public class TestHiveSink {
       txn.commit();
       txn.close();
 
-      checkRecordCountInTable(0);
       sink.process();
-      checkRecordCountInTable(4);
     }
+    checkRecordCountInTable(totalRecords, dbName, tblName);
     sink.stop();
-    checkRecordCountInTable(4);
+    checkRecordCountInTable(totalRecords, dbName, tblName);
   }
 
   private void sleep(int n) {
@@ -413,9 +411,9 @@ public class TestHiveSink {
     return channel;
   }
 
-  private void checkRecordCountInTable(int expectedCount)
+  private void checkRecordCountInTable(int expectedCount, String db, String tbl)
           throws CommandNeedRetryException, IOException {
-//    int count = TestUtil.listRecordsInTable(driver, dbName, tblName).size();
-//    Assert.assertEquals(expectedCount, count);
+    int count = TestUtil.listRecordsInTable(driver, db, tbl).size();
+    Assert.assertEquals(expectedCount, count);
   }
 }

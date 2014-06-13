@@ -26,6 +26,7 @@ import org.apache.flume.event.SimpleEvent;
 import org.apache.flume.instrumentation.SinkCounter;
 import org.apache.hadoop.hive.cli.CliSessionState;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
 import org.apache.hadoop.hive.ql.CommandNeedRetryException;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hive.hcatalog.streaming.HiveEndPoint;
@@ -77,8 +78,6 @@ public class TestHiveWriter {
 
     port = 9083;
     metaStoreURI = null;
-//    port = TestUtil.findFreePort();
-//    metaStoreURI = "thrift://localhost:" + port;
 
     int callTimeoutPoolSize = 1;
     callTimeoutPool = Executors.newFixedThreadPool(callTimeoutPoolSize,
@@ -90,7 +89,6 @@ public class TestHiveWriter {
     if(metaStoreURI!=null) {
       conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
     }
-//    TestUtil.startLocalMetaStore(port, conf);
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
@@ -98,6 +96,10 @@ public class TestHiveWriter {
 
   @Before
   public void setUp() throws Exception {
+    // 1) prepare hive
+    TxnDbUtil.cleanDb();
+    TxnDbUtil.prepDb();
+
     // 1) Setup tables
     TestUtil.dropDB(conf, dbName);
     String dbLocation = dbFolder.newFolder(dbName).getCanonicalPath() + ".db";

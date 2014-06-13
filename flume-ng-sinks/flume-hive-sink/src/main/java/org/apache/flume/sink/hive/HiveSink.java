@@ -469,16 +469,10 @@ public class HiveSink extends AbstractSink implements Configurable {
     for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
       try {
         HiveWriter w = entry.getValue();
-        LOG.info(getName() + ": Flushing writer to {}", w);
-        w.flush(false);
-        LOG.info(getName() + ": Closing writer to {}", w);
-        w.close();
-      } catch (Exception ex) {
-        LOG.warn(getName() + ": Error while closing writer to " + entry.getKey() +
-                ". Exception follows.", ex);
-        if (ex instanceof InterruptedException) {
-          Thread.currentThread().interrupt();
-        }
+        LOG.info("Closing connection to {}", w);
+        w.closeConnection();
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
       }
     }
 
