@@ -37,7 +37,6 @@ import org.apache.hive.hcatalog.streaming.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -248,17 +247,49 @@ public class HiveSink extends AbstractSink implements Configurable {
    */
   public Status process() throws EventDeliveryException {
     // writers used in this Txn
-    HashMap<HiveEndPoint,HiveWriter> activeWriters = Maps.newHashMap();
 
     Channel channel = getChannel();
     Transaction transaction = channel.getTransaction();
-    if(timeToSendHeartBeat.compareAndSet(true, false)) {
-      enableHeartBeatOnAllWriters();
-    }
     transaction.begin();
+    boolean success = false;
     try {
-      int txnEventCount = 0;
+      // 1 Enable Heart Beats
+      if(timeToSendHeartBeat.compareAndSet(true, false)) {
+        enableHeartBeatOnAllWriters();
+      }
+
+      // 2 Drain Batch
+      int txnEventCount = drainOneBatch(channel);
+      transaction.commit();
+      success = true;
+
+      // 3 Update Counters
+      if (txnEventCount < 1) {
+        return Status.BACKOFF;
+      } else {
+        return Status.READY;
+      }
+    } catch (InterruptedException err) {
+      LOG.warn(getName() + ": Thread was interrupted.", err);
+      return Status.BACKOFF;
+    } catch (Exception e) {
+      throw new EventDeliveryException(e);
+    } finally {
+      if(!success) {
+        transaction.rollback();
+      }
+      transaction.close();
+    }
+  }
+
+  // Drains one batch of events from Channel into Hive
+  private int drainOneBatch(Channel channel)
+          throws HiveWriter.Failure, InterruptedException {
+    int txnEventCount = 0;
+    try {
+      HashMap<HiveEndPoint,HiveWriter> activeWriters = Maps.newHashMap();
       for (; txnEventCount < batchSize; ++txnEventCount) {
+        // 0) Read event from Channel
         Event event = channel.take();
         if (event == null) {
           break;
@@ -266,18 +297,15 @@ public class HiveSink extends AbstractSink implements Configurable {
 
         //1) Create end point by substituting place holders
         HiveEndPoint endPoint = makeEndPoint(metaStoreUri, database, table,
-                        partitionVals, event.getHeaders(), timeZone,
-                        needRounding, roundUnit, roundValue, useLocalTime);
+                partitionVals, event.getHeaders(), timeZone,
+                needRounding, roundUnit, roundValue, useLocalTime);
 
         //2) Create or reuse Writer
         HiveWriter writer = getOrCreateWriter(activeWriters, endPoint);
 
-        //3) Write the data to Hive
-        try {
-          writer.write(event);
-        } catch (Exception ex) {
-          LOG.warn(ex.getMessage(), ex);
-        }
+        //3) Write
+        LOG.debug("{} : Writing event to {}", getName(), endPoint);
+        writer.write(event);
 
       } // for
 
@@ -289,35 +317,21 @@ public class HiveSink extends AbstractSink implements Configurable {
       } else {
         sinkCounter.incrementBatchUnderflowCount();
       }
+      sinkCounter.addToEventDrainAttemptCount(txnEventCount);
 
-      // 5) Flush all Writers and Commit Channel Txn
+
+      // 5) Flush all Writers
       for (HiveWriter writer : activeWriters.values()) {
         writer.flush(true);
       }
 
-      transaction.commit();
-
-      if (txnEventCount < 1) {
-        return Status.BACKOFF;
-      } else {
-        sinkCounter.addToEventDrainSuccessCount(txnEventCount);
-        return Status.READY;
-      }
-    } catch (StreamingException err) {
-      transaction.rollback();
-      LOG.warn("Hive streaming error", err);
-      retireIdleWriters();
-      return Status.BACKOFF;
-    } catch (Throwable th) {
-      transaction.rollback();
-      LOG.error("process failed", th);
-      if (th instanceof Error) {
-        throw (Error) th;
-      } else {
-        throw new EventDeliveryException(th);
-      }
-    } finally {
-      transaction.close();
+      sinkCounter.addToEventDrainSuccessCount(txnEventCount);
+      return txnEventCount;
+    } catch (HiveWriter.Failure e) {
+      LOG.warn(getName() + " : " + e.getMessage(), e);
+      abortAllWriters();
+      closeAllWriters();
+      throw e;
     }
   }
 
@@ -329,19 +343,19 @@ public class HiveSink extends AbstractSink implements Configurable {
 
   private HiveWriter getOrCreateWriter(HashMap<HiveEndPoint, HiveWriter> activeWriters,
                                        HiveEndPoint endPoint)
-          throws IOException, InterruptedException, ClassNotFoundException, StreamingException {
+          throws HiveWriter.ConnectFailure, InterruptedException {
     try {
       HiveWriter writer = allWriters.get( endPoint );
       if( writer == null ) {
-        LOG.info("Creating Writer to Hive end point : " + endPoint);
+        LOG.info(getName() + ": Creating Writer to Hive end point : " + endPoint);
         writer = new HiveWriter(endPoint, txnsPerBatchAsk, autoCreatePartitions,
                 callTimeout, callTimeoutPool, proxyUser, serializer, sinkCounter);
 
         sinkCounter.incrementConnectionCreatedCount();
         if(allWriters.size() > maxOpenConnections){
-          int retired = retireIdleWriters();
+          int retired = closeIdleWriters();
           if(retired==0) {
-            retireEldestWriter();
+            closeEldestWriter();
           }
         }
         allWriters.put(endPoint, writer);
@@ -353,12 +367,7 @@ public class HiveSink extends AbstractSink implements Configurable {
         }
       }
       return writer;
-    } catch (ClassNotFoundException e) {
-      LOG.error("Failed to create HiveWriter for endpoint: " + endPoint, e);
-      sinkCounter.incrementConnectionFailedCount();
-      throw e;
-    } catch (StreamingException e) {
-      LOG.error("Failed to create HiveWriter for endpoint: " + endPoint, e);
+    } catch (HiveWriter.ConnectFailure e) {
       sinkCounter.incrementConnectionFailedCount();
       throw e;
     }
@@ -369,7 +378,7 @@ public class HiveSink extends AbstractSink implements Configurable {
                                     List<String> partVals, Map<String, String> headers,
                                     TimeZone timeZone, boolean needRounding,
                                     int roundUnit, Integer roundValue,
-                                    boolean useLocalTime) throws ConnectionError {
+                                    boolean useLocalTime)  {
     if(partVals==null) {
       return new HiveEndPoint(metaStoreUri, database, table, null);
     }
@@ -385,7 +394,7 @@ public class HiveSink extends AbstractSink implements Configurable {
   /**
    * Locate writer that has not been used for longest time and retire it
    */
-  private void retireEldestWriter() {
+  private void closeEldestWriter() throws InterruptedException {
     long oldestTimeStamp = System.currentTimeMillis();
     HiveEndPoint eldest = null;
     for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
@@ -394,15 +403,14 @@ public class HiveSink extends AbstractSink implements Configurable {
         oldestTimeStamp = entry.getValue().getLastUsed();
       }
     }
+
     try {
       sinkCounter.incrementConnectionCreatedCount();
-      LOG.info("Closing least used Writer to Hive end point : " + eldest);
+      LOG.info(getName() + ": Closing least used Writer to Hive EndPoint : " + eldest);
       allWriters.remove(eldest).close();
-    } catch (IOException e) {
-      LOG.warn("Failed to close writer for end point: " + eldest, e);
     } catch (InterruptedException e) {
-      LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
-      Thread.currentThread().interrupt();
+      LOG.warn(getName() + ": Interrupted when attempting to close writer for end point: " + eldest, e);
+      throw e;
     }
   }
 
@@ -410,7 +418,7 @@ public class HiveSink extends AbstractSink implements Configurable {
    * Locate all writers past idle timeout and retire them
    * @return number of writers retired
    */
-  private int retireIdleWriters() {
+  private int closeIdleWriters() throws InterruptedException {
     int count = 0;
     long now = System.currentTimeMillis();
     ArrayList<HiveEndPoint> retirees = Lists.newArrayList();
@@ -424,18 +432,35 @@ public class HiveSink extends AbstractSink implements Configurable {
     }
     //2) Retire them
     for(HiveEndPoint ep : retirees) {
-      try {
-        sinkCounter.incrementConnectionClosedCount();
-        LOG.info("Closing idle Writer to Hive end point : {}", ep);
-        allWriters.remove(ep).close();
-      } catch (IOException e) {
-        LOG.warn("Failed to close writer for end point: {}. Error: "+ ep, e);
-      } catch (InterruptedException e) {
-        LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
-        Thread.currentThread().interrupt();
-      }
+      sinkCounter.incrementConnectionClosedCount();
+      LOG.info(getName() + ": Closing idle Writer to Hive end point : {}", ep);
+      allWriters.remove(ep).close();
     }
     return count;
+  }
+
+  /**
+   * Closes all writers and remove them from cache
+   * @return number of writers retired
+   */
+  private void closeAllWriters() throws InterruptedException {
+    //1) Retire writers
+    for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        entry.getValue().close();
+    }
+
+    //2) Clear cache
+    allWriters.clear();
+  }
+
+  /**
+   * Abort current Txn on all writers
+   * @return number of writers retired
+   */
+  private void abortAllWriters() throws InterruptedException {
+    for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        entry.getValue().abort();
+    }
   }
 
   @Override
@@ -444,12 +469,12 @@ public class HiveSink extends AbstractSink implements Configurable {
     for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
       try {
         HiveWriter w = entry.getValue();
-        LOG.info("Flushing writer to {}", w);
+        LOG.info(getName() + ": Flushing writer to {}", w);
         w.flush(false);
-        LOG.info("Closing writer to {}", w);
+        LOG.info(getName() + ": Closing writer to {}", w);
         w.close();
       } catch (Exception ex) {
-        LOG.warn("Error while closing writer to " + entry.getKey() +
+        LOG.warn(getName() + ": Error while closing writer to " + entry.getKey() +
                 ". Exception follows.", ex);
         if (ex instanceof InterruptedException) {
           Thread.currentThread().interrupt();
@@ -467,7 +492,7 @@ public class HiveSink extends AbstractSink implements Configurable {
                 Math.max(defaultCallTimeout, callTimeout), TimeUnit.MILLISECONDS);
         }
       } catch (InterruptedException ex) {
-        LOG.warn("shutdown interrupted on " + execService, ex);
+        LOG.warn(getName() + ":Shutdown interrupted on " + execService, ex);
       }
     }
 
@@ -490,7 +515,7 @@ public class HiveSink extends AbstractSink implements Configurable {
     sinkCounter.start();
     super.start();
     setupHeartBeatTimer();
-    LOG.info("Hive Sink {} started", getName() );
+    LOG.info(getName() + ": Hive Sink {} started", getName() );
   }
 
   private void setupHeartBeatTimer() {

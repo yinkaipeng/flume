@@ -306,7 +306,7 @@ public class TestHiveWriter {
   }
 
 
-  private void writeEvents(HiveWriter writer, int count) throws IOException, InterruptedException {
+  private void writeEvents(HiveWriter writer, int count) throws InterruptedException, HiveWriter.WriteFailure {
     SimpleEvent event = new SimpleEvent();
     for (int i = 1; i <= count; i++) {
       event.setBody((i + ",xyz,Hello world,abc").getBytes());
