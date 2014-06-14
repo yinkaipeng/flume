@@ -31,6 +31,7 @@ import org.apache.flume.annotations.Recyclable;
 import org.apache.flume.annotations.InterfaceAudience;
 import org.apache.flume.annotations.InterfaceStability;
 import org.apache.flume.channel.file.FileChannel;
+import org.apache.flume.channel.file.FileChannelConfiguration;
 import org.apache.flume.instrumentation.ChannelCounter;
 
 import org.apache.flume.lifecycle.LifecycleState;
@@ -715,7 +716,10 @@ public class SpillableMemoryChannel extends FileChannel {
         }
         overflowDisabled = (overflowCapacity < 1) ;
         if (overflowDisabled) {
+          LOGGER.info(getName() + ": Overflow to disk has been disabled.");
           overflowActivated = false;
+          overflowCapacity = 1; // as 0 is invalid setting for file channel
+          context.put(FileChannelConfiguration.TRANSACTION_CAPACITY, "1");
         }
     } catch(NumberFormatException e) {
       overflowCapacity = defaultOverflowCapacity;
