@@ -21,4 +21,5 @@ limitations under the License.
 	<description> This service runs Flume </description>
 	<executable>"cmd"</executable>
 	<arguments> /c flume-ng.cmd agent -f ../conf/flume.conf -n agent </arguments>
+        <job_limit>true</job_limit>
 </service>
