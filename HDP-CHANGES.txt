@@ -1,0 +1,12 @@
+New Features:
+-----------------------
+
+Unsupported Features:
+-----------------------
+
+Improvements:
+-----------------------
+
+Bug Fixes:
+----------------------
+ Stopping Windows Service leaves the Flume java process running
