@@ -156,7 +156,7 @@ limitations under the License.
           <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>3.4.5</version>
+            <version>${zookeeper.version}</version>
             <scope>test</scope>
           </dependency>
         </dependencies>
@@ -227,7 +227,7 @@ limitations under the License.
           <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>3.4.5</version>
+            <version>${zookeeper.version}</version>
             <scope>test</scope>
           </dependency>
 
@@ -275,7 +275,7 @@ limitations under the License.
       </activation>
       <properties>
         <hadoop.version>${hadoop2.version}</hadoop.version>
-        <hbase.version>0.98.2-hadoop2</hbase.version>
+        <hbase.version>${hbaseversion}</hbase.version>
         <hadoop.common.artifact.id>hadoop-common</hadoop.common.artifact.id>
         <thrift.version>0.8.0</thrift.version>
       </properties>
@@ -379,7 +379,7 @@ limitations under the License.
           <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>3.4.5</version>
+            <version>${zookeeper.version}</version>
             <scope>test</scope>
           </dependency>
 
