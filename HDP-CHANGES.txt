@@ -9,4 +9,5 @@ Improvements:
 
 Bug Fixes:
 ----------------------
+FLUME-2407 Spillable Channel sometimes fails on reconfigure 
  Stopping Windows Service leaves the Flume java process running
