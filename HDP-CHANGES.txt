@@ -10,5 +10,6 @@ Improvements:
 
 Bug Fixes:
 ----------------------
+FLUME-2068 - File Channel issue - recovering from BadCheckpoint exception on Windows
 FLUME-2407 Spillable Channel sometimes fails on reconfigure 
  Stopping Windows Service leaves the Flume java process running
