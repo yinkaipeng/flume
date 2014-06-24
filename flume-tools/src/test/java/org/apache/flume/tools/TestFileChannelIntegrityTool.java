@@ -34,11 +34,14 @@ import org.apache.flume.channel.file.WriteOrderOracle;
 import org.apache.flume.event.EventBuilder;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.fest.reflect.core.Reflection.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
+
+import static org.fest.reflect.core.Reflection.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -58,6 +61,8 @@ public class TestFileChannelIntegrityTool {
   private File checkpointDir;
   private File dataDir;
 
+  @Rule
+  public TemporaryFolder tempFolder = new TemporaryFolder();
 
   @BeforeClass
   public static void setUpClass() throws Exception{
@@ -66,8 +71,8 @@ public class TestFileChannelIntegrityTool {
 
   @Before
   public void setUp() throws Exception {
-    checkpointDir = new File(baseDir, "checkpoint");
-    dataDir = new File(baseDir, "dataDir");
+    checkpointDir = tempFolder.newFolder("checkpoint");
+    dataDir = tempFolder.newFolder("dataDir");
     Assert.assertTrue(checkpointDir.mkdirs() || checkpointDir.isDirectory());
     Assert.assertTrue(dataDir.mkdirs() || dataDir.isDirectory());
     File[] dataFiles = origDataDir.listFiles(new FilenameFilter() {
@@ -86,14 +91,16 @@ public class TestFileChannelIntegrityTool {
 
   @After
   public void tearDown() throws Exception {
-    FileUtils.deleteDirectory(checkpointDir);
-    FileUtils.deleteDirectory(dataDir);
   }
 
   @AfterClass
   public static void tearDownClass() throws Exception {
-    FileUtils.deleteDirectory(origCheckpointDir);
-    FileUtils.deleteDirectory(origDataDir);
+    try {
+      FileUtils.deleteDirectory(origCheckpointDir);
+    } catch (Exception e) {}
+    try {
+      FileUtils.deleteDirectory(origDataDir);
+    } catch (Exception e) {}
   }
 
   @Test

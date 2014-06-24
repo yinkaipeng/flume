@@ -53,6 +53,8 @@ public class StagedInstall {
   public static final String PROP_PATH_TO_DIST_TARBALL =
       "flume.dist.tarball";
 
+  private boolean win = System.getProperty("os.name").startsWith("Windows");
+
   public static final String ENV_FLUME_LOG_DIR = "flume.log.dir";
   public static final String ENV_FLUME_ROOT_LOGGER = "flume.root.logger";
   public static final String ENV_FLUME_ROOT_LOGGER_VALUE = "DEBUG,LOGFILE";
@@ -140,16 +142,19 @@ public class StagedInstall {
     ImmutableList.Builder<String> builder = new ImmutableList.Builder<String>();
     builder.add(launchScriptPath);
     builder.add("agent");
-    builder.add("--conf", confDirPath);
+    builder.add(win ? "-conf" : "--conf", confDirPath);
     if (agentClasspath != null) {
-        builder.add("--classpath", agentClasspath);
+        builder.add(win ? "-classpath" : "--classpath", agentClasspath);
     }
-    builder.add("--conf-file", configFilePath);
+    builder.add(win ? "-conf-file" : "--conf-file", configFilePath);
+    builder.add(win ? "-name" : "--name", name);
+    builder.add(win ? "-property " : "-D" + ENV_FLUME_LOG_DIR + "=" + logDirPath);
+    builder.add(win ? "-property " : "-D" + ENV_FLUME_ROOT_LOGGER + "=" + ENV_FLUME_ROOT_LOGGER_VALUE);
     builder.add("--name", agentName);
     builder.add("-D" + ENV_FLUME_LOG_DIR + "=" + logDirPath);
     builder.add("-D" + ENV_FLUME_ROOT_LOGGER + "="
             + ENV_FLUME_ROOT_LOGGER_VALUE);
-    builder.add("-D" + ENV_FLUME_LOG_FILE + "=" + logFileName);
+    builder.add(win ? "-property " : "-D" + ENV_FLUME_LOG_FILE + "=" + logFileName);
 
     List<String> cmdArgs = builder.build();
 
@@ -264,7 +269,7 @@ public class StagedInstall {
     baseDir = rootDir;
 
     // Give execute permissions to the bin/flume-ng script
-    File launchScript = new File(baseDir, "bin/flume-ng");
+    File launchScript = new File(baseDir, win ? "bin/flume-ng.cmd" : "bin/flume-ng");
     giveExecutePermissions(launchScript);
 
     launchScriptPath = launchScript.getCanonicalPath();

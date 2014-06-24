@@ -163,7 +163,7 @@ public class TestMonitoredCounterGroup {
 
     skc.start();
     Assert.assertTrue("StartTime", getStartTime(on) != 0L);
-    Assert.assertTrue("StartTime", getStartTime(on) > start1);
+    Assert.assertTrue("StartTime", getStartTime(on) >= start1);
     Assert.assertTrue("StopTime", getStopTime(on) == 0L);
 
     assertSkCounterState(on, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
@@ -229,7 +229,7 @@ public class TestMonitoredCounterGroup {
 
     chc.start();
     Assert.assertTrue("StartTime", getStartTime(on) != 0L);
-    Assert.assertTrue("StartTime", getStartTime(on) > start1);
+    Assert.assertTrue("StartTime", getStartTime(on) >= start1);
     Assert.assertTrue("StopTime", getStopTime(on) == 0L);
 
     assertChCounterState(on, 0L, 0L, 0L, 0L, 0L);
@@ -294,7 +294,7 @@ public class TestMonitoredCounterGroup {
 
     srcc.start();
     Assert.assertTrue("StartTime", getStartTime(on) != 0L);
-    Assert.assertTrue("StartTime", getStartTime(on) > start1);
+    Assert.assertTrue("StartTime", getStartTime(on) >= start1);
     Assert.assertTrue("StopTime", getStopTime(on) == 0L);
 
     assertSrcCounterState(on, 0L, 0L, 0L, 0L, 0L, 0L);
