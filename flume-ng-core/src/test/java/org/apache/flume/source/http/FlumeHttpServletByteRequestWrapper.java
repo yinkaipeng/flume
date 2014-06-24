@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flume.sink.solr.morphline;
+package org.apache.flume.source.http;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -34,14 +34,14 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-class FlumeHttpServletRequestWrapper implements HttpServletRequest {
+class FlumeHttpServletByteRequestWrapper implements HttpServletRequest {
 
   private ServletInputStream stream;
   private String charset;
-  
-  public FlumeHttpServletRequestWrapper(final byte[] data) {
+
+  public FlumeHttpServletByteRequestWrapper(final byte[] data) {
     stream = new ServletInputStream() {
-      private final InputStream in = new ByteArrayInputStream(data);      
+      private final InputStream in = new ByteArrayInputStream(data);
       @Override
       public int read() throws IOException {
         return in.read();
