@@ -18,4 +18,4 @@ FLUME-2068  File Channel issue - recovering from BadCheckpoint exception on Wind
 FLUME-2224  Disable File channel dual checkpointing on Windows
 FLUME-2407  Spillable Channel sometimes fails on reconfigure 
 Stopping Windows Service leaves the Flume java process running
-
+FLUME-2145 - TestCheckpointRebuilder.testFastReplay fails on Windows
