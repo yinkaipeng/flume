@@ -145,7 +145,8 @@ public class TestThriftLegacySource {
   @Test
   public void testLifecycle() throws InterruptedException {
     bind();
-    Thread.sleep(1000);
+    // No longer needed after upgrading to thrift 0.9.1 (see THRIFT-1795)
+    // Thread.sleep(1000);
     stop();
   }
 
