@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flume.sink.solr.morphline;
+package org.apache.flume.serialization;
 
 import java.io.IOException;
 
 import org.apache.flume.serialization.ResettableInputStream;
 
-class ResettableTestStringInputStream extends ResettableInputStream {
+class ResettableTestByteInputStream extends ResettableInputStream {
 
   private String str;
   private int markPos = 0;
@@ -30,7 +30,7 @@ class ResettableTestStringInputStream extends ResettableInputStream {
    * Warning: This test class does not handle character/byte conversion at all!
    * @param str String to use for testing
    */
-  public ResettableTestStringInputStream(String str) {
+  public ResettableTestByteInputStream(String str) {
     this.str = str;
   }
 
