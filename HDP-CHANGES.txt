@@ -8,6 +8,8 @@ Unsupported Features:
 
 Improvements:
 -----------------------
+FLUME-2226 - Refactor BlobHandler out of morphline sink and into HTTP source
+FLUME-2227 - Move BlobDeserializer from Morphline Sink to flume-ng-core
 
 Bug Fixes:
 ----------------------
