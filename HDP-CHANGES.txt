@@ -24,4 +24,5 @@ FLUME-2219 - Windows: Flume tests need to know location of Hadoop native librari
 FLUME-2137 - Fix StagedInstall.java to invoke the correct startup script on Windows
 FLUME-2058 - TestFlumeEventQueue in FileChannel  fails on Windows
 FLUME-2136 - Fix intermittent test failure in TestMonitoredCounterGroup on Windows
+FLUME-2150 - Fix TestFileChannelEncryption failure on Windows
 FLUME-2358 - File Channel needs to close BackingStore & EventQueue before deleting files in checkpoint directory
