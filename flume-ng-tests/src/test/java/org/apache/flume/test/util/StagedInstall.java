@@ -149,7 +149,7 @@ public class StagedInstall {
     builder.add(win ? "-conf-file" : "--conf-file", configFilePath);
     builder.add(win ? "-name" : "--name", name);
     builder.add(win ? "-property " : "-D" + ENV_FLUME_LOG_DIR + "=" + logDirPath);
-    builder.add(win ? "-property " : "-D" + ENV_FLUME_ROOT_LOGGER + "="
+    builder.add(win ? "-property " : "-D" + ENV_FLUME_ROOT_LOGGER + "=" + ENV_FLUME_ROOT_LOGGER_VALUE);
     builder.add("--name", agentName);
     builder.add("-D" + ENV_FLUME_LOG_DIR + "=" + logDirPath);
     builder.add("-D" + ENV_FLUME_ROOT_LOGGER + "="
