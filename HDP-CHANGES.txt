@@ -21,3 +21,4 @@ Stopping Windows Service leaves the Flume java process running
 FLUME-2145 - TestCheckpointRebuilder.testFastReplay fails on Windows
 FLUME-2218 - TestFileChannelIntegrityTool tests failing on Windows
 FLUME-2219 - Windows: Flume tests need to know location of Hadoop native libraries (hadoop.dll)
+FLUME-2137 - Fix StagedInstall.java to invoke the correct startup script on Windows
