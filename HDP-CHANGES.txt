@@ -4,12 +4,15 @@ FLUME-1734  Create a Hive Sink based on the new Hive Streaming support
 
 Unsupported Features:
 -----------------------
+ FLUME-2224 - Disable File channel dual checkpointing on Windows
 
 Improvements:
 -----------------------
 
 Bug Fixes:
 ----------------------
-FLUME-2068 - File Channel issue - recovering from BadCheckpoint exception on Windows
-FLUME-2407 Spillable Channel sometimes fails on reconfigure 
- Stopping Windows Service leaves the Flume java process running
+FLUME-2068  File Channel issue - recovering from BadCheckpoint exception on Windows
+FLUME-2224  Disable File channel dual checkpointing on Windows
+FLUME-2407  Spillable Channel sometimes fails on reconfigure 
+Stopping Windows Service leaves the Flume java process running
+
