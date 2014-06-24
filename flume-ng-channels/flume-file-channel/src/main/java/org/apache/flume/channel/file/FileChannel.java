@@ -106,10 +106,15 @@ public class FileChannel extends BasicChannelSemantics {
 
   @Override
   public void configure(Context context) {
-
     useDualCheckpoints = context.getBoolean(
         FileChannelConfiguration.USE_DUAL_CHECKPOINTS,
         FileChannelConfiguration.DEFAULT_USE_DUAL_CHECKPOINTS);
+    String os = System.getProperty("os.name").toLowerCase();
+    if(os.toLowerCase().startsWith("windows") && useDualCheckpoints==true) {
+      useDualCheckpoints = false;
+      LOG.warn("Dual checkpoints is currently not supported on Windows");
+    }
+
     String homePath = System.getProperty("user.home").replace('\\', '/');
 
     String strCheckpointDir =
