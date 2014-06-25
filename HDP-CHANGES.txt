@@ -31,4 +31,5 @@ FLUME-2359 - TestFileChannelIntegrityTool throws exception on class teardown on 
 FLUME-2402 - Warning seen when overflow is disabled for Spillable Channel
 FLUME-2412 - Improve Logging in Spillable Channel
 FLUME-2122 - Minor cleanups of User guide
+FLUME-2123 - Morphline Solr sink missing short type name
 Stopping Windows Service leaves the Flume java process running
