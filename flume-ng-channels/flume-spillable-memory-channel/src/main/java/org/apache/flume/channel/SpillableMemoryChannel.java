@@ -352,6 +352,7 @@ public class SpillableMemoryChannel extends FileChannel {
             takeCalled = true;
             if (drainOrderTop < 0) {
               useOverflow = true;
+              LOGGER.debug("{} : Overflow active", getName());
               overflowTakeTx = getOverflowTx();
               overflowTakeTx.begin();
             }
@@ -400,10 +401,6 @@ public class SpillableMemoryChannel extends FileChannel {
     protected void doCommit() throws InterruptedException {
       if (putCalled) {
         putCommit();
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Put Committed. Drain Order Queue state : "
-                  + drainOrder.dump());
-        }
       } else if (takeCalled) {
         takeCommit();
         if (LOGGER.isDebugEnabled()) {
@@ -420,6 +417,10 @@ public class SpillableMemoryChannel extends FileChannel {
       synchronized (queueLock) {
         if (overflowTakeTx!=null) {
           overflowTakeTx.commit();
+          if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("{} : Take committed on overflow. Drain Order Queue state : {}",
+                    getName(), drainOrder.dump());
+          }
         }
         double memoryPercentFree = (memoryCapacity == 0) ?  0
            :  (memoryCapacity - memQueue.size() + takeCount ) / (double)memoryCapacity ;
@@ -427,13 +428,17 @@ public class SpillableMemoryChannel extends FileChannel {
         if (overflowActivated
                 &&  memoryPercentFree >= overflowDeactivationThreshold) {
           overflowActivated = false;
-          LOGGER.info("Overflow Deactivated");
+          LOGGER.info("{} : Overflow Deactivated", getName());
         }
         channelCounter.setChannelSize(getTotalStored());
       }
       if (!useOverflow)  {
         memQueRemaining.release(takeCount);
         bytesRemaining.release(takeListByteCount);
+        if(LOGGER.isDebugEnabled()) {
+          LOGGER.debug("{} : Take committed on memory. Drain Order Queue state : {}",
+                  getName(), drainOrder.dump());
+        }
       }
 
       channelCounter.addToEventTakeSuccessCount(takeCount);
@@ -448,26 +453,28 @@ public class SpillableMemoryChannel extends FileChannel {
         if (!memQueRemaining.tryAcquire(putList.size(), timeout,
           TimeUnit.SECONDS)) {
           if (overflowDisabled) {
-            throw new ChannelFullException("Spillable Memory Channel's " +
-              "memory capacity has been reached and overflow is " +
-              "disabled. Consider increasing memoryCapacity.");
+            throw new ChannelFullException(getName() +
+              " channel's memory capacity has been reached and overflow is " +
+              "disabled. Consider increasing memoryCapacity or enabling overflow.");
           }
           overflowActivated = true;
           useOverflow = true;
+          LOGGER.debug("{} : Overflow Active", getName());
         }
         // check if we have enough byteCapacity for using memory queue
         else if (!bytesRemaining.tryAcquire(putListByteCount, overflowTimeout
           , TimeUnit.SECONDS)) {
           memQueRemaining.release(putList.size());
           if (overflowDisabled) {
-            throw new ChannelFullException("Spillable Memory Channel's "
-              + "memory capacity has been reached.  "
+            throw new ChannelFullException(getName()
+              + " channel's memory capacity has been reached.  "
               + (bytesRemaining.availablePermits() * (int) avgEventSize)
               + " bytes are free and overflow is disabled. Consider "
               + "increasing byteCapacity or capacity.");
           }
           overflowActivated = true;
           useOverflow = true;
+          LOGGER.debug("{} : Overflow Active", getName());
         }
       } else {
         useOverflow = true;
@@ -479,8 +486,16 @@ public class SpillableMemoryChannel extends FileChannel {
 
       if (useOverflow) {
         commitPutsToOverflow();
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("{} : Put committed into overflow. Drain Order Queue state : {}",
+                  getName(), drainOrder.dump());
+        }
       } else {
         commitPutsToPrimary();
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("{} : Put committed into memory. Drain Order Queue state : {}",
+                  getName(), drainOrder.dump());
+        }
       }
     }
 
@@ -589,10 +604,11 @@ public class SpillableMemoryChannel extends FileChannel {
   @Override
   public synchronized void configure(Context context) {
 
+    LOGGER.info("{} : Configuring Spillable Memory Channel ", getName());
     if (getLifecycleState() == LifecycleState.START    // does not support reconfig when running
-            || getLifecycleState() == LifecycleState.ERROR)
+            || getLifecycleState() == LifecycleState.ERROR) {
       stop();
-
+    }
     if (totalStored == null) {
       totalStored = new Semaphore(0);
     }
@@ -716,7 +732,7 @@ public class SpillableMemoryChannel extends FileChannel {
         }
         overflowDisabled = (overflowCapacity < 1) ;
         if (overflowDisabled) {
-          LOGGER.info(getName() + ": Overflow to disk has been disabled.");
+          LOGGER.info("{} : Overflow to disk has been disabled.", getName());
           overflowActivated = false;
           overflowCapacity = 1; // as 0 is invalid setting for file channel
           context.put(FileChannelConfiguration.TRANSACTION_CAPACITY, "1");
@@ -728,6 +744,7 @@ public class SpillableMemoryChannel extends FileChannel {
     // Configure File channel
     context.put(KEEP_ALIVE,"0"); // override keep-alive for  File channel
     context.put(CAPACITY, Integer.toString(overflowCapacity) );  // file channel capacity
+    LOGGER.info("{} : Configuring embedded file channel ", getName());
     super.configure(context);
   }
 
@@ -772,7 +789,7 @@ public class SpillableMemoryChannel extends FileChannel {
     if(getLifecycleState() == LifecycleState.START) {
       return;
     }
-
+    LOGGER.info("{} : Starting Spillable Memory Channel ", getName());
     super.start();
     int overFlowCount = super.getDepth();
     if (drainOrder.isEmpty()) {
@@ -789,8 +806,10 @@ public class SpillableMemoryChannel extends FileChannel {
     if (getLifecycleState()==LifecycleState.STOP) {
       return;
     }
+    LOGGER.info("{} : Stopping Spillable Memory Channel ", getName());
     channelCounter.setChannelSize(memQueue.size() + drainOrder.overflowCounter);
     channelCounter.stop();
+    LOGGER.debug("{} : Stopping embedded file channel ", getName());
     super.stop();
   }
 
