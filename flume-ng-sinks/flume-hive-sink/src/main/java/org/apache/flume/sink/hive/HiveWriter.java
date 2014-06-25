@@ -228,7 +228,7 @@ class HiveWriter {
   }
 
   public void closeConnection() throws InterruptedException {
-    LOG.info("Closing connection to EndPoint : {}", endPoint);
+    LOG.debug("Closing connection to EndPoint : {}", endPoint);
     try {
       timedCall(new CallRunner1<Void>() {
         @Override
@@ -245,9 +245,7 @@ class HiveWriter {
   }
 
   private void commitTxn() throws CommitFailure, InterruptedException {
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Committing Txn " + txnBatch.getCurrentTxnId() + " on EndPoint: " + endPoint);
-    }
+    LOG.info("Committing Txn id {} to {}", txnBatch.getCurrentTxnId() , endPoint);
     try {
       timedCall(new CallRunner1<Void>() {
         @Override
@@ -310,7 +308,7 @@ class HiveWriter {
           return connection.fetchTransactionBatch(txnsPerBatch, recordWriter); // could block
         }
       });
-      LOG.info("Acquired Txn Batch {}. Switching to first txn", batch);
+      LOG.info("Acquired Transaction batch {}. Switching to first txn", batch);
       batch.beginNextTransaction();
     } catch (TimeoutException e) {
       throw new TxnBatchFailure(endPoint, e);
@@ -322,7 +320,7 @@ class HiveWriter {
 
   private void closeTxnBatch() throws InterruptedException {
     try {
-      LOG.debug("Closing Txn Batch {}", txnBatch);
+      LOG.info("Closing Txn Batch {}", txnBatch);
       timedCall(new CallRunner1<Void>() {
         @Override
         public Void call() throws InterruptedException, StreamingException {
