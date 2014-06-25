@@ -19,7 +19,6 @@ Bug Fixes:
 FLUME-2068  File Channel issue - recovering from BadCheckpoint exception on Windows
 FLUME-2224  Disable File channel dual checkpointing on Windows
 FLUME-2407  Spillable Channel sometimes fails on reconfigure 
-Stopping Windows Service leaves the Flume java process running
 FLUME-2145 - TestCheckpointRebuilder.testFastReplay fails on Windows
 FLUME-2218 - TestFileChannelIntegrityTool tests failing on Windows
 FLUME-2219 - Windows: Flume tests need to know location of Hadoop native libraries (hadoop.dll)
@@ -30,3 +29,5 @@ FLUME-2150 - Fix TestFileChannelEncryption failure on Windows
 FLUME-2358 - File Channel needs to close BackingStore & EventQueue before deleting files in checkpoint directory
 FLUME-2359 - TestFileChannelIntegrityTool throws exception on class teardown on Windows
 FLUME-2402 - Warning seen when overflow is disabled for Spillable Channel
+FLUME-2412 - Improve Logging in Spillable Channel
+Stopping Windows Service leaves the Flume java process running
