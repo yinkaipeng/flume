@@ -16,7 +16,7 @@
 
 
 # Give Flume more memory and pre-allocate, enable remote monitoring via JMX
-$JAVA_OPTS="-Xms100m -Xmx200m -Dcom.sun.management.jmxremote"
+$JAVA_OPTS="-Xms100m -Xmx2000m -Dcom.sun.management.jmxremote"
 
 # Foll. classpath will be included in Flume's classpath.
 # Note that the Flume conf directory is always included in the classpath.
