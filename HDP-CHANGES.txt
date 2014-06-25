@@ -30,4 +30,5 @@ FLUME-2358 - File Channel needs to close BackingStore & EventQueue before deleti
 FLUME-2359 - TestFileChannelIntegrityTool throws exception on class teardown on Windows
 FLUME-2402 - Warning seen when overflow is disabled for Spillable Channel
 FLUME-2412 - Improve Logging in Spillable Channel
+FLUME-2122 - Minor cleanups of User guide
 Stopping Windows Service leaves the Flume java process running
