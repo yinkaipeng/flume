@@ -73,12 +73,9 @@
         </property>
       </activation>
       <dependencies>
-        <dependency>
-          <groupId>org.apache.flume.flume-ng-sinks</groupId>
-          <artifactId>flume-dataset-sink</artifactId>
-        </dependency>
       </dependencies>
     </profile>
+    
     <profile>
       <id>hbase-98</id>
       <activation>
@@ -87,6 +84,15 @@
           <value>hbase-98</value>
         </property>
       </activation>
+    </profile>
+
+    <profile>
+      <id>not-windows</id>
+      <activation>
+        <os>
+          <family>!Windows</family>
+        </os>
+      </activation>
       <dependencies>
         <dependency>
           <groupId>org.apache.flume.flume-ng-sinks</groupId>
@@ -94,7 +100,9 @@
         </dependency>
       </dependencies>
     </profile>
+
   </profiles>
+
 
   <dependencies>
     <dependency>
