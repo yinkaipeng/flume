@@ -33,4 +33,6 @@ FLUME-2412 - Improve Logging in Spillable Channel
 FLUME-2122 - Minor cleanups of User guide
 FLUME-2175 - Update Developer Guide with notes on how to upgrade Protocol Buffer version
 FLUME-2123 - Morphline Solr sink missing short type name
+FLUME-2162 - TestHDFSEventSinkOnMiniCluster.maxUnderReplicationTest fails on hadoop2
+
 Stopping Windows Service leaves the Flume java process running
