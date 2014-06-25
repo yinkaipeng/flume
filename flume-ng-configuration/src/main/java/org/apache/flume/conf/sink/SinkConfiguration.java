@@ -128,6 +128,13 @@ public class SinkConfiguration extends ComponentConfiguration {
     ELASTICSEARCH("org.apache.flume.sink.elasticsearch.ElasticSearchSinkConfiguration"),
 
     /**
+     * Morphline Solr Sink
+     *
+     * @see org.apache.flume.sink.solr.morphline.MorphlineSolrSink
+     */
+    MORPHLINESOLR("org.apache.flume.sink.solr.morphline.MorphlineSolrSink"),
+
+    /**
      * HBase Sink
      *
      * @see org.apache.flume.sink.hbase.HBaseSink

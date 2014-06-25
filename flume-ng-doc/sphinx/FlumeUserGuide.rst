@@ -2097,7 +2097,7 @@ Required properties are in **bold**.
 Property Name        Default                                                                  Description
 ===================  =======================================================================  ========================
 **channel**          --
-**type**             --                                                                       The component type name, needs to be ``org.apache.flume.sink.solr.morphline.MorphlineSolrSink``
+**type**             --                                                                       The component type name, needs to be morphlinesolr
 **morphlineFile**    --                                                                       The relative or absolute path on the local file system to the morphline configuration file. Example: ``/etc/flume-ng/conf/morphline.conf``
 morphlineId          null                                                                     Optional name used to identify a morphline if there are multiple morphlines in a morphline config file
 batchSize            1000                                                                     The maximum number of events to take per flume transaction.
@@ -2111,7 +2111,7 @@ Example for agent named a1:
 
   a1.channels = c1
   a1.sinks = k1
-  a1.sinks.k1.type = org.apache.flume.sink.solr.morphline.MorphlineSolrSink
+  a1.sinks.k1.type = morphlinesolr
   a1.sinks.k1.channel = c1
   a1.sinks.k1.morphlineFile = /etc/flume-ng/conf/morphline.conf
   # a1.sinks.k1.morphlineId = morphline1
