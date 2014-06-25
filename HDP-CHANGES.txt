@@ -6,6 +6,7 @@ FLUME-1334 - Flume startup script for Windows
 Unsupported Features:
 -----------------------
  FLUME-2224 - Disable File channel dual checkpointing on Windows
+ Kite Dataset Sink is not supported on Windows
 
 Improvements:
 -----------------------
