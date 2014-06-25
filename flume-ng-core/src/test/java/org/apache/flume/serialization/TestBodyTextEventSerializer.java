@@ -34,15 +34,15 @@ import org.junit.Test;
 
 public class TestBodyTextEventSerializer {
 
-  File testFile = new File("src/test/resources/events.txt");
-  File expectedFile = new File("src/test/resources/events.txt");
-
   @Test
-  public void testWithNewline() throws FileNotFoundException, IOException {
+  public void testWithNewline() throws IOException {
+
+    File testFile = File.createTempFile("events_", Long.toString(System.currentTimeMillis()));
+    FileUtils.forceDeleteOnExit(testFile);
 
     OutputStream out = new FileOutputStream(testFile);
     EventSerializer serializer =
-        EventSerializerFactory.getInstance("text", new Context(), out);
+            EventSerializerFactory.getInstance("text", new Context(), out);
     serializer.afterCreate();
     serializer.write(EventBuilder.withBody("event 1", Charsets.UTF_8));
     serializer.write(EventBuilder.withBody("event 2", Charsets.UTF_8));
@@ -58,18 +58,19 @@ public class TestBodyTextEventSerializer {
     Assert.assertEquals("event 3", reader.readLine());
     Assert.assertNull(reader.readLine());
     reader.close();
-
-    FileUtils.forceDelete(testFile);
   }
 
   @Test
-  public void testNoNewline() throws FileNotFoundException, IOException {
+  public void testNoNewline() throws IOException {
+
+    File testFile = File.createTempFile("events_", Long.toString(System.currentTimeMillis()));
+    FileUtils.forceDeleteOnExit(testFile);
 
     OutputStream out = new FileOutputStream(testFile);
     Context context = new Context();
     context.put("appendNewline", "false");
     EventSerializer serializer =
-        EventSerializerFactory.getInstance("text", context, out);
+            EventSerializerFactory.getInstance("text", context, out);
     serializer.afterCreate();
     serializer.write(EventBuilder.withBody("event 1\n", Charsets.UTF_8));
     serializer.write(EventBuilder.withBody("event 2\n", Charsets.UTF_8));
@@ -85,8 +86,5 @@ public class TestBodyTextEventSerializer {
     Assert.assertEquals("event 3", reader.readLine());
     Assert.assertNull(reader.readLine());
     reader.close();
-
-    FileUtils.forceDelete(testFile);
   }
-
 }
