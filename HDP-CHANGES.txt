@@ -6,7 +6,8 @@ FLUME-1334 - Flume startup script for Windows
 Unsupported Features:
 -----------------------
  FLUME-2224 - Disable File channel dual checkpointing on Windows
-
+ Kite Dataset sink is not supported on Windows
+ 
 Improvements:
 -----------------------
 FLUME-2226 - Refactor BlobHandler out of morphline sink and into HTTP source
