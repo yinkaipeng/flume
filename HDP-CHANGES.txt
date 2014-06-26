@@ -35,4 +35,5 @@ FLUME-2175 - Update Developer Guide with notes on how to upgrade Protocol Buffer
 FLUME-2123 - Morphline Solr sink missing short type name
 FLUME-2162 - TestHDFSEventSinkOnMiniCluster.maxUnderReplicationTest fails on hadoop2
 FLUME-2146 - Windows: Tmp file creation in TestBodyTextEventSerializer.java needs fixing
+FLUME-2151 - Windows: Update TestExecSource to use native commands on Windows
 Stopping Windows Service leaves the Flume java process running
