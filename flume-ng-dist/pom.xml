@@ -75,6 +75,7 @@
       <dependencies>
       </dependencies>
     </profile>
+    
     <profile>
       <id>hbase-98</id>
       <activation>
@@ -84,7 +85,6 @@
         </property>
       </activation>
     </profile>
-  </profiles>
 
     <profile>
       <id>not-windows</id>
@@ -100,6 +100,8 @@
         </dependency>
       </dependencies>
     </profile>
+
+  </profiles>
 
   <dependencies>
     <dependency>

@@ -1,24 +1,24 @@
 New Features:
 -----------------------
-FLUME-1734  Create a Hive Sink based on the new Hive Streaming support
+FLUME-1734 - Create a Hive Sink based on the new Hive Streaming support
 FLUME-1334 - Flume startup script for Windows
 
 Unsupported Features:
 -----------------------
- FLUME-2224 - Disable File channel dual checkpointing on Windows
- Kite Dataset sink is not supported on Windows
- 
+FLUME-2224 - Disable File channel dual checkpointing on Windows
+Kite Dataset Sink is not supported on Windows
+
 Improvements:
 -----------------------
 FLUME-2226 - Refactor BlobHandler out of morphline sink and into HTTP source
 FLUME-2227 - Move BlobDeserializer from Morphline Sink to flume-ng-core
+FLUME-2337 - export JAVA_HOME in flume-env.sh.template and increase heap size
 
 Bug Fixes:
 ----------------------
-FLUME-2068  File Channel issue - recovering from BadCheckpoint exception on Windows
-FLUME-2224  Disable File channel dual checkpointing on Windows
-FLUME-2407  Spillable Channel sometimes fails on reconfigure 
-Stopping Windows Service leaves the Flume java process running
+FLUME-2068 - File Channel issue - recovering from BadCheckpoint exception on Windows
+FLUME-2224 - Disable File channel dual checkpointing on Windows
+FLUME-2407 - Spillable Channel sometimes fails on reconfigure
 FLUME-2145 - TestCheckpointRebuilder.testFastReplay fails on Windows
 FLUME-2218 - TestFileChannelIntegrityTool tests failing on Windows
 FLUME-2219 - Windows: Flume tests need to know location of Hadoop native libraries (hadoop.dll)
@@ -29,3 +29,10 @@ FLUME-2150 - Fix TestFileChannelEncryption failure on Windows
 FLUME-2358 - File Channel needs to close BackingStore & EventQueue before deleting files in checkpoint directory
 FLUME-2359 - TestFileChannelIntegrityTool throws exception on class teardown on Windows
 FLUME-2402 - Warning seen when overflow is disabled for Spillable Channel
+FLUME-2412 - Improve Logging in Spillable Channel
+FLUME-2122 - Minor cleanups of User guide
+FLUME-2175 - Update Developer Guide with notes on how to upgrade Protocol Buffer version
+FLUME-2123 - Morphline Solr sink missing short type name
+FLUME-2162 - TestHDFSEventSinkOnMiniCluster.maxUnderReplicationTest fails on hadoop2
+FLUME-2146 - Windows: Tmp file creation in TestBodyTextEventSerializer.java needs fixing
+Stopping Windows Service leaves the Flume java process running

@@ -244,7 +244,7 @@ class HiveWriter {
     }
   }
 
-  private void commitTxn() throws IOException, InterruptedException {
+  private void commitTxn() throws CommitFailure, InterruptedException {
     LOG.info("Committing Txn id {} to {}", txnBatch.getCurrentTxnId() , endPoint);
     try {
       timedCall(new CallRunner1<Void>() {
