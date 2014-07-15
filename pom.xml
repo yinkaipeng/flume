@@ -48,9 +48,9 @@ limitations under the License.
     <sitename>Flume Site</sitename>
     <stagingDirectory>${project.basedir}/target/docs</stagingDirectory>
     <hadoop-one.version>1.0.1</hadoop-one.version>
-    <hadoop-two.version>[2.5.0.2.2.0.0,2.5.0.2.3.0.0)</hadoop-two.version>
-    <hbaseversion>[0.98.0.2.2.0.0,0.98.0.2.3.0.0)</hbaseversion>
-    <zookeeper.version>[3.4.5.2.2.0.0,3.4.5.2.3.0.0)</zookeeper.version>
+    <hadoop-two.version>2.0.0-alpha</hadoop-two.version>
+    <hbaseversion>0.94.2</hbaseversion>
+    <zookeeper.version>3.4.5</zookeeper.version>
     <repoid>apache.staging.https</repoid>
     <repourl>https://repository.apache.org/service/local/staging/deploy/maven2/</repourl>
     <reponame>Apache Staging Repository</reponame>
@@ -156,7 +156,7 @@ limitations under the License.
           <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>${zookeeper.version}</version>
+            <version>3.4.5</version>
             <scope>test</scope>
           </dependency>
         </dependencies>
@@ -238,7 +238,7 @@ limitations under the License.
           <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>${zookeeper.version}</version>
+            <version>3.4.5</version>
             <scope>test</scope>
           </dependency>
 
@@ -281,7 +281,7 @@ limitations under the License.
       </activation>
       <properties>
         <hadoop.version>${hadoop2.version}</hadoop.version>
-        <hbase.version>${hbaseversion}</hbase.version>
+        <hbase.version>0.98.2-hadoop2</hbase.version>
         <hadoop.common.artifact.id>hadoop-common</hadoop.common.artifact.id>
         <thrift.version>0.8.0</thrift.version>
       </properties>
@@ -390,7 +390,7 @@ limitations under the License.
           <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>${zookeeper.version}</version>
+            <version>3.4.5</version>
             <scope>test</scope>
           </dependency>
 
@@ -747,17 +747,6 @@ limitations under the License.
         <enabled>false</enabled>
       </snapshots>
     </repository>
-    <repository>
-      <id>hortonworks.repo</id>
-      <url>http://repo.hortonworks.com/content/repositories/releases</url>
-      <name>Hortonworks Repo</name>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-  </repository>
 
   </repositories>
 
