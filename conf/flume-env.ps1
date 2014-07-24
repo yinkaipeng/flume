@@ -21,3 +21,6 @@ $JAVA_OPTS="-Xms100m -Xmx2000m -Dcom.sun.management.jmxremote"
 # Foll. classpath will be included in Flume's classpath.
 # Note that the Flume conf directory is always included in the classpath.
 $FLUME_CLASSPATH=""   # Example:  "path1;path2;path3"
+
+# $HIVE_HOME=
+# $HCAT_HOME=
