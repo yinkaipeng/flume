@@ -1649,6 +1649,9 @@ Name                      Default       Description
 hive.partition            --            Comma separate list of partition values identifying the partition to write to. May contain escape
                                         sequences. E.g: If the table is partitioned by (continent: string, country :string, time : string)
                                         then 'Asia,India,2014-02-26-01-21' will indicate continent=Asia,country=India,time=2014-02-26-01-21
+hive.kerberosPrincipal    --            Kerberos user principal for accessing secure Hive
+hive.kerberosKeytab       --            Kerberos keytab for accessing secure Hive
+
 hive.txnsPerBatchAsk      100           Hive grants a *batch of transactions* instead of single transactions to streaming clients like Flume.
                                         This setting configures the number of desired transactions per Transaction Batch. Data from all
                                         transactions in a single batch end up in a single file. Flume will write a maximum of batchSize events
