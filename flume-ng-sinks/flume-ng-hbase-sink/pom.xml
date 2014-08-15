@@ -32,7 +32,6 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <excludes>
-            <exclude>**/TestAsyncHBaseSink.java</exclude>
           </excludes>
         </configuration>
       </plugin>
