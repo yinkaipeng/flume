@@ -300,15 +300,20 @@ public class TestAvroSource {
       }
     }
 
+    checkSSLAvro();
+  }
+
+  private void checkSSLAvro() throws InterruptedException, IOException {
     Assert
         .assertTrue("Reached start or error", LifecycleController.waitForOneOf(
-            source, LifecycleState.START_OR_ERROR));
+                source, LifecycleState.START_OR_ERROR));
     Assert.assertEquals("Server is started", LifecycleState.START,
         source.getLifecycleState());
 
     AvroSourceProtocol client = SpecificRequestor.getClient(
-        AvroSourceProtocol.class, new NettyTransceiver(new InetSocketAddress(
-        selectedPort), new SSLChannelFactory()));
+            AvroSourceProtocol.class, new NettyTransceiver(new InetSocketAddress(
+                    selectedPort), new SSLChannelFactory())
+    );
 
     AvroFlumeEvent avroEvent = new AvroFlumeEvent();
 
@@ -336,6 +341,70 @@ public class TestAvroSource {
         LifecycleController.waitForOneOf(source, LifecycleState.STOP_OR_ERROR));
     Assert.assertEquals("Server is stopped", LifecycleState.STOP,
         source.getLifecycleState());
+  }
+
+
+  @Test
+  public void testSslRequestPasswordFile_AES() throws InterruptedException, IOException {
+    boolean bound = false;
+
+    for (int i = 0; i < 10 && !bound; i++) {
+      try {
+        Context context = new Context();
+
+        context.put("port", String.valueOf(selectedPort = 41414 + i));
+        context.put("bind", "0.0.0.0");
+        context.put("ssl", "true");
+        context.put("keystore", "src/test/resources/server.p12");
+        context.put("keystore-password-file", "src/test/resources/passwordfile.aes");
+        context.put("keystore-password-file-type", "aes");
+        context.put("keystore-type", "PKCS12");
+
+        Configurables.configure(source, context);
+
+        source.start();
+        bound = true;
+      } catch (ChannelException e) {
+        /*
+         * NB: This assume we're using the Netty server under the hood and the
+         * failure is to bind. Yucky.
+         */
+        Thread.sleep(100);
+      }
+    }
+
+    checkSSLAvro();
+  }
+
+  @Test
+  public void testSslRequestPasswordFile_text() throws InterruptedException, IOException {
+    boolean bound = false;
+
+    for (int i = 0; i < 10 && !bound; i++) {
+      try {
+        Context context = new Context();
+
+        context.put("port", String.valueOf(selectedPort = 41414 + i));
+        context.put("bind", "0.0.0.0");
+        context.put("ssl", "true");
+        context.put("keystore","src/test/resources/server.p12");
+        context.put("keystore-password-file", "src/test/resources/passwordfile.txt");
+        context.put("keystore-type", "PKCS12");
+
+        Configurables.configure(source, context);
+
+        source.start();
+        bound = true;
+      } catch (ChannelException e) {
+        /*
+         * NB: This assume we're using the Netty server under the hood and the
+         * failure is to bind. Yucky.
+         */
+        Thread.sleep(100);
+      }
+    }
+
+    checkSSLAvro();
   }
 
   /**
