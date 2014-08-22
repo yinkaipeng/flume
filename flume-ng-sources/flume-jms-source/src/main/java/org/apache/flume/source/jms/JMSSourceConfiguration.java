@@ -40,6 +40,7 @@ public class JMSSourceConfiguration {
   public static final String USERNAME = "userName";
 
   public static final String PASSWORD_FILE = "passwordFile";
+  public static final String PASSWORD_FILE_TYPE = "passwordFileType";
 
   public static final String BATCH_SIZE = "batchSize";
   public static final int BATCH_SIZE_DEFAULT = 100;

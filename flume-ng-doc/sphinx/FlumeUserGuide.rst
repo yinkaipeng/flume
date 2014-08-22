@@ -703,10 +703,10 @@ interceptors.*
 compression-type              none         This can be "none" or "deflate".  The compression-type must match the compression-type of matching AvroSource
 ssl                           false        Set this to true to enable SSL encryption. You must also specify a "keystore" and a "keystore-password".
 keystore                      --           This is the path to a Java keystore file. Required for SSL.
+keystore-type                 JKS          The type of the Java keystore. This can be "JKS" or "PKCS12".
 keystore-password             --           The password for the Java keystore. Either this or the keystore-password-file setting is required for SSL.
 keystore-password-file        --           The location of the file which stores the password to the keystore. Either this or the keystore-password setting is required for SSL.
-keystore-password-file-type   TEXT         Format of the password file. This can be "AES" if password file was created using "flue-ng password" command.
-keystore-type                 JKS          The type of the Java keystore. This can be "JKS" or "PKCS12".
+keystore-password-file-type   TEXT         Format of the password file. This can be "AES" if password file was created using "flue-ng password" command. "TEXT" indicates the password is in clear text.
 ipFilter                      false        Set this to true to enable ipFiltering for netty
 ipFilter.rules                --           Define N netty ipFilter pattern rules with this config.
 ===========================   ===========  ===================================================
@@ -871,6 +871,7 @@ Property Name               Default      Description
 messageSelector             --           Message selector to use when creating the consumer
 userName                    --           Username for the destination/provider
 passwordFile                --           File containing the password for the destination/provider
+passwordFileType            TEXT         Indicates how the password is stored in the passwordFile. Can also be set to "AES" if password file is created using "flume-ng password" command. "TEXT" indicates the password is in clear text.
 batchSize                   100          Number of messages to consume in one batch
 converter.type              DEFAULT      Class to use to convert messages to flume events. See below.
 converter.*                 --           Converter properties.
@@ -1309,7 +1310,7 @@ enableSSL                 false                                         Set the 
 keystore                                                                Location of the keystore includng keystore file name
 keystorePassword                                                        Keystore password. Alternatively you can specify the password through a separate file using "keystorePasswordFile" setting
 keystorePasswordFile      --                                            File containing the keystore password
-keystorePasswordFileType  TEXT                                          Indicates how the password is stored in keystorePasswordFile. Can also be "AES" if the password file was created using "flume-ng password" command
+keystorePasswordFileType  TEXT                                          Indicates how the password is stored in keystorePasswordFile. Can also be "AES" if the password file was created using "flume-ng password" command. "TEXT" indicates the password is in clear text.
 ============================================================================================================================================
 
 For example, a http source for agent named a1:
@@ -1827,7 +1828,7 @@ trust-all-certs                    false                                        
 truststore                         --                                                     The path to a custom Java truststore file. Flume uses the certificate authority information in this file to determine whether the remote Avro Source's SSL authentication credentials should be trusted. If not specified, the default Java JSSE certificate authority files (typically "jssecacerts" or "cacerts" in the Oracle JRE) will be used.
 truststore-password                --                                                     The password for the specified truststore. Alternatively you can set the password in an external file using the "truststore-password-file" setting.
 truststore-password-file           --                                                     File in which password for the truststore is stored.
-truststore-password-file-type      TEXT                                                   Type of password-file. Can also be "AES" if the file is created using "flume-ng password" command
+truststore-password-file-type      TEXT                                                   Type of password-file. Can also be "AES" if the file is created using "flume-ng password" command. "TEXT" indicates the password is in clear text.
 truststore-type                    JKS                                                    The type of the Java truststore. This can be "JKS" or other supported Java truststore type.
 maxIoWorkers                       2 * the number of available processors in the machine  The maximum number of I/O worker threads. This is configured on the NettyAvroRpcClient NioClientSocketChannelFactory.
 =============================      =====================================================  ===========================================================================================

@@ -42,6 +42,7 @@ import org.apache.flume.FlumeException;
 import org.apache.flume.PollableSource.Status;
 import org.apache.flume.channel.ChannelProcessor;
 import org.apache.flume.conf.Configurable;
+import org.apache.flume.tools.PasswordObfuscator;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -61,12 +62,15 @@ public class TestJMSSource extends JMSMessageConsumerTestBase {
   private InitialContextFactory contextFactory;
   private File baseDir;
   private File passwordFile;
+  private File passwordFileAes;
   @SuppressWarnings("unchecked")
   @Override
   void afterSetup() throws Exception {
     baseDir = Files.createTempDir();
     passwordFile = new File(baseDir, "password");
+    passwordFileAes = new File(baseDir, "password.aes");
     Assert.assertTrue(passwordFile.createNewFile());
+    PasswordObfuscator.encodeToFile("password", passwordFileAes.getAbsolutePath() );
     initialContext = mock(InitialContext.class);
     channelProcessor = mock(ChannelProcessor.class);
     events = Lists.newArrayList();
@@ -181,10 +185,22 @@ public class TestJMSSource extends JMSMessageConsumerTestBase {
     assertBodyIsExpected(events);
   }
   @Test
-  public void testConfigureWithUserNameAndPasswordFile() throws Exception {
+  public void testConfigureWithUserNameAndPasswordFile_Text() throws Exception {
     context.put(JMSSourceConfiguration.USERNAME, "dummy");
     context.put(JMSSourceConfiguration.PASSWORD_FILE,
         passwordFile.getAbsolutePath());
+    source.configure(context);
+    source.start();
+    Assert.assertEquals(Status.READY, source.process());
+    Assert.assertEquals(batchSize, events.size());
+    assertBodyIsExpected(events);
+  }
+  @Test
+  public void testConfigureWithUserNameAndPasswordFile_Aes() throws Exception {
+    context.put(JMSSourceConfiguration.USERNAME, "dummy");
+    context.put(JMSSourceConfiguration.PASSWORD_FILE,
+            passwordFile.getAbsolutePath());
+    context.put(JMSSourceConfiguration.PASSWORD_FILE_TYPE, "AES");
     source.configure(context);
     source.start();
     Assert.assertEquals(Status.READY, source.process());
