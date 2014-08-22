@@ -37,7 +37,8 @@ public class TestAESPasswordObfuscator {
             "the big fat elephant danced around the plump smiling hippo. " +
             "the funky hippie ran up the windy slope.");
 
-    File f = tempFolder.newFile();
+    String f = tempFolder.newFile().getAbsolutePath();
+
     PasswordObfuscator.encodeToFile(originalText, f);
     String decodedText = PasswordObfuscator.readPasswordFromFile(f, PasswordObfuscator.TYPE_AES);
     Assert.assertEquals("Decoded text is not same as original text", originalText, decodedText);

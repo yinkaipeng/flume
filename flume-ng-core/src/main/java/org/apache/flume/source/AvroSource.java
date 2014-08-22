@@ -199,9 +199,9 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
       keystorePasswordFileType = context.getString(KEYSTORE_PASSWORD_FILE_TYPE, "TEXT");
       try {
         if(keystorePassword==null) {
-          File passwordFile = new File(keystorePasswordFile);
           keystorePassword =
-                  PasswordObfuscator.readPasswordFromFile(passwordFile, keystorePasswordFileType);
+                  PasswordObfuscator.readPasswordFromFile(keystorePasswordFile,
+                          keystorePasswordFileType);
         }
         KeyStore ks = KeyStore.getInstance(keystoreType);
         ks.load(new FileInputStream(keystore), keystorePassword.toCharArray());

@@ -79,11 +79,12 @@ public class PasswordObfuscator {
   /**
    * Encodes the originalText and writes it to a file
    * @param originalText the text to be encoded
-   * @param output the file where the encoded bytes will be written
+   * @param outputFile the file where the encoded bytes will be written
    * @throws java.io.IOException if could not write to file
    */
-  public static void encodeToFile(String originalText, File output)
+  public static void encodeToFile(String originalText, String outputFile)
           throws IOException {
+      File output = new File(outputFile);
       byte[] cipherBytes = encode(originalText);
       FileUtils.writeByteArrayToFile(output, cipherBytes);
   }
@@ -129,7 +130,7 @@ public class PasswordObfuscator {
     CommandLineParser parser = new GnuParser();
     CommandLine commandLine = parser.parse(options, args);
 
-    File outputFile = new File(commandLine.getOptionValue("outfile"));
+    String outputFile = commandLine.getOptionValue("outfile");
 
     System.out.println("Enter the password : ");
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -156,12 +157,13 @@ public class PasswordObfuscator {
    * @param passwordFileType Can be "AES" or "TEXT" (case in-sensitive)
    * @return the decoded string
    */
-  public static String readPasswordFromFile(File passwordFile, String passwordFileType) {
+  public static String readPasswordFromFile(String passwordFile, String passwordFileType) {
     try {
+      File pfile = new File(passwordFile);
       if( passwordFileType.equalsIgnoreCase(TYPE_TEXT) ) {
-          return FileUtils.readLines(passwordFile, "UTF-8").get(0);
+          return FileUtils.readLines(pfile, "UTF-8").get(0);
       } else if ( passwordFileType.equalsIgnoreCase(TYPE_AES) ) {
-        return PasswordObfuscator.decodeFromFile(passwordFile, "UTF-8");
+        return PasswordObfuscator.decodeFromFile(pfile, "UTF-8");
       } else {
         throw new IllegalArgumentException("Unsupported password file format");
       }

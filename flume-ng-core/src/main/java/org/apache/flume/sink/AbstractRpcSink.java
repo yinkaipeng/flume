@@ -176,9 +176,9 @@ public abstract class AbstractRpcSink extends AbstractSink
             , PasswordObfuscator.TYPE_TEXT);
 
     if( truststorePasswordFile!=null  &&  context.getString("truststore-password")==null ) {
-      File passwordFile = new File(truststorePasswordFile);
       String password =
-              PasswordObfuscator.readPasswordFromFile(passwordFile, truststorePasswordFileType);
+              PasswordObfuscator.readPasswordFromFile(truststorePasswordFile,
+                      truststorePasswordFileType);
       context.put("truststore-password",password);
     }
     for (Entry<String, String> entry: context.getParameters().entrySet()) {
