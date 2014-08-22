@@ -88,13 +88,7 @@ public class PasswordObfuscator {
       FileUtils.writeByteArrayToFile(output, cipherBytes);
   }
 
-  /**
-   * Decodes the password that was encoded using encode()
-   * @param encoded
-   * @param charEncoding the encoding used to convert decoded bytes to String. Should
-   *                     be same as the encoding originally used for the originalText when encoding
-   * @return the decoded string
-   */
+
   public static String decode(byte[] encoded, String charEncoding) {
     try {
       Cipher decipher = Cipher.getInstance("AES/CTR/NoPadding");
@@ -102,7 +96,7 @@ public class PasswordObfuscator {
       byte[] plain = decipher.doFinal(encoded);
       return new String(plain, charEncoding);
     } catch (Exception e) {
-      throw new FlumeException("AES Encryption Failed", e);
+      throw new FlumeException("AES Encryption Failed: " + e.getMessage(), e);
     }
   }
 
@@ -112,12 +106,12 @@ public class PasswordObfuscator {
    * @param charEncoding encoding to convert decoded bytes from file to the returned String object
    * @return the decoded string
    */
-  public static String decodeFromFile(File inputFile, String charEncoding) {
+  private static String decodeFromFile(File inputFile, String charEncoding) {
     try {
       byte[] cipherBytes = FileUtils.readFileToByteArray(inputFile);
       return decode(cipherBytes,charEncoding);
     } catch (Exception e) {
-      throw new FlumeException("AES Encryption Failed", e);
+      throw new FlumeException("AES Encryption Failed: " + e.getMessage(), e);
     }
   }
 
@@ -156,13 +150,23 @@ public class PasswordObfuscator {
 
   }
 
-  public static String readPasswordFromFile(File passwordFile, String keystorePasswordFileType) throws IOException {
-    if( keystorePasswordFileType.equalsIgnoreCase(TYPE_TEXT) ) {
-      return FileUtils.readLines(passwordFile, "UTF-8").get(0);
-    } else if ( keystorePasswordFileType.equalsIgnoreCase(TYPE_AES) ) {
-      return PasswordObfuscator.decodeFromFile(passwordFile, "UTF-8");
-    } else {
-      throw new IllegalArgumentException("Unsupported password file format");
+  /**
+   * Decodes the password that was encoded using encode()
+   * @param passwordFile
+   * @param passwordFileType Can be "AES" or "TEXT" (case in-sensitive)
+   * @return the decoded string
+   */
+  public static String readPasswordFromFile(File passwordFile, String passwordFileType) {
+    try {
+      if( passwordFileType.equalsIgnoreCase(TYPE_TEXT) ) {
+          return FileUtils.readLines(passwordFile, "UTF-8").get(0);
+      } else if ( passwordFileType.equalsIgnoreCase(TYPE_AES) ) {
+        return PasswordObfuscator.decodeFromFile(passwordFile, "UTF-8");
+      } else {
+        throw new IllegalArgumentException("Unsupported password file format");
+      }
+    } catch (IOException e) {
+      throw new FlumeException(e.getMessage(), e);
     }
   }
 
