@@ -20,7 +20,6 @@ package org.apache.flume.sink;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.flume.Channel;
@@ -34,9 +33,11 @@ import org.apache.flume.api.RpcClient;
 import org.apache.flume.api.RpcClientConfigurationConstants;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.instrumentation.SinkCounter;
+import org.apache.flume.tools.PasswordObfuscator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -44,8 +45,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This sink provides the basic RPC functionality for Flume. This sink takes
@@ -155,6 +154,8 @@ public abstract class AbstractRpcSink extends AbstractSink
   private final ScheduledExecutorService cxnResetExecutor = Executors
     .newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
       .setNameFormat("Rpc Sink Reset Thread").build());
+  private String truststorePasswordFile;
+  private String truststorePasswordFileType;
 
   @Override
   public void configure(Context context) {
@@ -170,6 +171,16 @@ public abstract class AbstractRpcSink extends AbstractSink
     clientProps.setProperty(RpcClientConfigurationConstants.CONFIG_HOSTS_PREFIX +
         "h1", hostname + ":" + port);
 
+    truststorePasswordFile = context.getString("truststore-password-file", null);
+    truststorePasswordFileType = context.getString("truststore-password-file-type"
+            , PasswordObfuscator.TYPE_TEXT);
+
+    if( truststorePasswordFile!=null  &&  context.getString("truststore-password")==null ) {
+      String password =
+              PasswordObfuscator.readPasswordFromFile(truststorePasswordFile,
+                      truststorePasswordFileType);
+      context.put("truststore-password",password);
+    }
     for (Entry<String, String> entry: context.getParameters().entrySet()) {
       clientProps.setProperty(entry.getKey(), entry.getValue());
     }

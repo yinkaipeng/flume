@@ -37,6 +37,7 @@ import org.apache.flume.annotations.InterfaceStability;
 import org.apache.flume.conf.Configurables;
 import org.apache.flume.instrumentation.SourceCounter;
 import org.apache.flume.source.AbstractPollableSource;
+import org.apache.flume.tools.PasswordObfuscator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,17 +125,14 @@ public class JMSSource extends AbstractPollableSource {
 
     String passwordFile = context.getString(JMSSourceConfiguration.
         PASSWORD_FILE, "").trim();
+    String passwordFileType = context.getString(JMSSourceConfiguration.
+            PASSWORD_FILE_TYPE, "TEXT");
 
     if(passwordFile.isEmpty()) {
       password = Optional.of("");
     } else {
-      try {
-        password = Optional.of(Files.toString(new File(passwordFile),
-            Charsets.UTF_8).trim());
-      } catch (IOException e) {
-        throw new FlumeException(String.format(
-            "Could not read password file %s", passwordFile), e);
-      }
+        password = Optional.of(
+                PasswordObfuscator.readPasswordFromFile(passwordFile, passwordFileType) );
     }
 
     String converterClassName = context.getString(

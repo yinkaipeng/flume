@@ -21,6 +21,8 @@ package org.apache.flume.source;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
@@ -56,6 +58,7 @@ import org.apache.flume.instrumentation.SourceCounter;
 import org.apache.flume.source.avro.AvroFlumeEvent;
 import org.apache.flume.source.avro.AvroSourceProtocol;
 import org.apache.flume.source.avro.Status;
+import org.apache.flume.tools.PasswordObfuscator;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
@@ -140,12 +143,16 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
   private static final String IP_FILTER_RULES_KEY = "ipFilterRules";
   private static final String KEYSTORE_KEY = "keystore";
   private static final String KEYSTORE_PASSWORD_KEY = "keystore-password";
+  private static final String KEYSTORE_PASSWORD_FILE = "keystore-password-file";
+  private static final String KEYSTORE_PASSWORD_FILE_TYPE = "keystore-password-file-type";
   private static final String KEYSTORE_TYPE_KEY = "keystore-type";
   private int port;
   private String bindAddress;
   private String compressionType;
   private String keystore;
   private String keystorePassword;
+  private String keystorePasswordFile;
+  private String keystorePasswordFileType;
   private String keystoreType;
   private boolean enableSsl = false;
   private boolean enableIpFilter;
@@ -177,14 +184,25 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
     enableSsl = context.getBoolean(SSL_KEY, false);
     keystore = context.getString(KEYSTORE_KEY);
     keystorePassword = context.getString(KEYSTORE_PASSWORD_KEY);
+    keystorePasswordFile = context.getString(KEYSTORE_PASSWORD_FILE,null);
     keystoreType = context.getString(KEYSTORE_TYPE_KEY, "JKS");
 
     if (enableSsl) {
       Preconditions.checkNotNull(keystore,
           KEYSTORE_KEY + " must be specified when SSL is enabled");
-      Preconditions.checkNotNull(keystorePassword,
-          KEYSTORE_PASSWORD_KEY + " must be specified when SSL is enabled");
+      if(keystorePassword==null && keystorePasswordFile==null) {
+        Preconditions.checkNotNull(keystorePassword,
+                KEYSTORE_PASSWORD_KEY + " or " + KEYSTORE_PASSWORD_FILE +
+                        " must be specified when SSL is enabled"
+        );
+      }
+      keystorePasswordFileType = context.getString(KEYSTORE_PASSWORD_FILE_TYPE, "TEXT");
       try {
+        if(keystorePassword==null) {
+          keystorePassword =
+                  PasswordObfuscator.readPasswordFromFile(keystorePasswordFile,
+                          keystorePasswordFileType);
+        }
         KeyStore ks = KeyStore.getInstance(keystoreType);
         ks.load(new FileInputStream(keystore), keystorePassword.toCharArray());
       } catch (Exception ex) {
@@ -214,6 +232,7 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
       sourceCounter = new SourceCounter(getName());
     }
   }
+
 
   @Override
   public void start() {

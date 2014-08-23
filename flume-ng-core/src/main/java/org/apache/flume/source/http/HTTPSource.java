@@ -27,6 +27,7 @@ import org.apache.flume.conf.Configurable;
 import org.apache.flume.instrumentation.SourceCounter;
 import org.apache.flume.source.AbstractSource;
 import org.apache.flume.tools.HTTPServerConstraintUtil;
+import org.apache.flume.tools.PasswordObfuscator;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.nio.SelectChannelConnector;
@@ -92,7 +93,10 @@ public class HTTPSource extends AbstractSource implements
   // SSL configuration variable
   private volatile String keyStorePath;
   private volatile String keyStorePassword;
+  private String passwordFile;
+  private String passwordFileType;
   private volatile Boolean sslEnabled;
+
 
 
   @Override
@@ -104,7 +108,6 @@ public class HTTPSource extends AbstractSource implements
       port = context.getInteger(HTTPSourceConfigurationConstants.CONFIG_PORT);
       host = context.getString(HTTPSourceConfigurationConstants.CONFIG_BIND,
         HTTPSourceConfigurationConstants.DEFAULT_BIND);
-
       Preconditions.checkState(host != null && !host.isEmpty(),
                 "HTTPSource hostname specified is empty");
       Preconditions.checkNotNull(port, "HTTPSource requires a port number to be"
@@ -120,7 +123,17 @@ public class HTTPSource extends AbstractSource implements
         Preconditions.checkArgument(keyStorePath != null && !keyStorePath.isEmpty(),
                                         "Keystore is required for SSL Conifguration" );
         keyStorePassword = context.getString(HTTPSourceConfigurationConstants.SSL_KEYSTORE_PASSWORD);
-        Preconditions.checkArgument(keyStorePassword != null, "Keystore password is required for SSL Configuration");
+        passwordFile =
+                context.getString(HTTPSourceConfigurationConstants.SSL_KEYSTORE_PASSWORD_FILE, null);
+        boolean passwordProvided = keyStorePassword!= null ||  passwordFile!=null;
+        Preconditions.checkArgument(passwordProvided,
+                "keystorePassword or keystorePasswordFile is required for SSL Configuration");
+        if(keyStorePassword==null) {
+          passwordFileType =
+             context.getString(HTTPSourceConfigurationConstants.SSL_KEYSTORE_PASSWORD_FILE_TYPE, null);
+          keyStorePassword = PasswordObfuscator.readPasswordFromFile(passwordFile, passwordFileType);
+        }
+
       }
 
 

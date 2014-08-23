@@ -688,26 +688,28 @@ When paired with the built-in Avro Sink on another (previous hop) Flume agent,
 it can create tiered collection topologies.
 Required properties are in **bold**.
 
-==================   ===========  ===================================================
-Property Name        Default      Description
-==================   ===========  ===================================================
-**channels**         --
-**type**             --           The component type name, needs to be ``avro``
-**bind**             --           hostname or IP address to listen on
-**port**             --           Port # to bind to
-threads              --           Maximum number of worker threads to spawn
+===========================   ===========  ===================================================
+Property Name                 Default      Description
+===========================   ===========  ===================================================
+**channels**                  --
+**type**                      --           The component type name, needs to be ``avro``
+**bind**                      --           hostname or IP address to listen on
+**port**                      --           Port # to bind to
+threads                       --           Maximum number of worker threads to spawn
 selector.type
 selector.*
-interceptors         --           Space-separated list of interceptors
+interceptors                  --           Space-separated list of interceptors
 interceptors.*
-compression-type     none         This can be "none" or "deflate".  The compression-type must match the compression-type of matching AvroSource
-ssl                  false        Set this to true to enable SSL encryption. You must also specify a "keystore" and a "keystore-password".
-keystore             --           This is the path to a Java keystore file. Required for SSL.
-keystore-password    --           The password for the Java keystore. Required for SSL.
-keystore-type        JKS          The type of the Java keystore. This can be "JKS" or "PKCS12".
-ipFilter             false        Set this to true to enable ipFiltering for netty
-ipFilter.rules       --           Define N netty ipFilter pattern rules with this config.
-==================   ===========  ===================================================
+compression-type              none         This can be "none" or "deflate".  The compression-type must match the compression-type of matching AvroSource
+ssl                           false        Set this to true to enable SSL encryption. You must also specify a "keystore" and a "keystore-password".
+keystore                      --           This is the path to a Java keystore file. Required for SSL.
+keystore-type                 JKS          The type of the Java keystore. This can be "JKS" or "PKCS12".
+keystore-password             --           The password for the Java keystore. Either this or the keystore-password-file setting is required for SSL.
+keystore-password-file        --           The location of the file which stores the password to the keystore. Either this or the keystore-password setting is required for SSL.
+keystore-password-file-type   TEXT         Format of the password file. This can be "AES" if password file was created using "flue-ng password" command. "TEXT" indicates the password is in clear text.
+ipFilter                      false        Set this to true to enable ipFiltering for netty
+ipFilter.rules                --           Define N netty ipFilter pattern rules with this config.
+===========================   ===========  ===================================================
 
 Example for agent named a1:
 
@@ -869,6 +871,7 @@ Property Name               Default      Description
 messageSelector             --           Message selector to use when creating the consumer
 userName                    --           Username for the destination/provider
 passwordFile                --           File containing the password for the destination/provider
+passwordFileType            TEXT         Indicates how the password is stored in the passwordFile. Can also be set to "AES" if password file is created using "flume-ng password" command. "TEXT" indicates the password is in clear text.
 batchSize                   100          Number of messages to consume in one batch
 converter.type              DEFAULT      Class to use to convert messages to flume events. See below.
 converter.*                 --           Converter properties.
@@ -1291,22 +1294,24 @@ unavailable status.
 All events sent in one post request are considered to be one batch and
 inserted into the channel in one transaction.
 
-==============  ============================================  ====================================================================
-Property Name   Default                                       Description
-==============  ============================================  ====================================================================
-**type**                                                      The component type name, needs to be ``http``
-**port**        --                                            The port the source should bind to.
-bind            0.0.0.0                                       The hostname or IP address to listen on
-handler         ``org.apache.flume.source.http.JSONHandler``  The FQCN of the handler class.
-handler.*       --                                            Config parameters for the handler
-selector.type   replicating                                   replicating or multiplexing
-selector.*                                                    Depends on the selector.type value
-interceptors    --                                            Space-separated list of interceptors
+========================  ============================================  ====================================================================
+Property Name             Default                                       Description
+========================  ============================================  ====================================================================
+**type**                                                                The component type name, needs to be ``http``
+**port**                  --                                            The port the source should bind to.
+bind                      0.0.0.0                                       The hostname or IP address to listen on
+handler                   ``org.apache.flume.source.http.JSONHandler``  The FQCN of the handler class.
+handler.*                 --                                            Config parameters for the handler
+selector.type             replicating                                   replicating or multiplexing
+selector.*                                                              Depends on the selector.type value
+interceptors              --                                            Space-separated list of interceptors
 interceptors.*
-enableSSL       false                                         Set the property true, to enable SSL
-keystore                                                      Location of the keystore includng keystore file name
-keystorePassword                                              Keystore password
-==================================================================================================================================
+enableSSL                 false                                         Set the property true, to enable SSL
+keystore                                                                Location of the keystore includng keystore file name
+keystorePassword                                                        Keystore password. Alternatively you can specify the password through a separate file using "keystorePasswordFile" setting
+keystorePasswordFile      --                                            File containing the keystore password
+keystorePasswordFileType  TEXT                                          Indicates how the password is stored in keystorePasswordFile. Can also be "AES" if the password file was created using "flume-ng password" command. "TEXT" indicates the password is in clear text.
+============================================================================================================================================
 
 For example, a http source for agent named a1:
 
@@ -1805,26 +1810,28 @@ hostname / port pair. The events are taken from the configured Channel in
 batches of the configured batch size.
 Required properties are in **bold**.
 
-==========================   =====================================================  ===========================================================================================
-Property Name                Default  Description
-==========================   =====================================================  ===========================================================================================
-**channel**                  --
-**type**                     --                                                     The component type name, needs to be ``avro``.
-**hostname**                 --                                                     The hostname or IP address to bind to.
-**port**                     --                                                     The port # to listen on.
-batch-size                   100                                                    number of event to batch together for send.
-connect-timeout              20000                                                  Amount of time (ms) to allow for the first (handshake) request.
-request-timeout              20000                                                  Amount of time (ms) to allow for requests after the first.
-reset-connection-interval    none                                                   Amount of time (s) before the connection to the next hop is reset. This will force the Avro Sink to reconnect to the next hop. This will allow the sink to connect to hosts behind a hardware load-balancer when news hosts are added without having to restart the agent.
-compression-type             none                                                   This can be "none" or "deflate".  The compression-type must match the compression-type of matching AvroSource
-compression-level            6                                                      The level of compression to compress event. 0 = no compression and 1-9 is compression.  The higher the number the more compression
-ssl                          false                                                  Set to true to enable SSL for this AvroSink. When configuring SSL, you can optionally set a "truststore", "truststore-password", "truststore-type", and specify whether to "trust-all-certs".
-trust-all-certs              false                                                  If this is set to true, SSL server certificates for remote servers (Avro Sources) will not be checked. This should NOT be used in production because it makes it easier for an attacker to execute a man-in-the-middle attack and "listen in" on the encrypted connection.
-truststore                   --                                                     The path to a custom Java truststore file. Flume uses the certificate authority information in this file to determine whether the remote Avro Source's SSL authentication credentials should be trusted. If not specified, the default Java JSSE certificate authority files (typically "jssecacerts" or "cacerts" in the Oracle JRE) will be used.
-truststore-password          --                                                     The password for the specified truststore.
-truststore-type              JKS                                                    The type of the Java truststore. This can be "JKS" or other supported Java truststore type.
-maxIoWorkers                 2 * the number of available processors in the machine  The maximum number of I/O worker threads. This is configured on the NettyAvroRpcClient NioClientSocketChannelFactory.
-==========================   =====================================================  ===========================================================================================
+=============================      =====================================================  ===========================================================================================
+Property Name                      Default  Description
+=============================      =====================================================  ===========================================================================================
+**channel**                        --
+**type**                           --                                                     The component type name, needs to be ``avro``.
+**hostname**                       --                                                     The hostname or IP address to bind to.
+**port**                           --                                                     The port # to listen on.
+batch-size                         100                                                    number of event to batch together for send.
+connect-timeout                    20000                                                  Amount of time (ms) to allow for the first (handshake) request.
+request-timeout                    20000                                                  Amount of time (ms) to allow for requests after the first.
+reset-connection-interval          none                                                   Amount of time (s) before the connection to the next hop is reset. This will force the Avro Sink to reconnect to the next hop. This will allow the sink to connect to hosts behind a hardware load-balancer when news hosts are added without having to restart the agent.
+compression-type                   none                                                   This can be "none" or "deflate".  The compression-type must match the compression-type of matching AvroSource
+compression-level                  6                                                      The level of compression to compress event. 0 = no compression and 1-9 is compression.  The higher the number the more compression
+ssl                                false                                                  Set to true to enable SSL for this AvroSink. When configuring SSL, you can optionally set a "truststore", "truststore-password", "truststore-type", and specify whether to "trust-all-certs".
+trust-all-certs                    false                                                  If this is set to true, SSL server certificates for remote servers (Avro Sources) will not be checked. This should NOT be used in production because it makes it easier for an attacker to execute a man-in-the-middle attack and "listen in" on the encrypted connection.
+truststore                         --                                                     The path to a custom Java truststore file. Flume uses the certificate authority information in this file to determine whether the remote Avro Source's SSL authentication credentials should be trusted. If not specified, the default Java JSSE certificate authority files (typically "jssecacerts" or "cacerts" in the Oracle JRE) will be used.
+truststore-password                --                                                     The password for the specified truststore. Alternatively you can set the password in an external file using the "truststore-password-file" setting.
+truststore-password-file           --                                                     File in which password for the truststore is stored.
+truststore-password-file-type      TEXT                                                   Type of password-file. Can also be "AES" if the file is created using "flume-ng password" command. "TEXT" indicates the password is in clear text.
+truststore-type                    JKS                                                    The type of the Java truststore. This can be "JKS" or other supported Java truststore type.
+maxIoWorkers                       2 * the number of available processors in the machine  The maximum number of I/O worker threads. This is configured on the NettyAvroRpcClient NioClientSocketChannelFactory.
+=============================      =====================================================  ===========================================================================================
 
 Example for agent named a1:
 
@@ -2357,6 +2364,7 @@ encryption.cipherProvider                         --                            
 encryption.keyProvider                            --                                Key provider type, supported types: JCEKSFILE
 encryption.keyProvider.keyStoreFile               --                                Path to the keystore file
 encrpytion.keyProvider.keyStorePasswordFile       --                                Path to the keystore password file
+encrpytion.keyProvider.keyStorePasswordFileType   TEXT                              Type of keystore password file. "TEXT" indicates simple raw text. "AES" indicates file is created using 'flume-ng password' command.
 encryption.keyProvider.keys                       --                                List of all keys (e.g. history of the activeKey setting)
 encyption.keyProvider.keys.*.passwordFile         --                                Path to the optional key password file
 ================================================  ================================  ========================================================

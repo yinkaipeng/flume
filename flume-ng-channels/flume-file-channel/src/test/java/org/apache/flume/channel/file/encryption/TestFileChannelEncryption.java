@@ -35,6 +35,7 @@ import org.apache.flume.FlumeException;
 import org.apache.flume.channel.file.FileChannelConfiguration;
 import org.apache.flume.channel.file.TestFileChannelBase;
 import org.apache.flume.channel.file.TestUtils;
+import org.apache.flume.tools.PasswordObfuscator;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,13 +53,16 @@ public class TestFileChannelEncryption extends TestFileChannelBase {
       LoggerFactory.getLogger(TestFileChannelEncryption.class);
   private File keyStoreFile;
   private File keyStorePasswordFile;
+  private String keyStorePasswordFileAES;
   private Map<String, File> keyAliasPassword;
 
   @Before
   public void setup() throws Exception {
     super.setup();
     keyStorePasswordFile = new File(baseDir, "keyStorePasswordFile");
+    keyStorePasswordFileAES = new File(baseDir, "keyStorePasswordFile.aes").getAbsolutePath();
     Files.write("keyStorePassword", keyStorePasswordFile, Charsets.UTF_8);
+    PasswordObfuscator.encodeToFile("keyStorePassword", keyStorePasswordFileAES);
     keyStoreFile = new File(baseDir, "keyStoreFile");
     Assert.assertTrue(keyStoreFile.createNewFile());
     keyAliasPassword = Maps.newHashMap();
@@ -324,6 +328,37 @@ public class TestFileChannelEncryption extends TestFileChannelBase {
       Assert.assertTrue(ex.getMessage().startsWith("java.io.FileNotFoundException"));
     }
   }
+
+
+  @Test
+  public void testConfigurationPasswordFileAes() throws Exception {
+    Map<String, String> overrides = Maps.newHashMap();
+    overrides.put("encryption.activeKey", "key-1");
+    overrides.put("encryption.cipherProvider", "AESCTRNOPADDING");
+    overrides.put("encryption.keyProvider", "JCEKSFILE");
+    overrides.put("encryption.keyProvider.keyStoreFile",
+            keyStoreFile.getAbsolutePath());
+    overrides.put("encryption.keyProvider.keyStorePasswordFile",
+            keyStorePasswordFileAES);
+    overrides.put("encryption.keyProvider.keyStorePasswordFileType",
+            "aes");
+    overrides.put("encryption.keyProvider.keys", "key-0 key-1");
+    overrides.put("encryption.keyProvider.keys.key-0.passwordFile",
+            keyAliasPassword.get("key-0").getAbsolutePath());
+    channel = createFileChannel(overrides);
+    channel.start();
+    Assert.assertTrue(channel.isOpen());
+    Set<String> in = fillChannel(channel, "restart");
+    channel.stop();
+    channel = TestUtils.createFileChannel(checkpointDir.getAbsolutePath(),
+            dataDir, overrides);
+    channel.start();
+    Assert.assertTrue(channel.isOpen());
+    Set<String> out =  consumeChannel(channel);
+    compareInputAndOut(in, out);
+  }
+
+
   @Test
   public void testBadKeyStorePassword() throws Exception {
     Files.write("invalid", keyStorePasswordFile, Charsets.UTF_8);
