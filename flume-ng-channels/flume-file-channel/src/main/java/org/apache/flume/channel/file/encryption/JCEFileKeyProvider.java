@@ -25,16 +25,15 @@ import java.security.KeyStore;
 import java.util.Map;
 
 import org.apache.flume.Context;
+import org.apache.flume.tools.PasswordObfuscator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
 
 public class JCEFileKeyProvider extends KeyProvider {
   private static final Logger logger =
@@ -44,16 +43,20 @@ public class JCEFileKeyProvider extends KeyProvider {
   private KeyStore ks;
   private char[] keyStorePassword;
   private File keyStorePasswordFile;
+  private String keyStorePasswordFileType;
 
-  public JCEFileKeyProvider(File keyStoreFile, File keyStorePasswordFile,
-      Map<String, File> aliasPasswordFileMap) {
+  public JCEFileKeyProvider(File keyStoreFile, File keyStorePasswordFile
+          , String keyStorePasswordFileType, Map<String, File> aliasPasswordFileMap) {
     super();
     this.aliasPasswordFileMap = aliasPasswordFileMap;
     this.keyStorePasswordFile = keyStorePasswordFile;
+    this.keyStorePasswordFileType = keyStorePasswordFileType;
     try {
       ks = KeyStore.getInstance("jceks");
-      keyStorePassword = Files.toString(keyStorePasswordFile, Charsets.UTF_8)
-          .trim().toCharArray();
+      keyStorePassword =
+              PasswordObfuscator.readPasswordFromFile(
+                      keyStorePasswordFile.getAbsolutePath(),keyStorePasswordFileType
+                ).toCharArray();
       ks.load(new FileInputStream(keyStoreFile), keyStorePassword);
     } catch(Exception ex) {
       throw Throwables.propagate(ex);
@@ -67,8 +70,8 @@ public class JCEFileKeyProvider extends KeyProvider {
       char[] keyPassword = keyStorePassword;
       if(aliasPasswordFileMap.containsKey(alias)) {
         File keyPasswordFile = aliasPasswordFileMap.get(alias);
-        keyPassword = Files.toString(keyPasswordFile,
-            Charsets.UTF_8).trim().toCharArray();
+        keyPassword = PasswordObfuscator.readPasswordFromFile(
+                passwordFile,keyStorePasswordFileType).toCharArray();
         passwordFile = keyPasswordFile.getAbsolutePath();
       }
       Key key = ks.getKey(alias, keyPassword);
@@ -94,6 +97,9 @@ public class JCEFileKeyProvider extends KeyProvider {
           "KeyStore file not specified");
       Preconditions.checkState(!Strings.isNullOrEmpty(keyStorePasswordFileName),
           "KeyStore password  file not specified");
+      String keyStorePasswordFileType = context.getString(
+              EncryptionConfiguration.JCE_FILE_KEY_STORE_PASSWORD_FILE_TYPE,
+                  PasswordObfuscator.TYPE_TEXT);
       Map<String, File> aliasPasswordFileMap = Maps.newHashMap();
       String passwordProtectedKeys = context.getString(
           EncryptionConfiguration.JCE_FILE_KEYS);
@@ -114,7 +120,7 @@ public class JCEFileKeyProvider extends KeyProvider {
       }
       File keyStoreFile = new File(keyStoreFileName.trim());
       File keyStorePasswordFile = new File(keyStorePasswordFileName.trim());
-      return new JCEFileKeyProvider(keyStoreFile, keyStorePasswordFile,
+      return new JCEFileKeyProvider(keyStoreFile, keyStorePasswordFile, keyStorePasswordFileType,
           aliasPasswordFileMap);
     }
   }

@@ -55,5 +55,9 @@ public class EncryptionConfiguration {
    * Path to a jceks key store password file
    */
   public static final String JCE_FILE_KEY_STORE_PASSWORD_FILE = "keyStorePasswordFile";
+  /**
+   * Path to a jceks key store password file type
+   */
+  public static final String JCE_FILE_KEY_STORE_PASSWORD_FILE_TYPE = "keyStorePasswordFileType";
 
 }

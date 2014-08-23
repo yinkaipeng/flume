@@ -2364,6 +2364,7 @@ encryption.cipherProvider                         --                            
 encryption.keyProvider                            --                                Key provider type, supported types: JCEKSFILE
 encryption.keyProvider.keyStoreFile               --                                Path to the keystore file
 encrpytion.keyProvider.keyStorePasswordFile       --                                Path to the keystore password file
+encrpytion.keyProvider.keyStorePasswordFileType   TEXT                              Type of keystore password file. "TEXT" indicates simple raw text. "AES" indicates file is created using 'flume-ng password' command.
 encryption.keyProvider.keys                       --                                List of all keys (e.g. history of the activeKey setting)
 encyption.keyProvider.keys.*.passwordFile         --                                Path to the optional key password file
 ================================================  ================================  ========================================================
