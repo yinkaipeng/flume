@@ -27,7 +27,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 
-public class TestAESPasswordObfuscator {
+public class TestPasswordObfuscator {
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
 

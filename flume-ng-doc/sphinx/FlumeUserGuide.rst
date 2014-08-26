@@ -1311,7 +1311,7 @@ keystore                                                                Location
 keystorePassword                                                        Keystore password. Alternatively you can specify the password through a separate file using "keystorePasswordFile" setting
 keystorePasswordFile      --                                            File containing the keystore password
 keystorePasswordFileType  TEXT                                          Indicates how the password is stored in keystorePasswordFile. Can also be "AES" if the password file was created using "flume-ng password" command. "TEXT" indicates the password is in clear text.
-============================================================================================================================================
+========================  ============================================  ====================================================================
 
 For example, a http source for agent named a1:
 
