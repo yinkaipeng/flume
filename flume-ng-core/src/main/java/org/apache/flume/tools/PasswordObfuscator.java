@@ -32,6 +32,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -133,10 +134,9 @@ public class PasswordObfuscator {
     String outputFile = commandLine.getOptionValue("outfile");
 
     System.out.println("Enter the password : ");
-    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    String password = br.readLine();
+    String password = new String( System.console().readPassword() );
     System.out.println("Verify password    : ");
-    if( !password.equals( br.readLine() ) ) {
+    if( !password.equals( new String(System.console().readPassword()) ) ) {
       System.err.println("Passwords do not match. Please try again");
       return;
     }

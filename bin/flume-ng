@@ -461,7 +461,7 @@ elif [ -n "${opt_version}" ] ; then
 elif [ -n "${opt_tool}" ] ; then
   run_flume $FLUME_TOOLS_CLASS $args
 elif [ -n "${opt_password}" ]; then
-  run_flume $FLUME_PASSWORD_CLASS $args
+  run_flume $FLUME_PASSWORD_CLASS --outfile=$password_file
 else
   error "This message should never appear" 1
 fi
