@@ -67,10 +67,14 @@ public class TestJMSSource extends JMSMessageConsumerTestBase {
   @Override
   void afterSetup() throws Exception {
     baseDir = Files.createTempDir();
+
     passwordFile = new File(baseDir, "password");
-    passwordFileAes = new File(baseDir, "password.aes");
     Assert.assertTrue(passwordFile.createNewFile());
+    FileUtils.write(passwordFile, "password", "UTF-8");
+
+    passwordFileAes = new File(baseDir, "password.aes");
     PasswordObfuscator.encodeToFile("password", passwordFileAes.getAbsolutePath() );
+
     initialContext = mock(InitialContext.class);
     channelProcessor = mock(ChannelProcessor.class);
     events = Lists.newArrayList();

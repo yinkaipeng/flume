@@ -24,6 +24,8 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.util.Map;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import org.apache.flume.Context;
 import org.apache.flume.tools.PasswordObfuscator;
 import org.slf4j.Logger;
@@ -70,8 +72,8 @@ public class JCEFileKeyProvider extends KeyProvider {
       char[] keyPassword = keyStorePassword;
       if(aliasPasswordFileMap.containsKey(alias)) {
         File keyPasswordFile = aliasPasswordFileMap.get(alias);
-        keyPassword = PasswordObfuscator.readPasswordFromFile(
-                passwordFile,keyStorePasswordFileType).toCharArray();
+        keyPassword = Files.toString(keyPasswordFile,
+                Charsets.UTF_8).trim().toCharArray();
         passwordFile = keyPasswordFile.getAbsolutePath();
       }
       Key key = ks.getKey(alias, keyPassword);

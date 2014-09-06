@@ -21,6 +21,7 @@ package org.apache.flume.channel.file.encryption;
 import static org.apache.flume.channel.file.TestUtils.*;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -325,7 +326,7 @@ public class TestFileChannelEncryption extends TestFileChannelBase {
       channel = createFileChannel(overrides);
       Assert.fail();
     } catch(RuntimeException ex) {
-      Assert.assertTrue(ex.getMessage().startsWith("java.io.FileNotFoundException"));
+      Assert.assertTrue(ex.getCause() instanceof FileNotFoundException);
     }
   }
 
