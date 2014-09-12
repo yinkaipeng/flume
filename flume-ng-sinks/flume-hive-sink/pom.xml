@@ -69,6 +69,7 @@ limitations under the License.
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-common</artifactId>
           <version>${hadoop.version}</version>
+          <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -92,6 +93,7 @@ limitations under the License.
         <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-common</artifactId>
+          <optional>true</optional>
         </dependency>
 
         <dependency>
