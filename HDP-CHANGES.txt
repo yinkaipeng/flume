@@ -7,7 +7,7 @@ FLUME-2442 - Need an alternative to providing clear text passwords in flume conf
 Unsupported Features:
 -----------------------
 FLUME-2224 - Disable File channel dual checkpointing on Windows
-Kite Dataset Sink is not supported on Windows
+FLUME-2467 - Disable Morphline Sink and Kite Dataset sinks on Windows Builds
 
 Improvements:
 -----------------------
