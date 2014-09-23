@@ -72,8 +72,9 @@ public class JCEFileKeyProvider extends KeyProvider {
       char[] keyPassword = keyStorePassword;
       if(aliasPasswordFileMap.containsKey(alias)) {
         File keyPasswordFile = aliasPasswordFileMap.get(alias);
-        keyPassword = Files.toString(keyPasswordFile,
-                Charsets.UTF_8).trim().toCharArray();
+        keyPassword = PasswordObfuscator.readPasswordFromFile(
+                          keyPasswordFile.getAbsolutePath(),  keyStorePasswordFileType
+                      ).toCharArray();
         passwordFile = keyPasswordFile.getAbsolutePath();
       }
       Key key = ks.getKey(alias, keyPassword);
