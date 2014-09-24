@@ -130,6 +130,22 @@ Function GetHbaseHome() {
     return $Null
 }
 
+Function GetHiveHome() {
+    if($env:HIVE_HOME) {
+        return $env:HIVE_HOME
+    }
+
+    #Searches for hive.cmd in the HIVE_HOME, current directory and path
+    [String[]] $hivePaths = (".;$env:PATH").Split(";") |
+                               ? { "$_" -ne "" -and (Test-Path $_) } |
+                               ? { Test-Path (Join-Path $_ "hive.cmd") }
+
+    if($hivePaths -ne $Null) {
+        return $hivePaths[0]
+    }
+    Write-Host "WARN: HIVE_HOME not found"
+    return $Null
+}
 
 Function GetJavaLibraryPath ($cmd, $flumeLibDir) {
     $flumeCoreJar = EnumerateJars( $flumeLibDir ) | ? { $_ -match "flume-ng-core.*jar" }
@@ -275,7 +291,7 @@ foreach ($opt in $javaPropertiesArr) {
 }
 
 ########### Setup Classpath ###############
-# flume\conf ; flume_home\lib\* ; cmdline ; env.ps1 ; plugins.d ; hadoop.cpath ; hbase.cpath
+# flume\conf ; flume_home\lib\* ; cmdline ; env.ps1 ; plugins.d ; hadoop.cpath ; hbase.cpath ; hive.cpath
 
 [string]$javaClassPath='"' + $conf + '"'
 [string]$flumeLibJars=""
@@ -321,7 +337,7 @@ $hadoopHome = GetHadoopHome
 if("$hadoopHome" -ne "") {
   $hadoopCmd = "$hadoopHome\bin\hadoop.cmd"
   if( Test-Path $hadoopCmd ) {
-    Write-Host "Including Hadoop libraries found in ($hadoopHome) for DFS access" 
+    Write-Host "Including Hadoop libraries found in ($hadoopHome) for DFS access"
     $javaClassPath = "$javaClassPath;""$hadoopHome\conf""";
     foreach ($path in  GetClassPath $hadoopCmd) {
       $javaClassPath = "$javaClassPath;""$path"""
@@ -353,6 +369,26 @@ if( "$hbaseHome" -ne "" ) {
       }
     } else {
         Write-Host "WARN: $hbaseCmd not be found. Unable to include HBase classpath and java.library.path"
+    }
+}
+
+# Add Hive classpath
+$hiveHome = GetHiveHome
+if( "$hiveHome" -ne "" ) {
+    $hiveLib = "$hiveHome\lib"
+    if( Test-Path $hiveLib ) {
+      Write-Host "Including Hive libraries found via ($hiveHome) for Hive access"
+      $javaClassPath = "$javaClassPath;""$hiveLib\*"""
+    } else {
+      Write-Host "WARN: $hiveLib not be found. Unable to include Hive into classpath"
+    }
+
+    $hcatLib = "$hiveHome\hcatalog\share\hcatalog"
+    if( Test-Path $hcatLib ) {
+    Write-Host "Including HCatalog libraries found via ($hiveHome) for Hive access"
+      $javaClassPath = "$javaClassPath;""$hcatLib\*"""
+    } else {
+        Write-Host "WARN: $hcatLib not be found. Unable to include HCatalog into classpath"
     }
 }
 
