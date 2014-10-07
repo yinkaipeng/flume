@@ -17,6 +17,7 @@ FLUME-2337 - export JAVA_HOME in flume-env.sh.template and increase heap size
 
 Bug Fixes:
 ----------------------
+FLUME-2451 - HDFS Sink Cannot Reconnect After NameNode Restart
 FLUME-2068 - File Channel issue - recovering from BadCheckpoint exception on Windows
 FLUME-2224 - Disable File channel dual checkpointing on Windows
 FLUME-2407 - Spillable Channel sometimes fails on reconfigure
