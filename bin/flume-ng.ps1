@@ -380,15 +380,23 @@ if( "$hiveHome" -ne "" ) {
       Write-Host "Including Hive libraries found via ($hiveHome) for Hive access"
       $javaClassPath = "$javaClassPath;""$hiveLib\*"""
     } else {
-      Write-Host "WARN: $hiveLib not be found. Unable to include Hive into classpath"
+      Write-Host "WARN: $hiveLib not found. Unable to include Hive into classpath"
+    }
+
+    $hiveConf = "$hiveHome\conf"
+    if( Test-Path $hiveConf ) {
+      Write-Host "Including Hive conf dir ($hiveConf) in classpath for Hive access"
+      $javaClassPath = "$javaClassPath;""$hiveConf"""
+    } else {
+      Write-Host "WARN: $hiveConf not found. Unable to include it into classpath"
     }
 
     $hcatLib = "$hiveHome\hcatalog\share\hcatalog"
     if( Test-Path $hcatLib ) {
-    Write-Host "Including HCatalog libraries found via ($hiveHome) for Hive access"
+    Write-Host "Including HCatalog libraries ($hcatLib) for Hive access"
       $javaClassPath = "$javaClassPath;""$hcatLib\*"""
     } else {
-        Write-Host "WARN: $hcatLib not be found. Unable to include HCatalog into classpath"
+        Write-Host "WARN: $hcatLib not found. Unable to include HCatalog into classpath"
     }
 }
 
