@@ -167,6 +167,10 @@ add_hive_paths(){
     info "Including Hive libraries found via ($HIVE_HOME) for Hive access"
     FLUME_CLASSPATH="$FLUME_CLASSPATH:$HIVE_HOME/lib/*"
   fi
+  if [ -d "${HIVE_HOME}/conf" ]; then
+    info "Including Hive conf dir (${HIVE_HOME}/conf) in classpath for Hive access"
+    FLUME_CLASSPATH="$FLUME_CLASSPATH:$HIVE_HOME/conf"
+  fi
   if [ -d "${HCAT_HOME}/share/hcatalog" ]; then
     info "Including HCatalog libraries found via ($HCAT_HOME) for Hive access"
     FLUME_CLASSPATH="$FLUME_CLASSPATH:${HCAT_HOME}/share/hcatalog/*"
