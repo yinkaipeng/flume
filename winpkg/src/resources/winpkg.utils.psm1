@@ -106,7 +106,7 @@ function Invoke-CmdChk ($command)
     $out | ForEach-Object { Write-LogRecord "CMD" $_ }
     if (-not ($LastExitCode  -eq 0))
     {
-        throw "Command `"$out`" failed with exit code $LastExitCode "
+	throw "Command `"$command`" failed with exit code $LastExitCode and output `"$out`" "
     }
     return $out
 }
