@@ -134,7 +134,7 @@ public class LineDeserializer implements EventDeserializer {
     while ((c = in.readChar()) != -1) {
       readChars++;
       if (c == '\n') {
-        if (sb.charAt(readChars-2)== '\r') {
+        if (readChars>2 && sb.charAt(readChars-2)== '\r') {
           sb.setLength(readChars-2);
         }
         break;
