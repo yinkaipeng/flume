@@ -133,14 +133,14 @@ public class LineDeserializer implements EventDeserializer {
     int readChars = 0;
     while ((c = in.readChar()) != -1) {
       readChars++;
-
-      // FIXME: support \r\n
       if (c == '\n') {
+        if (sb.charAt(readChars-2)== '\r') {
+          sb.setLength(readChars-2);
+        }
         break;
       }
 
       sb.append((char)c);
-
       if (readChars >= maxLineLength) {
         logger.warn("Line length exceeds max ({}), truncating line!",
             maxLineLength);

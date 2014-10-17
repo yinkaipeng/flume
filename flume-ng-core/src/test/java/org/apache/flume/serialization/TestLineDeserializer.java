@@ -47,6 +47,17 @@ public class TestLineDeserializer {
   }
 
   @Test
+  public void testSimpleWindowsLineEndings() throws IOException {
+    StringBuilder sb = new StringBuilder();
+    sb.append("line 1\r\nline 2\r\n");
+    String winStr = sb.toString();
+
+    ResettableInputStream in = new ResettableTestStringInputStream(winStr);
+    EventDeserializer des = new LineDeserializer(new Context(), in);
+    validateMiniParse(des);
+  }
+
+  @Test
   public void testSimpleViaBuilder() throws IOException {
     ResettableInputStream in = new ResettableTestStringInputStream(mini);
     EventDeserializer.Builder builder = new LineDeserializer.Builder();
