@@ -101,9 +101,13 @@ public class RpcClientFactory {
   public static RpcClient getInstance(File propertiesFile)
       throws FileNotFoundException, IOException {
     Reader reader = new FileReader(propertiesFile);
-    Properties props = new Properties();
-    props.load(reader);
-    return getInstance(props);
+    try {
+      Properties props = new Properties();
+      props.load(reader);
+      return getInstance(props);
+    } finally {
+      reader.close();
+    }
   }
 
   /**

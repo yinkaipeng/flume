@@ -20,6 +20,7 @@ package org.apache.flume.channel.file.encryption;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.util.Map;
@@ -53,16 +54,27 @@ public class JCEFileKeyProvider extends KeyProvider {
     this.aliasPasswordFileMap = aliasPasswordFileMap;
     this.keyStorePasswordFile = keyStorePasswordFile;
     this.keyStorePasswordFileType = keyStorePasswordFileType;
+    FileInputStream fis = null;
     try {
       ks = KeyStore.getInstance("jceks");
       keyStorePassword =
               PasswordObfuscator.readPasswordFromFile(
                       keyStorePasswordFile.getAbsolutePath(),keyStorePasswordFileType
                 ).toCharArray();
-      ks.load(new FileInputStream(keyStoreFile), keyStorePassword);
+      fis = new FileInputStream(keyStoreFile);
+      ks.load(fis, keyStorePassword);
     } catch(Exception ex) {
       throw Throwables.propagate(ex);
+    } finally {
+      try {
+        if(fis != null) {
+          fis.close();
+        }
+      } catch (IOException e) {
+        logger.warn("Problem closing file input stream. " + e.getMessage(), e);
+      }
     }
+
   }
 
   @Override

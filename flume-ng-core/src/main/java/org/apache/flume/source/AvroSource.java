@@ -24,6 +24,7 @@ import com.google.common.base.Throwables;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.security.Security;
@@ -197,6 +198,7 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
         );
       }
       keystorePasswordFileType = context.getString(KEYSTORE_PASSWORD_FILE_TYPE, "TEXT");
+      FileInputStream fis = null;
       try {
         if(keystorePassword==null) {
           keystorePassword =
@@ -204,11 +206,21 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
                           keystorePasswordFileType);
         }
         KeyStore ks = KeyStore.getInstance(keystoreType);
-        ks.load(new FileInputStream(keystore), keystorePassword.toCharArray());
+        fis = new FileInputStream(keystore);
+        ks.load(fis, keystorePassword.toCharArray());
       } catch (Exception ex) {
         throw new FlumeException(
             "Avro source configured with invalid keystore: " + keystore, ex);
+      } finally {
+        try {
+          if(fis != null) {
+            fis.close();
+          }
+        } catch (IOException e) {
+          logger.warn("Problem closing file input stream. " + e.getMessage(), e);
+        }
       }
+
     }
 
     enableIpFilter = context.getBoolean(IP_FILTER_KEY, false);
@@ -482,9 +494,11 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
     }
 
     private SSLContext createServerSSLContext() {
+      FileInputStream fis = null;
       try {
         KeyStore ks = KeyStore.getInstance(keystoreType);
-        ks.load(new FileInputStream(keystore), keystorePassword.toCharArray());
+        fis = new FileInputStream(keystore);
+        ks.load(fis, keystorePassword.toCharArray());
 
         // Set up key manager factory to use our key store
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(getAlgorithm());
@@ -495,6 +509,14 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
         return serverContext;
       } catch (Exception e) {
         throw new Error("Failed to initialize the server-side SSLContext", e);
+      } finally {
+        try {
+          if(fis != null) {
+            fis.close();
+          }
+        } catch (IOException e) {
+          logger.warn("Problem closing file input stream. " + e.getMessage(), e);
+        }
       }
     }
 

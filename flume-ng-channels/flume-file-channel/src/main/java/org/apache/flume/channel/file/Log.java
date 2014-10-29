@@ -1151,12 +1151,12 @@ public class Log {
     try {
       res = file.getChannel().tryLock();
     } catch(OverlappingFileLockException oe) {
-      file.close();
       return null;
     } catch(IOException e) {
       LOGGER.error("Cannot create lock on " + lockF, e);
-      file.close();
       throw e;
+    } finally {
+      file.close();
     }
     return res;
   }

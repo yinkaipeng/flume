@@ -135,6 +135,7 @@ public class MorphlineHandlerImpl implements MorphlineHandler {
       }
     } finally {
       timerContext.stop();
+      timerContext.close();
     }
   }
 

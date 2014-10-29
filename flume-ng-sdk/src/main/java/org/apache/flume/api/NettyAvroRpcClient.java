@@ -701,6 +701,7 @@ implements RpcClient {
     @Override
     public SocketChannel newChannel(ChannelPipeline pipeline) {
       TrustManager[] managers;
+      FileInputStream truststoreStream = null;
       try {
         if (enableCompression) {
           ZlibEncoder encoder = new ZlibEncoder(compressionLevel);
@@ -719,9 +720,10 @@ implements RpcClient {
               if (truststorePassword == null) {
                 throw new NullPointerException("truststore password is null");
               }
-              InputStream truststoreStream = new FileInputStream(truststore);
+              truststoreStream = new FileInputStream(truststore);
               keystore = KeyStore.getInstance(truststoreType);
               keystore.load(truststoreStream, truststorePassword.toCharArray());
+              truststoreStream.close();
             }
 
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
@@ -745,8 +747,17 @@ implements RpcClient {
       } catch (Exception ex) {
         logger.error("Cannot create SSL channel", ex);
         throw new RuntimeException("Cannot create SSL channel", ex);
+      } finally {
+        try {
+          if(truststoreStream != null) {
+            truststoreStream.close();
+          }
+        } catch (IOException e) {
+          logger.warn("Problem closing file input stream. " + e.getMessage(), e);
+        }
       }
-    }
+
+  }
   }
 
   /**
