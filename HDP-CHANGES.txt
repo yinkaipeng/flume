@@ -40,4 +40,5 @@ FLUME-2146 - Windows: Tmp file creation in TestBodyTextEventSerializer.java need
 FLUME-2151 - Windows: Update TestExecSource to use native commands on Windows
 FLUME-2501 - Updating HttpClient lib version to ensure compat with Solr
 FLUME-2508 - LineDeserializer causes incorrect behavior in SpoolDir Source on Windows
+FLUME-2530 - Resource leaks found by Coverity tool
 Stopping Windows Service leaves the Flume java process running
