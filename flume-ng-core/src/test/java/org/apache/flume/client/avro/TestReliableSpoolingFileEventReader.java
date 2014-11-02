@@ -30,6 +30,7 @@ import org.apache.flume.source.SpoolDirectorySourceConfigurationConstants.Consum
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,8 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
+
+import static org.junit.Assume.assumeTrue;
 
 public class TestReliableSpoolingFileEventReader {
 
@@ -120,6 +123,7 @@ public class TestReliableSpoolingFileEventReader {
     Assert.assertEquals("file2", after.get(0).getName());
     List<File> trackerFiles = listFiles(new File(WORK_DIR,
         SpoolDirectorySourceConfigurationConstants.DEFAULT_TRACKER_DIR));
+    reader.close();
     Assert.assertEquals("Expected 0, not: " + trackerFiles, 0,
         trackerFiles.size());
   }
@@ -137,6 +141,7 @@ public class TestReliableSpoolingFileEventReader {
       reader.commit();
     }
 
+    reader.close();
     Assert.assertEquals(expectedLines, seenLines);
   }
 
@@ -165,7 +170,7 @@ public class TestReliableSpoolingFileEventReader {
             .getAbsolutePath(), files.length > 0);
       }
     }
-
+    reader.close();
     Assert.assertEquals(expectedLines, seenLines);
   }
 
@@ -189,6 +194,7 @@ public class TestReliableSpoolingFileEventReader {
     Assert.assertEquals("Expected 0, not: " + after, 0, after.size());
     List<File> trackerFiles = listFiles(new File(WORK_DIR,
         SpoolDirectorySourceConfigurationConstants.DEFAULT_TRACKER_DIR));
+    reader.close();
     Assert.assertEquals("Expected 0, not: " + trackerFiles, 0,
         trackerFiles.size());
   }
@@ -200,7 +206,7 @@ public class TestReliableSpoolingFileEventReader {
     .consumeOrder(null)
     .build();
   }
-  
+
   @Test
   public void testConsumeFileRandomly() throws IOException {
     ReliableEventReader reader
@@ -210,15 +216,16 @@ public class TestReliableSpoolingFileEventReader {
     .build();
     File fileName = new File(WORK_DIR, "new-file");
     FileUtils.write(fileName,
-      "New file created in the end. Shoud be read randomly.\n");
+      "New file created in the end. Should be read randomly.\n");
     Set<String> actual = Sets.newHashSet();
-    readEventsForFilesInDir(WORK_DIR, reader, actual);      
+    readEventsForFilesInDir(WORK_DIR, reader, actual);
     Set<String> expected = Sets.newHashSet();
     createExpectedFromFilesInSetup(expected);
     expected.add("");
     expected.add(
-      "New file created in the end. Shoud be read randomly.");
-    Assert.assertEquals(expected, actual);    
+      "New file created in the end. Should be read randomly.");
+    reader.close();
+    Assert.assertEquals(expected, actual);
   }
 
 
@@ -229,30 +236,32 @@ public class TestReliableSpoolingFileEventReader {
       .spoolDirectory(WORK_DIR)
       .consumeOrder(ConsumeOrder.OLDEST)
       .build();
-    File file1 = new File(WORK_DIR, "new-file1");   
-    File file2 = new File(WORK_DIR, "new-file2");    
+    File file1 = new File(WORK_DIR, "new-file1");
+    File file2 = new File(WORK_DIR, "new-file2");
     File file3 = new File(WORK_DIR, "new-file3");
-    Thread.sleep(1000L);
     FileUtils.write(file2, "New file2 created.\n");
     Thread.sleep(1000L);
     FileUtils.write(file1, "New file1 created.\n");
     Thread.sleep(1000L);
     FileUtils.write(file3, "New file3 created.\n");
     // order of age oldest to youngest (file2, file1, file3)
-    List<String> actual = Lists.newLinkedList();    
-    readEventsForFilesInDir(WORK_DIR, reader, actual);        
+    List<String> actual = Lists.newLinkedList();
+    readEventsForFilesInDir(WORK_DIR, reader, actual);
     List<String> expected = Lists.newLinkedList();
     createExpectedFromFilesInSetup(expected);
     expected.add(""); // Empty file was added in the last in setup.
     expected.add("New file2 created.");
     expected.add("New file1 created.");
-    expected.add("New file3 created.");    
+    expected.add("New file3 created.");
+    reader.close();
     Assert.assertEquals(expected, actual);
   }
-  
+
   @Test
   public void testConsumeFileYoungest()
     throws IOException, InterruptedException {
+    // Timestamps of files created by test are not as expected on Windows, causing failure sometimes
+    assumeTrue( !System.getProperty( "os.name" ).startsWith( "Win" ) );
     ReliableEventReader reader
       = new ReliableSpoolingFileEventReader.Builder()
       .spoolDirectory(WORK_DIR)
@@ -261,25 +270,26 @@ public class TestReliableSpoolingFileEventReader {
     File file1 = new File(WORK_DIR, "new-file1");
     File file2 = new File(WORK_DIR, "new-file2");
     File file3 = new File(WORK_DIR, "new-file3");
-    Thread.sleep(1000L);
     FileUtils.write(file2, "New file2 created.\n");
     Thread.sleep(1000L);
     FileUtils.write(file3, "New file3 created.\n");
     Thread.sleep(1000L);
     FileUtils.write(file1, "New file1 created.\n");
+    Thread.sleep(1000L);
     // order of age youngest to oldest (file2, file3, file1)
-    List<String> actual = Lists.newLinkedList();    
-    readEventsForFilesInDir(WORK_DIR, reader, actual);        
+    List<String> actual = Lists.newLinkedList();
+    readEventsForFilesInDir(WORK_DIR, reader, actual);
     List<String> expected = Lists.newLinkedList();
     createExpectedFromFilesInSetup(expected);
     Collections.sort(expected);
     // Empty Line file was added in the last in Setup.
     expected.add(0, "");
-    expected.add(0, "New file2 created.");    
+    expected.add(0, "New file2 created.");
     expected.add(0, "New file3 created.");
     expected.add(0, "New file1 created.");
-        
+    reader.close();
     Assert.assertEquals(expected, actual);
+    return;
   }
 
   @Test
@@ -293,10 +303,10 @@ public class TestReliableSpoolingFileEventReader {
     File file1 = new File(WORK_DIR, "new-file1");
     File file2 = new File(WORK_DIR, "new-file2");
     File file3 = new File(WORK_DIR, "new-file3");
-    Thread.sleep(1000L);
     FileUtils.write(file3, "New file3 created.\n");
     FileUtils.write(file2, "New file2 created.\n");
     FileUtils.write(file1, "New file1 created.\n");
+    Thread.sleep(1000L);
     file1.setLastModified(file3.lastModified());
     file1.setLastModified(file2.lastModified());
     // file ages are same now they need to be ordered
@@ -309,6 +319,7 @@ public class TestReliableSpoolingFileEventReader {
     expected.add("New file1 created.");
     expected.add("New file2 created.");
     expected.add("New file3 created.");
+    reader.close();
     Assert.assertEquals(expected, actual);
   }
 
@@ -323,10 +334,10 @@ public class TestReliableSpoolingFileEventReader {
     File file1 = new File(WORK_DIR, "new-file1");
     File file2 = new File(WORK_DIR, "new-file2");
     File file3 = new File(WORK_DIR, "new-file3");
-    Thread.sleep(1000L);
     FileUtils.write(file1, "New file1 created.\n");
     FileUtils.write(file2, "New file2 created.\n");
     FileUtils.write(file3, "New file3 created.\n");
+    Thread.sleep(1000L);
     file1.setLastModified(file3.lastModified());
     file1.setLastModified(file2.lastModified());
     // file ages are same now they need to be ordered
@@ -339,6 +350,7 @@ public class TestReliableSpoolingFileEventReader {
     expected.add(0, "New file3 created.");
     expected.add(0, "New file2 created.");
     expected.add(0, "New file1 created.");
+    reader.close();
     Assert.assertEquals(expected, actual);
   }
 
