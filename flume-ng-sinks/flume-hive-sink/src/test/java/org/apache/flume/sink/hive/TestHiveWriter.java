@@ -28,6 +28,7 @@ import org.apache.hadoop.hive.cli.CliSessionState;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
 import org.apache.hadoop.hive.ql.CommandNeedRetryException;
+import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.hcatalog.streaming.HiveEndPoint;
@@ -72,6 +73,7 @@ public class TestHiveWriter {
   @Rule
   public TemporaryFolder dbFolder = new TemporaryFolder();
 
+  private final Driver driver;
 
   public TestHiveWriter() throws Exception {
     partVals = new ArrayList<String>(2);
@@ -94,6 +96,8 @@ public class TestHiveWriter {
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
+    driver = new Driver(conf);
+
   }
 
   @Before
@@ -105,7 +109,7 @@ public class TestHiveWriter {
     // 1) Setup tables
     TestUtil.dropDB(conf, dbName);
     String dbLocation = dbFolder.newFolder(dbName).getCanonicalPath() + ".db";
-    TestUtil.createDbAndTable(conf,dbName, tblName, partVals, colNames, colTypes
+    TestUtil.createDbAndTable(driver, dbName, tblName, partVals, colNames, colTypes
             , partNames, dbLocation);
 
     // 2) Setup serializer

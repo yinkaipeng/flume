@@ -121,7 +121,7 @@ public class TestHiveSink {
     sink.setName("HiveSink-" + UUID.randomUUID().toString());
 
     String dbLocation = dbFolder.newFolder(dbName).getCanonicalPath() + ".db";
-    TestUtil.createDbAndTable(conf, dbName, tblName, partitionVals, colNames,
+    TestUtil.createDbAndTable(driver, dbName, tblName, partitionVals, colNames,
             colTypes, partNames, dbLocation);
   }
 
@@ -181,7 +181,7 @@ public class TestHiveSink {
           throws Exception {
     TestUtil.dropDB(conf, dbName2);
     String dbLocation = dbFolder.newFolder(dbName2).getCanonicalPath() + ".db";
-    TestUtil.createDbAndTable(conf, dbName2, tblName2, null, colNames2, colTypes2
+    TestUtil.createDbAndTable(driver, dbName2, tblName2, null, colNames2, colTypes2
             , null, dbLocation);
 
     try {
@@ -245,7 +245,7 @@ public class TestHiveSink {
     String tblName = "hourlydata";
     TestUtil.dropDB(conf, dbName2);
     String dbLocation = dbFolder.newFolder(dbName2).getCanonicalPath() + ".db";
-    TestUtil.createDbAndTable(conf, dbName2, tblName, partitionVals, colNames,
+    TestUtil.createDbAndTable(driver, dbName2, tblName, partitionVals, colNames,
             colTypes, partNames, dbLocation);
 
     int totalRecords = 4;

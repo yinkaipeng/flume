@@ -27,25 +27,13 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.IMetaStoreClient;
-import org.apache.hadoop.hive.metastore.MetaStoreUtils;
-import org.apache.hadoop.hive.metastore.TableType;
-import org.apache.hadoop.hive.metastore.api.Database;
-import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
-import org.apache.hadoop.hive.metastore.api.Partition;
-import org.apache.hadoop.hive.metastore.api.SerDeInfo;
-import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
-import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
 import org.apache.hadoop.hive.ql.CommandNeedRetryException;
 import org.apache.hadoop.hive.ql.Driver;
-import org.apache.hadoop.hive.ql.io.orc.OrcInputFormat;
-import org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat;
-import org.apache.hadoop.hive.ql.io.orc.OrcSerde;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
-import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.util.Shell;
+import org.apache.hive.hcatalog.streaming.QueryFailedException;
 import org.apache.thrift.TException;
 
 import java.io.File;
@@ -54,9 +42,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class TestUtil {
 
@@ -74,54 +60,25 @@ public class TestUtil {
     conf.set("fs.raw.impl", RawFileSystem.class.getName());
   }
 
-  public static void createDbAndTable(HiveConf conf, String databaseName,
+  public static void createDbAndTable(Driver driver, String databaseName,
                                       String tableName, List<String> partVals,
                                       String[] colNames, String[] colTypes,
                                       String[] partNames, String dbLocation)
           throws Exception {
-    IMetaStoreClient client = new HiveMetaStoreClient(conf);
-
-    try {
-      String dbUri = "raw://" + dbLocation;
-              Database db = new Database();
-      db.setName(databaseName);
-      db.setLocationUri(dbUri);
-      client.createDatabase(db);
-
-      Table tbl = new Table();
-      tbl.setDbName(databaseName);
-      tbl.setTableName(tableName);
-      tbl.setTableType(TableType.MANAGED_TABLE.toString());
-      StorageDescriptor sd = new StorageDescriptor();
-      sd.setCols(getTableColumns(colNames, colTypes));
-      sd.setNumBuckets(10);
-      sd.setLocation(dbUri + Path.SEPARATOR + tableName);
-      if(partNames!=null && partNames.length!=0) {
-        tbl.setPartitionKeys(getPartitionKeys(partNames));
-      }
-
-      tbl.setSd(sd);
-
-      sd.setBucketCols(new ArrayList<String>(2));
-      sd.setSerdeInfo(new SerDeInfo());
-      sd.getSerdeInfo().setName(tbl.getTableName());
-      sd.getSerdeInfo().setParameters(new HashMap<String, String>());
-      sd.getSerdeInfo().getParameters().put(serdeConstants.SERIALIZATION_FORMAT, "1");
-
-      sd.getSerdeInfo().setSerializationLib(OrcSerde.class.getName());
-      sd.setInputFormat(OrcInputFormat.class.getName());
-      sd.setOutputFormat(OrcOutputFormat.class.getName());
-
-      Map<String, String> tableParams = new HashMap<String, String>();
-      tbl.setParameters(tableParams);
-      client.createTable(tbl);
-
-      if(partVals!=null && partVals.size() > 0) {
-        addPartition(client, tbl, partVals);
-      }
-    } finally {
-      client.close();
-    }
+    runDDL(driver, "create database IF NOT EXISTS " + databaseName);
+    runDDL(driver, "use " + databaseName);
+    String crtTbl = "create table " + tableName +
+            " ( " +  getTableColumnsStr(colNames,colTypes) + " )" +
+            " partitioned by (" + getTablePartsStr(partNames) + " )" +
+            " clustered by ( " + colNames[0] + " )" +
+            " into 10 buckets " +
+            " stored as orc ";
+    runDDL(driver, crtTbl);
+    System.out.println("crtTbl = " + crtTbl);
+    String addPart = "alter table " + tableName + " add partition ( " +
+            getTablePartsStr2(partNames, partVals) + " )";
+    runDDL(driver, addPart);
+    driver.close();
   }
 
   // delete db and all tables in it
@@ -137,63 +94,38 @@ public class TestUtil {
     }
   }
 
-  private static void addPartition(IMetaStoreClient client, Table tbl
-          , List<String> partValues)
-          throws IOException, TException {
-    Partition part = new Partition();
-    part.setDbName(tbl.getDbName());
-    part.setTableName(tbl.getTableName());
-    StorageDescriptor sd = new StorageDescriptor(tbl.getSd());
-    sd.setLocation(sd.getLocation() + Path.SEPARATOR + makePartPath(tbl.getPartitionKeys(), partValues));
-    part.setSd(sd);
-    part.setValues(partValues);
-    client.add_partition(part);
-  }
-
-  private static String makePartPath(List<FieldSchema> partKeys, List<String> partVals) {
-    if(partKeys.size()!=partVals.size()) {
-      throw new IllegalArgumentException("Partition values:" + partVals +
-              ", does not match the partition Keys in table :" + partKeys );
-    }
-    StringBuffer buff = new StringBuffer(partKeys.size()*20);
-    int i=0;
-    for(FieldSchema schema : partKeys) {
-      buff.append(schema.getName());
-      buff.append("=");
-      buff.append(partVals.get(i));
-      if(i!=partKeys.size()-1) {
-        buff.append(Path.SEPARATOR);
-      }
-      ++i;
-    }
-    return buff.toString();
-  }
-
-  private static List<FieldSchema> getTableColumns(String[] colNames, String[] colTypes) {
-    List<FieldSchema> fields = new ArrayList<FieldSchema>();
+  private static String getTableColumnsStr(String[] colNames, String[] colTypes) {
+    StringBuffer sb = new StringBuffer();
     for (int i=0; i<colNames.length; ++i) {
-      fields.add(new FieldSchema(colNames[i], colTypes[i], ""));
+      sb.append(colNames[i] + " " + colTypes[i]);
+      if(i<colNames.length-1) {
+        sb.append(",");
+      }
     }
-    return fields;
+    return sb.toString();
   }
 
-  private static List<FieldSchema> getPartitionKeys(String[] partNames) {
-    List<FieldSchema> fields = new ArrayList<FieldSchema>();
+  private static String getTablePartsStr(String[] partNames) {
+    StringBuffer sb = new StringBuffer();
     for (int i=0; i<partNames.length; ++i) {
-      fields.add(new FieldSchema(partNames[i], serdeConstants.STRING_TYPE_NAME, ""));
+      sb.append(partNames[i] + " string");
+      if(i<partNames.length-1) {
+        sb.append(",");
+      }
     }
-    return fields;
+    return sb.toString();
   }
 
-//  public static int findFreePort() throws IOException {
-//    return  MetaStoreUtils.findFreePort();
-//  }
-//
-//  public static void startLocalMetaStore(int port, HiveConf conf) throws Exception {
-//    TxnDbUtil.cleanDb();
-//    TxnDbUtil.prepDb();
-////    MetaStoreUtils.startMetaStore(port, ShimLoader.getHadoopThriftAuthBridge(), conf);
-//  }
+  private static String getTablePartsStr2(String[] partNames, List<String> partVals) {
+    StringBuffer sb = new StringBuffer();
+    for (int i=0; i<partVals.size(); ++i) {
+      sb.append(partNames[i] + " = '" + partVals.get(i) + "'");
+      if(i<partVals.size()-1) {
+        sb.append(",");
+      }
+    }
+    return sb.toString();
+  }
 
   public static ArrayList<String> listRecordsInTable(Driver driver, String dbName, String tblName)
           throws CommandNeedRetryException, IOException {
@@ -259,6 +191,22 @@ public class TestUtil {
               file.lastModified(), file.lastModified(),
               FsPermission.createImmutable(mod), "owen", "users", path);
     }
+  }
+  private static boolean runDDL(Driver driver, String sql) throws QueryFailedException {
+    int retryCount = 1; // # of times to retry if first attempt fails
+    for (int attempt=0; attempt<=retryCount; ++attempt) {
+      try {
+          //LOG.debug("Running Hive Query: "+ sql);
+        driver.run(sql);
+        return true;
+      } catch (CommandNeedRetryException e) {
+        if (attempt==retryCount) {
+          throw new QueryFailedException(sql, e);
+        }
+        continue;
+      }
+    } // for
+    return false;
   }
 
 }
