@@ -69,23 +69,31 @@ public class TestUtil {
     runDDL(driver, "use " + databaseName);
     String crtTbl = "create table " + tableName +
             " ( " +  getTableColumnsStr(colNames,colTypes) + " )" +
-            " partitioned by (" + getTablePartsStr(partNames) + " )" +
+            getParitionStmtStr(partNames) +
             " clustered by ( " + colNames[0] + " )" +
             " into 10 buckets " +
             " stored as orc ";
     runDDL(driver, crtTbl);
     System.out.println("crtTbl = " + crtTbl);
-    String addPart = "alter table " + tableName + " add partition ( " +
-            getTablePartsStr2(partNames, partVals) + " )";
-    runDDL(driver, addPart);
-    driver.close();
+    if(partNames!=null && partNames.length!=0) {
+      String addPart = "alter table " + tableName + " add partition ( " +
+              getTablePartsStr2(partNames, partVals) + " )";
+      runDDL(driver, addPart);
+    }
+  }
+
+  private static String getParitionStmtStr(String[] partNames) {
+    if (partNames==null || partNames.length==0) {
+      return "";
+    }
+    return " partitioned by (" + getTablePartsStr(partNames) + " )";
   }
 
   // delete db and all tables in it
   public static void dropDB(HiveConf conf, String databaseName) throws HiveException, MetaException {
     IMetaStoreClient client = new HiveMetaStoreClient(conf);
     try {
-      for(String table : client.listTableNamesByFilter(databaseName, "", (short)-1)) {
+      for (String table : client.listTableNamesByFilter(databaseName, "", (short)-1)) {
         client.dropTable(databaseName, table, true, true);
       }
       client.dropDatabase(databaseName);
@@ -96,31 +104,36 @@ public class TestUtil {
 
   private static String getTableColumnsStr(String[] colNames, String[] colTypes) {
     StringBuffer sb = new StringBuffer();
-    for (int i=0; i<colNames.length; ++i) {
+    for (int i=0; i < colNames.length; ++i) {
       sb.append(colNames[i] + " " + colTypes[i]);
-      if(i<colNames.length-1) {
+      if (i<colNames.length-1) {
         sb.append(",");
       }
     }
     return sb.toString();
   }
 
+  // converts partNames into "partName1 string, partName2 string"
   private static String getTablePartsStr(String[] partNames) {
+    if (partNames==null || partNames.length==0) {
+      return "";
+    }
     StringBuffer sb = new StringBuffer();
-    for (int i=0; i<partNames.length; ++i) {
+    for (int i=0; i < partNames.length; ++i) {
       sb.append(partNames[i] + " string");
-      if(i<partNames.length-1) {
+      if (i < partNames.length-1) {
         sb.append(",");
       }
     }
     return sb.toString();
   }
 
+  // converts partNames,partVals into "partName1=val1, partName2=val2"
   private static String getTablePartsStr2(String[] partNames, List<String> partVals) {
     StringBuffer sb = new StringBuffer();
-    for (int i=0; i<partVals.size(); ++i) {
+    for (int i=0; i < partVals.size(); ++i) {
       sb.append(partNames[i] + " = '" + partVals.get(i) + "'");
-      if(i<partVals.size()-1) {
+      if(i < partVals.size()-1) {
         sb.append(",");
       }
     }
@@ -194,13 +207,13 @@ public class TestUtil {
   }
   private static boolean runDDL(Driver driver, String sql) throws QueryFailedException {
     int retryCount = 1; // # of times to retry if first attempt fails
-    for (int attempt=0; attempt<=retryCount; ++attempt) {
+    for (int attempt=0; attempt <= retryCount; ++attempt) {
       try {
           //LOG.debug("Running Hive Query: "+ sql);
         driver.run(sql);
         return true;
       } catch (CommandNeedRetryException e) {
-        if (attempt==retryCount) {
+        if (attempt == retryCount) {
           throw new QueryFailedException(sql, e);
         }
         continue;

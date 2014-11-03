@@ -90,7 +90,7 @@ public class TestHiveWriter {
     // 1) Start metastore
     conf = new HiveConf(this.getClass());
     TestUtil.setConfValues(conf);
-    if(metaStoreURI!=null) {
+    if (metaStoreURI != null) {
       conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
     }
 

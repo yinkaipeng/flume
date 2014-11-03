@@ -241,6 +241,9 @@ public class TestHiveSink {
     List<String> partitionVals = null;
     String PART1_VALUE = "%{" + PART1_NAME + "}";
     String PART2_VALUE = "%y-%m-%d-%k";
+    partitionVals = new ArrayList<String>(2);
+    partitionVals.add(PART1_VALUE);
+    partitionVals.add(PART2_VALUE);
 
     String tblName = "hourlydata";
     TestUtil.dropDB(conf, dbName2);
