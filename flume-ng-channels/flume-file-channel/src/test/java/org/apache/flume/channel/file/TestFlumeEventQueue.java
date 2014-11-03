@@ -116,6 +116,7 @@ public class TestFlumeEventQueue {
   }
   @After
   public void cleanup() throws IOException {
+    queue.close();
     if(backingStore != null) {
       backingStore.close();
     }
