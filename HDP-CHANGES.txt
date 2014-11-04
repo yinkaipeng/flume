@@ -42,4 +42,5 @@ FLUME-2501 - Updating HttpClient lib version to ensure compat with Solr
 FLUME-2508 - LineDeserializer causes incorrect behavior in SpoolDir Source on Windows
 FLUME-2530 - Resource leaks found by Coverity tool
 FLUME-2532 - Windows : TestReliableSpoolingFileEventReader - need to close filereader
+FLUME-2534 - Windows : Windows : TestFlumeEventQueue has many failures
 Stopping Windows Service leaves the Flume java process running
