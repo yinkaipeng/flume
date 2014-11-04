@@ -69,7 +69,7 @@ public class TestUtil {
     runDDL(driver, "use " + databaseName);
     String crtTbl = "create table " + tableName +
             " ( " +  getTableColumnsStr(colNames,colTypes) + " )" +
-            getParitionStmtStr(partNames) +
+            getPartitionStmtStr(partNames) +
             " clustered by ( " + colNames[0] + " )" +
             " into 10 buckets " +
             " stored as orc ";
@@ -82,8 +82,8 @@ public class TestUtil {
     }
   }
 
-  private static String getParitionStmtStr(String[] partNames) {
-    if (partNames==null || partNames.length==0) {
+  private static String getPartitionStmtStr(String[] partNames) {
+    if ( partNames == null || partNames.length == 0) {
       return "";
     }
     return " partitioned by (" + getTablePartsStr(partNames) + " )";
