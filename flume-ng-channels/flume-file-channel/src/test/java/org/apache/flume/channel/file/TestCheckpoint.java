@@ -23,8 +23,10 @@ import java.io.IOException;
 
 import junit.framework.Assert;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class TestCheckpoint {
@@ -33,12 +35,22 @@ public class TestCheckpoint {
   File inflightPuts;
   File inflightTakes;
   File queueSet;
+  File queueSet2;
+  File queueSet3;
   @Before
   public void setup() throws IOException {
     file = File.createTempFile("Checkpoint", "");
     inflightPuts = File.createTempFile("inflightPuts", "");
+    FileUtils.forceDeleteOnExit(inflightPuts);
     inflightTakes = File.createTempFile("inflightTakes", "");
+    FileUtils.forceDeleteOnExit(inflightTakes);
     queueSet = File.createTempFile("queueset", "");
+    FileUtils.forceDeleteOnExit(queueSet);
+    queueSet2 = File.createTempFile("queueset2", "");
+    FileUtils.forceDeleteOnExit(queueSet2);
+    queueSet3 = File.createTempFile("queueset3", "");
+    FileUtils.forceDeleteOnExit(queueSet3);
+
     Assert.assertTrue(file.isFile());
     Assert.assertTrue(file.canWrite());
   }
@@ -55,11 +67,11 @@ public class TestCheckpoint {
         inflightTakes, inflightPuts, queueSet);
     queueIn.addHead(ptrIn);
     FlumeEventQueue queueOut = new FlumeEventQueue(backingStore,
-        inflightTakes, inflightPuts, queueSet);
+        inflightTakes, inflightPuts, queueSet2);
     Assert.assertEquals(0, queueOut.getLogWriteOrderID());
     queueIn.checkpoint(false);
     FlumeEventQueue queueOut2 = new FlumeEventQueue(backingStore,
-        inflightTakes, inflightPuts, queueSet);
+        inflightTakes, inflightPuts, queueSet3);
     FlumeEventPointer ptrOut = queueOut2.removeHead(0L);
     Assert.assertEquals(ptrIn, ptrOut);
     Assert.assertTrue(queueOut2.getLogWriteOrderID() > 0);

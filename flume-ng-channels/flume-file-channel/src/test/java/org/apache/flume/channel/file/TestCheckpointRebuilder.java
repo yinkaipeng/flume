@@ -80,6 +80,7 @@ public class TestCheckpointRebuilder extends TestFileChannelBase {
     CheckpointRebuilder checkpointRebuilder =
         new CheckpointRebuilder(getAllLogs(dataDirs), queue, true);
     Assert.assertTrue(checkpointRebuilder.rebuild());
+    queue.close();
     channel = createFileChannel(overrides);
     channel.start();
     Assert.assertTrue(channel.isOpen());
