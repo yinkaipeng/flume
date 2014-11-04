@@ -63,7 +63,8 @@ public class TestFlumeEventQueue {
       FileUtils.forceDeleteOnExit(inflightTakes);
       inflightPuts =   File.createTempFile("inflighttakes","test", baseDir);
       FileUtils.forceDeleteOnExit(inflightPuts);
-      queueSetDir =  new File(baseDir, "queueset");
+      queueSetDir =  File.createTempFile("queueset", "test", baseDir);
+      FileUtils.forceDeleteOnExit(queueSetDir);
     }
     File getCheckpoint() {
       return checkpoint;
@@ -77,8 +78,12 @@ public class TestFlumeEventQueue {
     File getQueueSetDir() {
       return queueSetDir;
     }
-    void delete() {
+
+    void delete() throws IOException {
       FileUtils.deleteQuietly(baseDir);
+      baseDir = Files.createTempDir();
+      FileUtils.forceDeleteOnExit(baseDir);
+
     }
     abstract EventQueueBackingStore get() throws Exception ;
   }
@@ -116,15 +121,16 @@ public class TestFlumeEventQueue {
   }
   @After
   public void cleanup() throws IOException {
+    if (queue != null) {
     queue.close();
-    if(backingStore != null) {
+    }
+    if (backingStore != null) {
       backingStore.close();
     }
     backingStoreSupplier.delete();
   }
   @Test
   public void testCapacity() throws Exception {
-    backingStore.close();
     File checkpoint = File.createTempFile("checkpoint","test");
     FileUtils.forceDeleteOnExit(checkpoint);
     backingStore = new EventQueueBackingStoreFileV2(checkpoint, 1, "test");
@@ -137,7 +143,6 @@ public class TestFlumeEventQueue {
   }
   @Test(expected=IllegalArgumentException.class)
   public void testInvalidCapacityZero() throws Exception {
-    backingStore.close();
     File checkpoint = File.createTempFile("checkpoint","test");
     FileUtils.forceDeleteOnExit(checkpoint);
     backingStore = new EventQueueBackingStoreFileV2(checkpoint, 0, "test");
@@ -148,7 +153,6 @@ public class TestFlumeEventQueue {
   }
   @Test(expected=IllegalArgumentException.class)
   public void testInvalidCapacityNegative() throws Exception {
-    backingStore.close();
     File checkpoint = File.createTempFile("checkpoint","test");
     FileUtils.forceDeleteOnExit(checkpoint);
     backingStore = new EventQueueBackingStoreFileV2(checkpoint, -1, "test");
@@ -361,6 +365,7 @@ public class TestFlumeEventQueue {
     queue.addWithoutCommit(new FlumeEventPointer(2, 2), txnID2);
     queue.checkpoint(true);
     TimeUnit.SECONDS.sleep(3L);
+    queue.close();
     queue = new FlumeEventQueue(backingStore,
         backingStoreSupplier.getInflightTakes(),
         backingStoreSupplier.getInflightPuts(),
@@ -390,6 +395,7 @@ public class TestFlumeEventQueue {
     queue.removeHead(txnID2);
     queue.checkpoint(true);
     TimeUnit.SECONDS.sleep(3L);
+    queue.close();
     queue = new FlumeEventQueue(backingStore,
         backingStoreSupplier.getInflightTakes(),
         backingStoreSupplier.getInflightPuts(),
@@ -423,6 +429,7 @@ public class TestFlumeEventQueue {
               backingStoreSupplier.getInflightPuts(), "rw");
       inflight.seek(0);
       inflight.writeInt(new Random().nextInt());
+      queue.close();
       queue = new FlumeEventQueue(backingStore,
               backingStoreSupplier.getInflightTakes(),
               backingStoreSupplier.getInflightPuts(),
@@ -458,6 +465,7 @@ public class TestFlumeEventQueue {
               backingStoreSupplier.getInflightTakes(), "rw");
       inflight.seek(0);
       inflight.writeInt(new Random().nextInt());
+      queue.close();
       queue = new FlumeEventQueue(backingStore,
               backingStoreSupplier.getInflightTakes(),
               backingStoreSupplier.getInflightPuts(),
