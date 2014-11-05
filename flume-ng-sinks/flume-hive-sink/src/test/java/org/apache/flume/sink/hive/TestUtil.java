@@ -65,14 +65,18 @@ public class TestUtil {
                                       String[] colNames, String[] colTypes,
                                       String[] partNames, String dbLocation)
           throws Exception {
-    runDDL(driver, "create database IF NOT EXISTS " + databaseName);
+    String dbUri = "raw://" + dbLocation;
+    String tableLoc = dbUri + Path.SEPARATOR + tableName;
+
+    runDDL(driver, "create database IF NOT EXISTS " + databaseName + " location '" + dbUri + "'");
     runDDL(driver, "use " + databaseName);
     String crtTbl = "create table " + tableName +
             " ( " +  getTableColumnsStr(colNames,colTypes) + " )" +
             getPartitionStmtStr(partNames) +
             " clustered by ( " + colNames[0] + " )" +
             " into 10 buckets " +
-            " stored as orc ";
+            " stored as orc " +
+            " location '" + tableLoc +  "'";
     runDDL(driver, crtTbl);
     System.out.println("crtTbl = " + crtTbl);
     if(partNames!=null && partNames.length!=0) {

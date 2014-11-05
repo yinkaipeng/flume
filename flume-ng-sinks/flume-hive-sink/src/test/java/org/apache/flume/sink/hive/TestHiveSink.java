@@ -83,7 +83,6 @@ public class TestHiveSink {
 
   private final Driver driver;
 
-  private final int port  = 9083;
   final String metaStoreURI;
 
   @Rule

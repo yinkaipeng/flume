@@ -59,7 +59,6 @@ public class TestHiveWriter {
   private static final String PART2_VALUE = "India";
   private final ArrayList<String> partVals;
 
-  private final int port;
   private final String metaStoreURI;
 
   private HiveDelimitedTextSerializer serializer;
@@ -80,7 +79,6 @@ public class TestHiveWriter {
     partVals.add(PART1_VALUE);
     partVals.add(PART2_VALUE);
 
-    port = 9083;
     metaStoreURI = null;
 
     int callTimeoutPoolSize = 1;
