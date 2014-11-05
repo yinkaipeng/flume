@@ -122,12 +122,12 @@ public class TestFlumeEventQueue {
   @After
   public void cleanup() throws IOException {
     if (queue != null) {
-    queue.close();
+      queue.close();
     }
     if (backingStore != null) {
       backingStore.close();
     }
-    backingStoreSupplier.delete();
+
   }
   @Test
   public void testCapacity() throws Exception {
