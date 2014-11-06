@@ -43,4 +43,5 @@ FLUME-2508 - LineDeserializer causes incorrect behavior in SpoolDir Source on Wi
 FLUME-2530 - Resource leaks found by Coverity tool
 FLUME-2532 - Windows : TestReliableSpoolingFileEventReader - need to close filereader
 FLUME-2534 - Windows : Windows : TestFlumeEventQueue has many failures
+FLUME-2541 - Bug in TestBucketWriter.testSequenceFileCloseRetries
 Stopping Windows Service leaves the Flume java process running
