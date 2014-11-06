@@ -420,7 +420,6 @@ public class TestBucketWriter {
     String hdfsPath = "file:///tmp/flume-test."
       + Calendar.getInstance().getTimeInMillis() + "."
       + Thread.currentThread().getId();
-
     Context context = new Context();
     Configuration conf = new Configuration();
     FileSystem fs = FileSystem.get(conf);
@@ -437,7 +436,7 @@ public class TestBucketWriter {
       MockFileSystem(fs,
       numberOfClosesRequired);
     BucketWriter bucketWriter = new BucketWriter(0, 0, 1, 1, ctx,
-      hdfsPath, hdfsPath, "singleBucket", ".tmp", null, null,
+      hdfsPath, "File", "singleBucket", ".tmp", null, null,
       null, new MockDataStream(mockFs),
       timedRollerPool, null,
       new SinkCounter(
