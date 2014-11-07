@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,6 +148,7 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
   private static final String KEYSTORE_PASSWORD_FILE = "keystore-password-file";
   private static final String KEYSTORE_PASSWORD_FILE_TYPE = "keystore-password-file-type";
   private static final String KEYSTORE_TYPE_KEY = "keystore-type";
+  private static final String EXCLUDE_PROTOCOLS = "exclude-protocols";
   private int port;
   private String bindAddress;
   private String compressionType;
@@ -155,6 +157,7 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
   private String keystorePasswordFile;
   private String keystorePasswordFileType;
   private String keystoreType;
+  private List<String> excludeProtocols;
   private boolean enableSsl = false;
   private boolean enableIpFilter;
   private String patternRuleConfigDefinition;
@@ -187,6 +190,8 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
     keystorePassword = context.getString(KEYSTORE_PASSWORD_KEY);
     keystorePasswordFile = context.getString(KEYSTORE_PASSWORD_FILE,null);
     keystoreType = context.getString(KEYSTORE_TYPE_KEY, "JKS");
+    excludeProtocols = Arrays.asList(
+        context.getString(EXCLUDE_PROTOCOLS, "SSLv2Hello SSLv3").split(" "));
 
     if (enableSsl) {
       Preconditions.checkNotNull(keystore,
@@ -542,6 +547,15 @@ public class AvroSource extends AbstractSource implements EventDrivenSource,
       if (enableSsl) {
         SSLEngine sslEngine = createServerSSLContext().createSSLEngine();
         sslEngine.setUseClientMode(false);
+        List<String> enabledProtocols = new ArrayList<String>();
+        for (String protocol : sslEngine.getEnabledProtocols()) {
+          if (!excludeProtocols.contains(protocol)) {
+            enabledProtocols.add(protocol);
+          }
+        }
+        sslEngine.setEnabledProtocols(enabledProtocols.toArray(new String[0]));
+        logger.info("SSLEngine protocols enabled: " +
+            Arrays.asList(sslEngine.getEnabledProtocols()));
         // addFirst() will make SSL handling the first stage of decoding
         // and the last stage of encoding this must be added after
         // adding compression handling above

@@ -688,28 +688,29 @@ When paired with the built-in Avro Sink on another (previous hop) Flume agent,
 it can create tiered collection topologies.
 Required properties are in **bold**.
 
-===========================   ===========  ===================================================
-Property Name                 Default      Description
-===========================   ===========  ===================================================
+===========================   ================   ===================================================
+Property Name                 Default            Description
+===========================   ================   ===================================================
 **channels**                  --
-**type**                      --           The component type name, needs to be ``avro``
-**bind**                      --           hostname or IP address to listen on
-**port**                      --           Port # to bind to
-threads                       --           Maximum number of worker threads to spawn
+**type**                      --                 The component type name, needs to be ``avro``
+**bind**                      --                 hostname or IP address to listen on
+**port**                      --                 Port # to bind to
+threads                       --                 Maximum number of worker threads to spawn
 selector.type
 selector.*
-interceptors                  --           Space-separated list of interceptors
+interceptors                  --                 Space-separated list of interceptors
 interceptors.*
-compression-type              none         This can be "none" or "deflate".  The compression-type must match the compression-type of matching AvroSource
-ssl                           false        Set this to true to enable SSL encryption. You must also specify a "keystore" and a "keystore-password".
-keystore                      --           This is the path to a Java keystore file. Required for SSL.
-keystore-type                 JKS          The type of the Java keystore. This can be "JKS" or "PKCS12".
-keystore-password             --           The password for the Java keystore. Either this or the keystore-password-file setting is required for SSL.
-keystore-password-file        --           The location of the file which stores the password to the keystore. Either this or the keystore-password setting is required for SSL.
-keystore-password-file-type   TEXT         Format of the password file. This can be "AES" if password file was created using "flue-ng password" command. "TEXT" indicates the password is in clear text.
-ipFilter                      false        Set this to true to enable ipFiltering for netty
-ipFilter.rules                --           Define N netty ipFilter pattern rules with this config.
-===========================   ===========  ===================================================
+compression-type              none               This can be "none" or "deflate".  The compression-type must match the compression-type of matching AvroSource
+ssl                           false              Set this to true to enable SSL encryption. You must also specify a "keystore" and a "keystore-password".
+keystore                      --                 This is the path to a Java keystore file. Required for SSL.
+keystore-type                 JKS                The type of the Java keystore. This can be "JKS" or "PKCS12".
+keystore-password             --                 The password for the Java keystore. Either this or the keystore-password-file setting is required for SSL.
+keystore-password-file        --                 The location of the file which stores the password to the keystore. Either this or the keystore-password setting is required for SSL.
+keystore-password-file-type   TEXT               Format of the password file. This can be "AES" if password file was created using "flue-ng password" command. "TEXT" indicates the password is in clear text.
+exclude-protocols             SSLv2Hello SSLv3   Space-separated list of SSL/TLS protocols to exclude
+ipFilter                      false              Set this to true to enable ipFiltering for netty
+ipFilter.rules                --                 Define N netty ipFilter pattern rules with this config.
+===========================   ================   ===================================================
 
 Example for agent named a1:
 
@@ -1830,6 +1831,7 @@ truststore-password                --                                           
 truststore-password-file           --                                                     File in which password for the truststore is stored.
 truststore-password-file-type      TEXT                                                   Type of password-file. Can also be "AES" if the file is created using "flume-ng password" command. "TEXT" indicates the password is in clear text.
 truststore-type                    JKS                                                    The type of the Java truststore. This can be "JKS" or other supported Java truststore type.
+exclude-protocols                  SSLv2Hello SSLv3                                       Space-separated list of SSL/TLS protocols to exclude
 maxIoWorkers                       2 * the number of available processors in the machine  The maximum number of I/O worker threads. This is configured on the NettyAvroRpcClient NioClientSocketChannelFactory.
 =============================      =====================================================  ===========================================================================================
 
