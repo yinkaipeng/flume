@@ -107,6 +107,7 @@ public class TestHiveWriter {
     // 1) Setup tables
     TestUtil.dropDB(conf, dbName);
     String dbLocation = dbFolder.newFolder(dbName).getCanonicalPath() + ".db";
+    dbLocation = dbLocation.replaceAll("\\\\","/"); // for windows paths
     TestUtil.createDbAndTable(driver, dbName, tblName, partVals, colNames, colTypes
             , partNames, dbLocation);
 

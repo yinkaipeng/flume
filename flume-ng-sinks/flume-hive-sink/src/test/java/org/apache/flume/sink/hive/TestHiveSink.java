@@ -120,6 +120,7 @@ public class TestHiveSink {
     sink.setName("HiveSink-" + UUID.randomUUID().toString());
 
     String dbLocation = dbFolder.newFolder(dbName).getCanonicalPath() + ".db";
+    dbLocation = dbLocation.replaceAll("\\\\","/"); // for windows paths
     TestUtil.createDbAndTable(driver, dbName, tblName, partitionVals, colNames,
             colTypes, partNames, dbLocation);
   }
