@@ -257,9 +257,7 @@ class HiveWriter {
           return null;
         }
       });
-    } catch (StreamingException e) {
-      throw new CommitFailure(endPoint, txnBatch.getCurrentTxnId(), e);
-    } catch (TimeoutException e) {
+    } catch (Exception e) {
       throw new CommitFailure(endPoint, txnBatch.getCurrentTxnId(), e);
     }
   }
