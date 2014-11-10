@@ -276,7 +276,7 @@ class HiveWriter {
       throw e;
     } catch (TimeoutException e) {
       LOG.warn("Timeout while aborting Txn " + txnBatch.getCurrentTxnId() + " on EndPoint: " + endPoint, e);
-    } catch (StreamingException e) {
+    } catch (Exception e) {
       LOG.warn("Error aborting Txn " + txnBatch.getCurrentTxnId() + " on EndPoint: " + endPoint, e);
       // Suppressing exceptions as we don't care for errors on abort
     }
@@ -291,9 +291,7 @@ class HiveWriter {
           return endPoint.newConnection(autoCreatePartitions, null, ugi); // could block
         }
       });
-    } catch (StreamingException e) {
-      throw new ConnectFailure(endPoint, e);
-    } catch (TimeoutException e) {
+    } catch (Exception e) {
       throw new ConnectFailure(endPoint, e);
     }
   }
@@ -311,9 +309,7 @@ class HiveWriter {
       });
       LOG.info("Acquired Transaction batch {}. Switching to first txn", batch);
       batch.beginNextTransaction();
-    } catch (TimeoutException e) {
-      throw new TxnBatchFailure(endPoint, e);
-    } catch (StreamingException e) {
+    } catch (Exception e) {
       throw new TxnBatchFailure(endPoint, e);
     }
     return batch;
