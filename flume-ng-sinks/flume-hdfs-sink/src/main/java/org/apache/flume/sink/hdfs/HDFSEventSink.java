@@ -68,8 +68,6 @@ public class HDFSEventSink extends AbstractSink implements Configurable {
   private static final Logger LOG = LoggerFactory
       .getLogger(HDFSEventSink.class);
 
-  private static String DIRECTORY_DELIMITER = System.getProperty("file.separator");
-
   private static final long defaultRollInterval = 30;
   private static final long defaultRollSize = 1024;
   private static final long defaultRollCount = 10;
@@ -390,7 +388,7 @@ public class HDFSEventSink extends AbstractSink implements Configurable {
         String realName = BucketPath.escapeString(fileName, event.getHeaders(),
           timeZone, needRounding, roundUnit, roundValue, useLocalTime);
 
-        String lookupPath = realPath + DIRECTORY_DELIMITER + realName;
+        String lookupPath = realPath + "/" + realName;
         BucketWriter bucketWriter;
         HDFSWriter hdfsWriter = null;
         // Callback to remove the reference to the bucket writer from the
