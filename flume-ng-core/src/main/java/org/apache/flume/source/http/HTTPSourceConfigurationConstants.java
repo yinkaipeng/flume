@@ -39,5 +39,6 @@ public class HTTPSourceConfigurationConstants {
   public static final String SSL_KEYSTORE_PASSWORD_FILE = "keystorePasswordFile";
   public static final String SSL_KEYSTORE_PASSWORD_FILE_TYPE = "keystorePasswordFileType";
   public static final String SSL_ENABLED = "enableSSL";
+  public static final String EXCLUDE_PROTOCOLS = "excludeProtocols";
 
 }

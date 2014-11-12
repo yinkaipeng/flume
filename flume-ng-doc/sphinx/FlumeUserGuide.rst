@@ -1307,11 +1307,13 @@ selector.*                                                              Depends 
 interceptors              --                                            Space-separated list of interceptors
 interceptors.*
 enableSSL                 false                                         Set the property true, to enable SSL
+excludeProtocols          SSLv3                                         Space-separated list of SSL/TLS protocols to exclude. SSLv3 is always excluded.
 keystore                                                                Location of the keystore includng keystore file name
 keystorePassword                                                        Keystore password. Alternatively you can specify the password through a separate file using "keystorePasswordFile" setting
 keystorePasswordFile      --                                            File containing the keystore password
 keystorePasswordFileType  TEXT                                          Indicates how the password is stored in keystorePasswordFile. Can also be "AES" if the password file was created using "flume-ng password" command. "TEXT" indicates the password is in clear text.
 ========================  ============================================  ====================================================================
+
 
 For example, a http source for agent named a1:
 
