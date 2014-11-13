@@ -710,6 +710,7 @@ keystore-password-file-type   TEXT            Format of the password file. This 
 exclude-protocols             SSLv3           Space-separated list of SSL/TLS protocols to exclude. SSLv3 will always be excluded in addition to the protocols specified.
 ipFilter                      false           Set this to true to enable ipFiltering for netty
 ipFilter.rules                --              Define N netty ipFilter pattern rules with this config.
+===========================   =============   ===================================================
 
 Example for agent named a1:
 
