@@ -298,6 +298,7 @@ public class TestReliableSpoolingFileEventReader {
   @Test
   public void testConsumeFileOldestWithLexicographicalComparision()
     throws IOException, InterruptedException {
+    assumeTrue( !System.getProperty( "os.name" ).startsWith( "Win" ) );
     ReliableEventReader reader
       = new ReliableSpoolingFileEventReader.Builder()
       .spoolDirectory(WORK_DIR)
