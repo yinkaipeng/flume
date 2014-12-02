@@ -603,7 +603,11 @@ limitations under the License.
         <enabled>false</enabled>
       </snapshots>
     </repository>
-
+    <repository>
+       <id>hwx</id>
+       <name>hwx</name>
+       <url>http://54.235.92.15/nexus/content/groups/public/</url>
+    </repository>
   </repositories>
 
   <distributionManagement>
@@ -908,13 +912,13 @@ limitations under the License.
       <dependency>
         <groupId>org.mortbay.jetty</groupId>
         <artifactId>jetty-util</artifactId>
-        <version>6.1.26</version>
+        <version>6.1.26.hwx</version>
       </dependency>
 
       <dependency>
         <groupId>org.mortbay.jetty</groupId>
         <artifactId>jetty</artifactId>
-        <version>6.1.26</version>
+        <version>6.1.26.hwx</version>
       </dependency>
 
       <dependency>
