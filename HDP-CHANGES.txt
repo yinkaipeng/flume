@@ -19,4 +19,4 @@ Bug Fixes:
 FLUME-2158   hdfs-sink and tools modules should not override hadoop1/hadoop2 specific properties in their poms
 FLUME-2159   Sporadic failures in TestNettyAvroRpcClient.spinThreadsCrazily
 FLUME-2162   TestHDFSEventSinkOnMiniCluster.maxUnderReplicationTest fails on hadoop2
-
+Using a fixed version of Jetty for Denial-of-Service attack (CVE-2011-4461)
