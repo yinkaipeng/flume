@@ -36,3 +36,4 @@ Bug Fixes:
  FLUME-2359 - TestFileChannelIntegrityTool throws exception on class teardown on Windows
  FLUME-2402 - Warning seen when overflow is disabled for Spillable Channel
  Stopping Windows Service leaves the Flume java process running
+ Using a fixed version of Jetty for Denial-of-Service attack (CVE-2011-4461)
