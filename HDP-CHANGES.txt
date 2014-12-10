@@ -51,3 +51,4 @@ FLUME-2533 - HTTPS tests fail on Java 6
 FULME-2544 Windows: Incorrect Path Separator used in HDFS path (HDFS Sink)
 
 Stopping Windows Service leaves the Flume java process running
+Using a fixed version of Jetty for Denial-of-Service attack (CVE-2011-4461)
