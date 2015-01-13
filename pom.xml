@@ -1299,6 +1299,12 @@ limitations under the License.
       </dependency>
 
       <dependency>
+        <groupId>org.apache.flume.flume-ng-sources</groupId>
+        <artifactId>flume-kafka-source</artifactId>
+        <version>1.5.2</version>
+      </dependency>
+
+      <dependency>
         <groupId>org.apache.flume.flume-ng-legacy-sources</groupId>
         <artifactId>flume-thrift-source</artifactId>
         <version>1.5.2</version>
