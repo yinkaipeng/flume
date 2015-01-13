@@ -62,6 +62,7 @@ limitations under the License.
     <thrift.version>0.9.0</thrift.version>
     <kite.version>0.12.0</kite.version>
     <hive.version>0.13.1</hive.version>
+    <kafka.version>0.8.2-beta</kafka.version>
   </properties>
 
   <modules>
@@ -1426,12 +1427,12 @@ limitations under the License.
       <dependency>
         <groupId>org.apache.kafka</groupId>
         <artifactId>kafka_2.10</artifactId>
-        <version>0.8.2-beta</version>
+        <version>${kafka.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.kafka</groupId>
         <artifactId>kafka_2.10</artifactId>
-        <version>0.8.2-beta</version>
+        <version>${kafka.version}</version>
         <classifier>test</classifier>
         <scope>test</scope>
       </dependency>
