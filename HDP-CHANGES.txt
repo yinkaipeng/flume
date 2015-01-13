@@ -23,6 +23,8 @@ FLUME-2454 - Support batchSize to allow multiple events per transaction to the K
 FLUME-2470 - Kafka Sink and Source must use camel case for all configs.
 FLUME-2499 - Include Kafka Message Key in Event Header, Updated Comments
 
+Kafka Source (Experimental):
+FLUME-2250 - Add support for Kafka Source
 
 Bug Fixes:
 ----------------------
