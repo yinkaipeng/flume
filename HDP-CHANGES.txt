@@ -16,6 +16,14 @@ FLUME-2227 - Move BlobDeserializer from Morphline Sink to flume-ng-core
 FLUME-2337 - export JAVA_HOME in flume-env.sh.template and increase heap size
 FLUME-2511 - Allow configuration of enabled protocols in Avro source and Rpc client
 
+Kafka Sink (Experimental):
+FLUME-2251 - Add support for Kafka Sink
+FLUME-2455 - Documentation update for Kafka Sink
+FLUME-2454 - Support batchSize to allow multiple events per transaction to the Kafka Sink
+FLUME-2470 - Kafka Sink and Source must use camel case for all configs.
+FLUME-2499 - Include Kafka Message Key in Event Header, Updated Comments
+
+
 Bug Fixes:
 ----------------------
 FLUME-2451 - HDFS Sink Cannot Reconnect After NameNode Restart
