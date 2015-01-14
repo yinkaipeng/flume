@@ -1098,6 +1098,54 @@ deserializer.maxBlobLength  100000000           The maximum number of bytes to r
 ==========================  ==================  =======================================================================
 
 
+Kafka Source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Kafka Source is an Apache Kafka consumer that reads messages from a Kafka topic.
+If you have multiple Kafka sources running, you can configure them with the same Consumer Group
+so each will read a unique set of partitions for the topic.
+
+
+
+===============================  ===========  ===================================================
+Property Name                    Default      Description
+===============================  ===========  ===================================================
+**channels**                     --
+**type**                         --           The component type name, needs to be ``org.apache.flume.source.kafka,KafkaSource``
+**zookeeperConnect**             --           URI of ZooKeeper used by Kafka cluster
+**groupId**                      flume        Unique identified of consumer group. Setting the same id in multiple sources or agents
+                                              indicates that they are part of the same consumer group
+**topic**                        --           Kafka topic we'll read messages from. At the time, this is a single topic only.
+batchSize                        1000         Maximum number of messages written to Channel in one batch
+batchDurationMillis              1000         Maximum time (in ms) before a batch will be written to Channel
+                                              The batch will be written whenever the first of size and time will be reached.
+Other Kafka Consumer Properties  --           These properties are used to configure the Kafka Consumer. Any producer property supported
+                                              by Kafka can be used. The only requirement is to prepend the property name with the prefix ``kafka.``.
+                                              For example: kafka.consumer.timeout.ms
+                                              Check `Kafka documentation <https://kafka.apache.org/08/configuration.html#consumerconfigs>` for details
+===============================  ===========  ===================================================
+
+.. note:: The Kafka Source overrides two Kafka consumer parameters:
+          auto.commit.enable is set to "false" by the source and we commit every batch. For improved performance
+          this can be set to "true", however, this can lead to loss of data
+          consumer.timeout.ms is set to 10ms, so when we check Kafka for new data we wait at most 10ms for the data to arrive
+          setting this to a higher value can reduce CPU utilization (we'll poll Kafka in less of a tight loop), but also means
+          higher latency in writing batches to channel (since we'll wait longer for data to arrive).
+
+
+Example for agent named tier1:
+
+.. code-block:: properties
+
+    tier1.sources.source1.type = org.apache.flume.source.kafka.KafkaSource
+    tier1.sources.source1.channels = channel1
+    tier1.sources.source1.zookeeperConnect = localhost:2181
+    tier1.sources.source1.topic = test1
+    tier1.sources.source1.groupId = flume
+    tier1.sources.source1.kafka.consumer.timeout.ms = 100
+
+
+
 NetCat Source
 ~~~~~~~~~~~~~
 
@@ -2231,6 +2279,60 @@ auth.kerberosKeytab      --       Kerberos keytab location (local FS) for the pr
 auth.proxyUser           --       The effective user for HDFS actions, if different from
                                   the kerberos principal
 =======================  =======  ===========================================================
+
+
+Kafka Sink
+~~~~~~~~~~
+This is a Flume Sink implementation that can publish data to a
+`Kafka <http://kafka.apache.org/>`_ topic. One of the objective is to integrate Flume
+with Kafka so that pull based processing systems can process the data coming
+through various Flume sources. This currently supports Kafka 0.8.x series of releases.
+
+Required properties are marked in bold font.
+
+
+===============================  ===================  =============================================================================================
+Property Name                    Default              Description
+===============================  ===================  =============================================================================================
+**type**                         --                   Must be set to ``org.apache.flume.sink.kafka.KafkaSink``
+**brokerList**                   --                   List of brokers Kafka-Sink will connect to, to get the list of topic partitions
+                                                      This can be a partial list of brokers, but we recommend at least two for HA.
+                                                      The format is comma separated list of hostname:port
+topic                            default-flume-topic  The topic in Kafka to which the messages will be published. If this parameter is configured,
+                                                      messages will be published to this topic.
+                                                      If the event header contains a "topic" field, the event will be published to that topic
+                                                      overriding the topic configured here.
+batchSize                        100                  How many messages to process in one batch. Larger batches improve throughput while adding latency.
+requiredAcks                     1                    How many replicas must acknowledge a message before its considered successfully written.
+                                                      Accepted values are 0 (Never wait for acknowledgement), 1 (wait for leader only), -1 (wait for all replicas)
+                                                      Set this to -1 to avoid data loss in some cases of leader failure.
+Other Kafka Producer Properties  --                   These properties are used to configure the Kafka Producer. Any producer property supported
+                                                      by Kafka can be used. The only requirement is to prepend the property name with the prefix ``kafka.``.
+                                                      For example: kafka.producer.type
+===============================  ===================  =============================================================================================
+
+.. note::   Kafka Sink uses the ``topic`` and ``key`` properties from the FlumeEvent headers to send events to Kafka.
+            If ``topic`` exists in the headers, the event will be sent to that specific topic, overriding the topic configured for the Sink.
+            If ``key`` exists in the headers, the key will used by Kafka to partition the data between the topic partitions. Events with same key
+            will be sent to the same partition. If the key is null, events will be sent to random partitions.
+
+An example configuration of a Kafka sink is given below. Properties starting
+with the prefix ``kafka`` (the last 3 properties) are used when instantiating
+the Kafka producer. The properties that are passed when creating the Kafka
+producer are not limited to the properties given in this example.
+Also it's possible include your custom properties here and access them inside
+the preprocessor through the Flume Context object passed in as a method
+argument.
+
+.. code-block:: properties
+
+    a1.sinks.k1.type = org.apache.flume.sink.kafka.KafkaSink
+    a1.sinks.k1.topic = mytopic
+    a1.sinks.k1.brokerList = localhost:9092
+    a1.sinks.k1.requiredAcks = 1
+    a1.sinks.k1.batchSize = 20
+    a1.sinks.k1.channel = c1
+
 
 Custom Sink
 ~~~~~~~~~~~
