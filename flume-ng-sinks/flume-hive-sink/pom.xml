@@ -44,7 +44,7 @@ limitations under the License.
       <id>hadoop-1.0</id>
       <activation>
         <property>
-          <name>!hadoop.profile</name>
+          <name>!flume.hadoop.profile</name>
         </property>
       </activation>
 
@@ -60,7 +60,7 @@ limitations under the License.
       <id>hadoop-2</id>
       <activation>
         <property>
-          <name>hadoop.profile</name>
+          <name>flume.hadoop.profile</name>
           <value>2</value>
         </property>
       </activation>
@@ -85,7 +85,7 @@ limitations under the License.
       <id>hbase-98</id>
       <activation>
         <property>
-          <name>hadoop.profile</name>
+          <name>flume.hadoop.profile</name>
           <value>hbase-98</value>
         </property>
       </activation>
