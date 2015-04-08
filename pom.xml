@@ -216,13 +216,6 @@ limitations under the License.
             <version>${hadoop.version}</version>
           </dependency>
           <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>${hadoop.version}</version>
-            <scope>test</scope>
-          </dependency>
-
-          <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase</artifactId>
             <version>${hbase.version}</version>
@@ -317,12 +310,6 @@ limitations under the License.
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-auth</artifactId>
             <version>${hadoop.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-minicluster</artifactId>
-            <version>${hadoop.version}</version>
-            <scope>test</scope>
           </dependency>
           <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -1150,22 +1137,6 @@ limitations under the License.
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
         <version>2.1</version>
-      </dependency>
-      
-      <!-- Adding zookeeper as dependency, beacuse it was 
-           pulling different version of zookeeper as transient
-           dependency from asynchbase. -->
-      
-      <dependency>
-        <groupId>org.apache.zookeeper</groupId>
-        <artifactId>zookeeper</artifactId>
-        <version>${zookeeper.version}</version>
-       </dependency>
-
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop</artifactId>
-        <version>${hadoop.version}</version>
       </dependency>
 
       <dependency>
