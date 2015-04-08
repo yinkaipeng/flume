@@ -18,7 +18,8 @@ FLUME-2450 - Improve replay index insertion speed
 FLUME-2511 - Allow configuration of enabled protocols in Avro source and Rpc client
 FLUME-2595 - Add option to checkpoint on file channel shutdown
 FLUME-2624 - Streaming ingest performance improvement
-FLUME-2663 Address Build warnings of duplicate dependencies listed
+FLUME-2662 - Upgrade to Commons-IO 2.4
+FLUME-2663 - Address Build warnings of duplicate dependencies listed
 
 
 Kafka Sink (Experimental):
