@@ -55,8 +55,8 @@ public class TestLog {
       Assert.assertTrue(dataDirs[i].isDirectory());
     }
     log = new Log.Builder().setCheckpointInterval(1L).setMaxFileSize(
-        MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
-            checkpointDir).setLogDirs(dataDirs)
+            MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
+            checkpointDir).setLogDirs(dataDirs).setCheckpointOnClose(false)
             .setChannelName("testlog").build();
     log.replay();
   }
@@ -76,7 +76,7 @@ public class TestLog {
    */
   @Test
   public void testPutGet()
-    throws IOException, InterruptedException, NoopRecordException, CorruptEventException {
+          throws IOException, InterruptedException, NoopRecordException, CorruptEventException {
     FlumeEvent eventIn = TestUtils.newPersistableEvent();
     long transactionID = ++this.transactionID;
     FlumeEventPointer eventPointer = log.put(transactionID, eventIn);
@@ -89,7 +89,7 @@ public class TestLog {
   }
   @Test
   public void testRoll()
-    throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
+          throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
     log.shutdownWorker();
     Thread.sleep(1000);
     for (int i = 0; i < 1000; i++) {
@@ -119,17 +119,17 @@ public class TestLog {
    */
   @Test
   public void testPutCommit()
-    throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
+          throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
     FlumeEvent eventIn = TestUtils.newPersistableEvent();
     long transactionID = ++this.transactionID;
     FlumeEventPointer eventPointerIn = log.put(transactionID, eventIn);
     log.commitPut(transactionID);
     log.close();
     log = new Log.Builder().setCheckpointInterval(
-        Long.MAX_VALUE).setMaxFileSize(
+            Long.MAX_VALUE).setMaxFileSize(
             FileChannelConfiguration.DEFAULT_MAX_FILE_SIZE).setQueueSize(
             CAPACITY).setCheckpointDir(checkpointDir).setLogDirs(
-                dataDirs).setChannelName("testlog").build();
+            dataDirs).setChannelName("testlog").build();
     log.replay();
     takeAndVerify(eventPointerIn, eventIn);
   }
@@ -145,30 +145,30 @@ public class TestLog {
     log.rollback(transactionID); // rolled back so it should not be replayed
     log.close();
     log = new Log.Builder().setCheckpointInterval(
-        Long.MAX_VALUE).setMaxFileSize(
+            Long.MAX_VALUE).setMaxFileSize(
             FileChannelConfiguration.DEFAULT_MAX_FILE_SIZE).setQueueSize(
             CAPACITY).setCheckpointDir(checkpointDir).setLogDirs(
-                dataDirs).setChannelName("testlog").build();
+            dataDirs).setChannelName("testlog").build();
     log.replay();
     FlumeEventQueue queue = log.getFlumeEventQueue();
     Assert.assertNull(queue.removeHead(transactionID));
   }
   @Test
   public void testMinimumRequiredSpaceTooSmallOnStartup() throws IOException,
-    InterruptedException {
+          InterruptedException {
     log.close();
     log = new Log.Builder().setCheckpointInterval(
-        Long.MAX_VALUE).setMaxFileSize(
+            Long.MAX_VALUE).setMaxFileSize(
             FileChannelConfiguration.DEFAULT_MAX_FILE_SIZE).setQueueSize(
             CAPACITY).setCheckpointDir(checkpointDir).setLogDirs(
-                dataDirs).setChannelName("testlog").
-                setMinimumRequiredSpace(Long.MAX_VALUE).build();
+            dataDirs).setChannelName("testlog").
+            setMinimumRequiredSpace(Long.MAX_VALUE).build();
     try {
       log.replay();
       Assert.fail();
     } catch (IOException e) {
       Assert.assertTrue(e.getMessage(), e.getMessage()
-          .startsWith("Usable space exhaused"));
+              .startsWith("Usable space exhaused"));
     }
   }
   /**
@@ -176,7 +176,7 @@ public class TestLog {
    */
   @Test
   public void testMinimumRequiredSpaceTooSmallForPut() throws IOException,
-    InterruptedException {
+          InterruptedException {
     try {
       doTestMinimumRequiredSpaceTooSmallForPut();
     } catch (IOException e) {
@@ -188,17 +188,17 @@ public class TestLog {
     }
   }
   public void doTestMinimumRequiredSpaceTooSmallForPut() throws IOException,
-    InterruptedException {
+          InterruptedException {
     long minimumRequiredSpace = checkpointDir.getUsableSpace() -
-        (10L* 1024L * 1024L);
+            (10L* 1024L * 1024L);
     log.close();
     log = new Log.Builder().setCheckpointInterval(
-        Long.MAX_VALUE).setMaxFileSize(
+            Long.MAX_VALUE).setMaxFileSize(
             FileChannelConfiguration.DEFAULT_MAX_FILE_SIZE).setQueueSize(
             CAPACITY).setCheckpointDir(checkpointDir).setLogDirs(
-                dataDirs).setChannelName("testlog").
-                setMinimumRequiredSpace(minimumRequiredSpace)
-                .setUsableSpaceRefreshInterval(1L).build();
+            dataDirs).setChannelName("testlog").
+            setMinimumRequiredSpace(minimumRequiredSpace)
+            .setUsableSpaceRefreshInterval(1L).build();
     log.replay();
     File filler = new File(checkpointDir, "filler");
     byte[] buffer = new byte[64 * 1024];
@@ -214,7 +214,7 @@ public class TestLog {
       Assert.fail();
     } catch (IOException e) {
       Assert.assertTrue(e.getMessage(), e.getMessage()
-          .startsWith("Usable space exhaused"));
+              .startsWith("Usable space exhaused"));
     }
   }
   /**
@@ -232,7 +232,7 @@ public class TestLog {
     log.commitTake(takeTransactionID);
     log.close();
     new Log.Builder().setCheckpointInterval(
-        Long.MAX_VALUE).setMaxFileSize(
+            Long.MAX_VALUE).setMaxFileSize(
             FileChannelConfiguration.DEFAULT_MAX_FILE_SIZE).setQueueSize(
             1).setCheckpointDir(checkpointDir).setLogDirs(dataDirs)
             .setChannelName("testlog").build();
@@ -247,16 +247,16 @@ public class TestLog {
    */
   @Test
   public void testPutTakeRollbackLogReplayV1()
-    throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
+          throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
     doPutTakeRollback(true);
   }
   @Test
   public void testPutTakeRollbackLogReplayV2()
-    throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
+          throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
     doPutTakeRollback(false);
   }
   public void doPutTakeRollback(boolean useLogReplayV1)
-    throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
+          throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
     FlumeEvent eventIn = TestUtils.newPersistableEvent();
     long putTransactionID = ++transactionID;
     FlumeEventPointer eventPointerIn = log.put(putTransactionID, eventIn);
@@ -266,7 +266,7 @@ public class TestLog {
     log.rollback(takeTransactionID);
     log.close();
     new Log.Builder().setCheckpointInterval(
-        Long.MAX_VALUE).setMaxFileSize(
+            Long.MAX_VALUE).setMaxFileSize(
             FileChannelConfiguration.DEFAULT_MAX_FILE_SIZE).setQueueSize(
             1).setCheckpointDir(checkpointDir).setLogDirs(dataDirs)
             .setChannelName("testlog").setUseLogReplayV1(useLogReplayV1).build();
@@ -280,7 +280,7 @@ public class TestLog {
     log.commitPut(putTransactionID);
     log.close();
     new Log.Builder().setCheckpointInterval(
-        Long.MAX_VALUE).setMaxFileSize(
+            Long.MAX_VALUE).setMaxFileSize(
             FileChannelConfiguration.DEFAULT_MAX_FILE_SIZE).setQueueSize(
             1).setCheckpointDir(checkpointDir).setLogDirs(dataDirs)
             .setChannelName("testlog").build();
@@ -296,7 +296,7 @@ public class TestLog {
     log.commitTake(putTransactionID);
     log.close();
     new Log.Builder().setCheckpointInterval(
-        Long.MAX_VALUE).setMaxFileSize(
+            Long.MAX_VALUE).setMaxFileSize(
             FileChannelConfiguration.DEFAULT_MAX_FILE_SIZE).setQueueSize(
             1).setCheckpointDir(checkpointDir).setLogDirs(dataDirs)
             .setChannelName("testlog").build();
@@ -312,7 +312,7 @@ public class TestLog {
     log.rollback(putTransactionID);
     log.close();
     new Log.Builder().setCheckpointInterval(
-        Long.MAX_VALUE).setMaxFileSize(
+            Long.MAX_VALUE).setMaxFileSize(
             FileChannelConfiguration.DEFAULT_MAX_FILE_SIZE).setQueueSize(
             1).setCheckpointDir(checkpointDir).setLogDirs(dataDirs)
             .setChannelName("testlog").build();
@@ -335,7 +335,7 @@ public class TestLog {
       File logGzip = new File(logDir, Log.PREFIX + i + ".gz");
       Assert.assertTrue(metaDataFile.isFile() || metaDataFile.createNewFile());
       Assert.assertTrue(metaDataTempFile.isFile() ||
-          metaDataTempFile.createNewFile());
+              metaDataTempFile.createNewFile());
       Assert.assertTrue(log.isFile() || logGzip.createNewFile());
     }
     List<File> actual = LogUtils.getLogs(logDir);
@@ -345,20 +345,20 @@ public class TestLog {
   }
   @Test
   public void testReplayFailsWithAllEmptyLogMetaDataNormalReplay()
-      throws IOException, InterruptedException {
+          throws IOException, InterruptedException {
     doTestReplayFailsWithAllEmptyLogMetaData(false);
   }
   @Test
   public void testReplayFailsWithAllEmptyLogMetaDataFastReplay()
-      throws IOException, InterruptedException {
+          throws IOException, InterruptedException {
     doTestReplayFailsWithAllEmptyLogMetaData(true);
   }
   public void doTestReplayFailsWithAllEmptyLogMetaData(boolean useFastReplay)
-      throws IOException, InterruptedException {
+          throws IOException, InterruptedException {
     // setup log with correct fast replay parameter
     log.close();
     log = new Log.Builder().setCheckpointInterval(1L).setMaxFileSize(
-        MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
+            MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
             checkpointDir).setLogDirs(dataDirs)
             .setChannelName("testlog").setUseFastReplay(useFastReplay).build();
     log.replay();
@@ -368,8 +368,8 @@ public class TestLog {
     log.commitPut(transactionID);
     log.close();
     if(useFastReplay) {
-      checkpointDir = Files.createTempDir();
-      FileUtils.forceDeleteOnExit(checkpointDir);
+      FileUtils.deleteQuietly(checkpointDir);
+      Assert.assertTrue(checkpointDir.mkdir());
     }
     List<File> logFiles = Lists.newArrayList();
     for (int i = 0; i < dataDirs.length; i++) {
@@ -382,7 +382,7 @@ public class TestLog {
       Assert.assertTrue(logFileMeta.createNewFile());
     }
     log = new Log.Builder().setCheckpointInterval(1L).setMaxFileSize(
-        MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
+            MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
             checkpointDir).setLogDirs(dataDirs)
             .setChannelName("testlog").setUseFastReplay(useFastReplay).build();
     try {
@@ -396,21 +396,21 @@ public class TestLog {
   }
   @Test
   public void testReplaySucceedsWithUnusedEmptyLogMetaDataNormalReplay()
-    throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
+          throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
     FlumeEvent eventIn = TestUtils.newPersistableEvent();
     long transactionID = ++this.transactionID;
     FlumeEventPointer eventPointer = log.put(transactionID, eventIn);
     log.commitPut(transactionID); // this is not required since
     log.close();
     log = new Log.Builder().setCheckpointInterval(1L).setMaxFileSize(
-        MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
+            MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
             checkpointDir).setLogDirs(dataDirs)
             .setChannelName("testlog").build();
     doTestReplaySucceedsWithUnusedEmptyLogMetaData(eventIn, eventPointer);
   }
   @Test
   public void testReplaySucceedsWithUnusedEmptyLogMetaDataFastReplay()
-    throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
+          throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
     FlumeEvent eventIn = TestUtils.newPersistableEvent();
     long transactionID = ++this.transactionID;
     FlumeEventPointer eventPointer = log.put(transactionID, eventIn);
@@ -420,14 +420,14 @@ public class TestLog {
     FileUtils.forceDeleteOnExit(checkpointDir);
     Assert.assertTrue(checkpointDir.isDirectory());
     log = new Log.Builder().setCheckpointInterval(1L).setMaxFileSize(
-        MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
+            MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
             checkpointDir).setLogDirs(dataDirs)
             .setChannelName("testlog").setUseFastReplay(true).build();
     doTestReplaySucceedsWithUnusedEmptyLogMetaData(eventIn, eventPointer);
   }
   public void doTestReplaySucceedsWithUnusedEmptyLogMetaData(FlumeEvent eventIn,
-      FlumeEventPointer eventPointer) throws IOException,
-    InterruptedException, NoopRecordException, CorruptEventException  {
+                                                             FlumeEventPointer eventPointer) throws IOException,
+          InterruptedException, NoopRecordException, CorruptEventException  {
     for (int i = 0; i < dataDirs.length; i++) {
       for(File logFile : LogUtils.getLogs(dataDirs[i])) {
         if(logFile.length() == 0L) {
@@ -448,11 +448,11 @@ public class TestLog {
     File fs = mock(File.class);
     when(fs.getUsableSpace()).thenReturn(Long.MAX_VALUE);
     LogFile.CachedFSUsableSpace cachedFS =
-        new LogFile.CachedFSUsableSpace(fs, 1000L);
+            new LogFile.CachedFSUsableSpace(fs, 1000L);
     Assert.assertEquals(cachedFS.getUsableSpace(), Long.MAX_VALUE);
     cachedFS.decrement(Integer.MAX_VALUE);
     Assert.assertEquals(cachedFS.getUsableSpace(),
-        Long.MAX_VALUE - Integer.MAX_VALUE);
+            Long.MAX_VALUE - Integer.MAX_VALUE);
     try {
       cachedFS.decrement(-1);
       Assert.fail();
@@ -462,12 +462,41 @@ public class TestLog {
     when(fs.getUsableSpace()).thenReturn(Long.MAX_VALUE - 1L);
     Thread.sleep(1100);
     Assert.assertEquals(cachedFS.getUsableSpace(),
-        Long.MAX_VALUE - 1L);
+            Long.MAX_VALUE - 1L);
+  }
+
+  @Test
+  public void testCheckpointOnClose() throws Exception {
+    // 0 Restart Log with checkpointOnClose=true
+    log.close();
+    log = new Log.Builder().setCheckpointInterval(1L).setMaxFileSize(
+            MAX_FILE_SIZE).setQueueSize(CAPACITY).setCheckpointDir(
+            checkpointDir).setLogDirs(dataDirs).setCheckpointOnClose(true)
+            .setChannelName("testLog").build();
+    log.replay();
+
+
+    // 1 Write One Event
+    FlumeEvent eventIn = TestUtils.newPersistableEvent();
+    log.put(transactionID, eventIn);
+    log.commitPut(transactionID);
+
+    // 2 Check state of checkpoint before close
+    File checkPointMetaFile =
+            FileUtils.listFiles(checkpointDir,new String[]{"meta"},false).iterator().next();
+    long before = FileUtils.checksumCRC32( checkPointMetaFile );
+
+    // 3 Close Log
+    log.close();
+
+    // 4 Verify that checkpoint was modified on close
+    long after = FileUtils.checksumCRC32( checkPointMetaFile );
+    Assert.assertFalse( before == after );
   }
 
   private void takeAndVerify(FlumeEventPointer eventPointerIn,
-      FlumeEvent eventIn)
-    throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
+                             FlumeEvent eventIn)
+          throws IOException, InterruptedException, NoopRecordException, CorruptEventException  {
     FlumeEventQueue queue = log.getFlumeEventQueue();
     FlumeEventPointer eventPointerOut = queue.removeHead(0);
     Assert.assertNotNull(eventPointerOut);

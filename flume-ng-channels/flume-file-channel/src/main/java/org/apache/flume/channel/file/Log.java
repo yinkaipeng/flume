@@ -808,17 +808,17 @@ public class Log {
    * so checkpoint and this method cannot run at the same time.
    */
   void close() throws IOException{
-    try {
-      if(checkpointOnClose) {
-        writeCheckpoint(true); // do this before acquiring exclusive lock
-      }
-    } catch (Exception err) {
-      LOGGER.warn("Failed creating checkpoint on close of channel " + channelNameDescriptor +
-              "Replay will take longer next time channel is started.", err);
-    }
     lockExclusive();
     try {
       open = false;
+      try {
+        if(checkpointOnClose) {
+          writeCheckpoint(true); // do this before acquiring exclusive lock
+        }
+      } catch (Exception err) {
+        LOGGER.warn("Failed creating checkpoint on close of channel " + channelNameDescriptor +
+                "Replay will take longer next time channel is started.", err);
+      }
       shutdownWorker();
       if (logFiles != null) {
         for (int index = 0; index < logFiles.length(); index++) {
