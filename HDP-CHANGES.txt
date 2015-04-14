@@ -1,8 +1,19 @@
 New Features:
 -----------------------
-FLUME-1734 - Create a Hive Sink based on the new Hive Streaming support
+FLUME-1734 - Hive Sink based on the new Hive Streaming support
 FLUME-1334 - Flume startup script for Windows
 FLUME-2442 - Need an alternative to providing clear text passwords in flume config
+
+Kafka Sink (Experimental):
+FLUME-2251 - Add support for Kafka Sink
+FLUME-2455 - Documentation update for Kafka Sink
+FLUME-2454 - Support batchSize to allow multiple events per transaction to the Kafka Sink
+FLUME-2470 - Kafka Sink and Source must use camel case for all configs.
+FLUME-2499 - Include Kafka Message Key in Event Header, Updated Comments
+
+Kafka Source (Experimental):
+FLUME-2250 - Add support for Kafka Source
+
 
 Unsupported Features:
 -----------------------
@@ -20,17 +31,7 @@ FLUME-2595 - Add option to checkpoint on file channel shutdown
 FLUME-2624 - Streaming ingest performance improvement
 FLUME-2662 - Upgrade to Commons-IO 2.4
 FLUME-2663 - Address Build warnings of duplicate dependencies listed
-
-
-Kafka Sink (Experimental):
-FLUME-2251 - Add support for Kafka Sink
-FLUME-2455 - Documentation update for Kafka Sink
-FLUME-2454 - Support batchSize to allow multiple events per transaction to the Kafka Sink
-FLUME-2470 - Kafka Sink and Source must use camel case for all configs.
-FLUME-2499 - Include Kafka Message Key in Event Header, Updated Comments
-
-Kafka Source (Experimental):
-FLUME-2250 - Add support for Kafka Source
+FLUME-2586 - HDFS Sink should have an option to try rename even if close fails
 
 Bug Fixes:
 ----------------------
@@ -64,6 +65,6 @@ FLUME-2541 - Bug in TestBucketWriter.testSequenceFileCloseRetries
 FLUME-2441 - Unit test TestHTTPSource.java failed with IBM JDK 1.7
 FLUME-2520 - HTTP Source should be able to block a prefixed set of protocols.
 FLUME-2533 - HTTPS tests fail on Java 6
-FULME-2544 Windows: Incorrect Path Separator used in HDFS path (HDFS Sink)
+FULME-2544 - Windows: Incorrect Path Separator used in HDFS path (HDFS Sink)
 
 Stopping Windows Service leaves the Flume java process running
