@@ -59,4 +59,6 @@ public class JMSSourceConfiguration {
   public static final String CONVERTER_CHARSET = CONVERTER + ".charset";
   public static final String CONVERTER_CHARSET_DEFAULT = "UTF-8";
 
+  public static final String SECURITY_AUTHENTICATION = "simple";
+  public static final String SECURITY_PROTOCOL = "simple";
 }
