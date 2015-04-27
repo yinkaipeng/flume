@@ -33,6 +33,7 @@ FLUME-2662 - Upgrade to Commons-IO 2.4
 FLUME-2663 - Address Build warnings of duplicate dependencies listed
 FLUME-2586 - HDFS Sink should have an option to try rename even if close fails
 FLUME-2655 - Update documentation for hdfs.closeTries based on FLUME-2586
+FLUME-2095 - JMS source with TIBCO (patch-1)
 
 Bug Fixes:
 ----------------------
