@@ -217,6 +217,21 @@ public class JMSSource extends AbstractPollableSource {
           initialContextFactoryName);
       contextProperties.setProperty(
           javax.naming.Context.PROVIDER_URL, providerUrl);
+
+      // Provide properties for connecting via JNDI
+      if (this.userName.isPresent()) {
+        contextProperties.setProperty(
+    	    javax.naming.Context.SECURITY_PRINCIPAL, this.userName.get());
+      }
+      if (this.password.isPresent()) {
+        contextProperties.setProperty(
+    	    javax.naming.Context.SECURITY_CREDENTIALS, this.password.get());
+      }
+      contextProperties.setProperty(
+    	  javax.naming.Context.SECURITY_AUTHENTICATION, JMSSourceConfiguration.SECURITY_AUTHENTICATION);
+      contextProperties.setProperty(
+    	  javax.naming.Context.SECURITY_PROTOCOL, JMSSourceConfiguration.SECURITY_PROTOCOL);
+      
       initialContext = initialContextFactory.create(contextProperties);
     } catch (NamingException e) {
       throw new FlumeException(String.format(
