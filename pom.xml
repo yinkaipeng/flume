@@ -48,7 +48,6 @@ limitations under the License.
     <sitename>Flume Site</sitename>
     <stagingDirectory>${project.basedir}/target/docs</stagingDirectory>
     <hadoop-one.version>1.0.1</hadoop-one.version>
-    <hadoop-two.version>2.0.0-alpha</hadoop-two.version>
     <hbaseversion>0.94.2</hbaseversion>
     <zookeeper.version>3.4.5</zookeeper.version>
     <repoid>apache.staging.https</repoid>
@@ -173,7 +172,7 @@ limitations under the License.
         </property>
       </activation>
       <properties>
-        <hadoop.version>${hadoop-two.version}</hadoop.version>
+        <hadoop.version>${hadoop2.version}</hadoop.version>
         <hbase.version>${hbaseversion}</hbase.version>
         <hadoop.common.artifact.id>hadoop-common</hadoop.common.artifact.id>
         <thrift.version>0.9.0</thrift.version>
