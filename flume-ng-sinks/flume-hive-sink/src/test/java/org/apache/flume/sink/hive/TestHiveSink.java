@@ -120,7 +120,6 @@ public class TestHiveSink {
     sink.setName("HiveSink-" + UUID.randomUUID().toString());
 
     String dbLocation = dbFolder.newFolder(dbName).getCanonicalPath() + ".db";
-    dbLocation = dbLocation.replaceAll("\\\\","/"); // for windows paths
     TestUtil.createDbAndTable(driver, dbName, tblName, partitionVals, colNames,
             colTypes, partNames, dbLocation);
   }
@@ -181,7 +180,6 @@ public class TestHiveSink {
           throws Exception {
     TestUtil.dropDB(conf, dbName2);
     String dbLocation = dbFolder.newFolder(dbName2).getCanonicalPath() + ".db";
-    dbLocation = dbLocation.replaceAll("\\\\","/"); // for windows paths
     TestUtil.createDbAndTable(driver, dbName2, tblName2, null, colNames2, colTypes2
             , null, dbLocation);
 
@@ -249,7 +247,6 @@ public class TestHiveSink {
     String tblName = "hourlydata";
     TestUtil.dropDB(conf, dbName2);
     String dbLocation = dbFolder.newFolder(dbName2).getCanonicalPath() + ".db";
-    dbLocation = dbLocation.replaceAll("\\\\","/"); // for windows paths
     TestUtil.createDbAndTable(driver, dbName2, tblName, partitionVals, colNames,
             colTypes, partNames, dbLocation);
 

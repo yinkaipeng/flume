@@ -65,7 +65,8 @@ public class TestUtil {
                                       String[] colNames, String[] colTypes,
                                       String[] partNames, String dbLocation)
           throws Exception {
-    String dbUri = "raw://" + dbLocation;
+
+    String dbUri = "raw://" + new Path(dbLocation).toUri().toString();
     String tableLoc = dbUri + Path.SEPARATOR + tableName;
 
     runDDL(driver, "create database IF NOT EXISTS " + databaseName + " location '" + dbUri + "'");
