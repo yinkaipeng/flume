@@ -55,7 +55,7 @@ public class KafkaSourceEmbeddedZookeeper {
   public void stopZookeeper() throws IOException {
     zookeeper.shutdown();
     factory.shutdown();
-    FileUtils.deleteDirectory(dir);
+    FileUtils.deleteQuietly(dir);
   }
 
   public String getConnectString() {
