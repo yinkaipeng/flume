@@ -29,6 +29,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -351,6 +352,7 @@ public class TestLog {
   @Test
   public void testReplayFailsWithAllEmptyLogMetaDataFastReplay()
           throws IOException, InterruptedException {
+    Assume.assumeTrue(!System.getProperty("os.name").toLowerCase().contains("win"));
     doTestReplayFailsWithAllEmptyLogMetaData(true);
   }
   public void doTestReplayFailsWithAllEmptyLogMetaData(boolean useFastReplay)

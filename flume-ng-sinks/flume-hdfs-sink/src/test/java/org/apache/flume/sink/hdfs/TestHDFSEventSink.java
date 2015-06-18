@@ -65,6 +65,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1264,6 +1265,7 @@ public class TestHDFSEventSink {
   }
   @Test
   public void testCloseOnIdle() throws IOException, EventDeliveryException, InterruptedException {
+    Assume.assumeTrue(!System.getProperty("os.name").toLowerCase().contains("win")); // flaky on windows
     String hdfsPath = testPath + "/idleClose";
 
     Configuration conf = new Configuration();
