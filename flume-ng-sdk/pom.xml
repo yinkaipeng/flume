@@ -14,14 +14,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <artifactId>flume-parent</artifactId>
     <groupId>org.apache.flume</groupId>
-    <version>1.5.2</version>
+    <version>1.5.2.2.3.0.0-2557</version>
   </parent>
 
   <artifactId>flume-ng-sdk</artifactId>
@@ -75,15 +74,15 @@ limitations under the License.
                       for JAVA_FILE in `ls $SRC_DIR/*.java 2&gt; /dev/null`
                       do
                         echo $JAVA_FILE
-                        cat $LICENSE > $JAVA_FILE.tmp
-                        cat $JAVA_FILE >> $JAVA_FILE.tmp
+                        cat $LICENSE &gt; $JAVA_FILE.tmp
+                        cat $JAVA_FILE &gt;&gt; $JAVA_FILE.tmp
                         mv $JAVA_FILE.tmp $JAVA_FILE
                         cp $JAVA_FILE $DEST_DIR
                       done
                       rm -rf $JAVA_DIR
                     </echo>
-                    <exec executable="sh" dir="${basedir}" failonerror="true">
-                      <arg line="target/compile-thrift.sh"/>
+                    <exec dir="${basedir}" executable="sh" failonerror="true">
+                      <arg line="target/compile-thrift.sh" />
                     </exec>
                   </target>
                 </configuration>
