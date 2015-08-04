@@ -52,6 +52,7 @@ FLUME-2441 - Unit test TestHTTPSource.java failed with IBM JDK 1.7
 FLUME-2520 - HTTP Source should be able to block a prefixed set of protocols.
 FLUME-2533 - HTTPS tests fail on Java 6
 FULME-2544 - Windows: Incorrect Path Separator used in HDFS path (HDFS Sink)
+FLUME-2754 - Hive Sink skipping first transaction in each Batch of Hive Transactions
 
 Stopping Windows Service leaves the Flume java process running
 Using a fixed version of Jetty for Denial-of-Service attack (CVE-2011-4461)
