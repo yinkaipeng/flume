@@ -70,5 +70,6 @@ FLUME-2533 - HTTPS tests fail on Java 6
 FULME-2544 - Windows: Incorrect Path Separator used in HDFS path (HDFS Sink)
 FLUME-2722 - Windows : TestKafkaSourceUtil Unit Tests fail on Windows
 FLUME-2754 - Hive Sink skipping first transaction in each Batch of Hive Transactions
+FLUME-2757 - Hive Sink tests fail due to permission issues on scratch dir
 
 Stopping Windows Service leaves the Flume java process running
