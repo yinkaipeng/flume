@@ -47,6 +47,7 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -88,6 +89,8 @@ public class TestHiveSink {
   @Rule
   public TemporaryFolder dbFolder = new TemporaryFolder();
 
+  @Rule
+  public TemporaryFolder scratchDir = new TemporaryFolder();
 
   private static final Logger LOG = LoggerFactory.getLogger(HiveSink.class);
 
@@ -100,6 +103,12 @@ public class TestHiveSink {
 
     conf = new HiveConf(this.getClass());
     TestUtil.setConfValues(conf);
+
+    File scratchFolder = scratchDir.newFolder();
+    scratchFolder.setExecutable(true, false);
+    scratchFolder.setReadable(true, false);
+    scratchFolder.setWritable(true, false);
+    conf.setVar(HiveConf.ConfVars.SCRATCHDIR, scratchFolder.getAbsolutePath());
 
     // 1) prepare hive
     TxnDbUtil.cleanDb();

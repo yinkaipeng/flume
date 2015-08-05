@@ -37,6 +37,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
@@ -72,6 +73,9 @@ public class TestHiveWriter {
   @Rule
   public TemporaryFolder dbFolder = new TemporaryFolder();
 
+  @Rule
+  public TemporaryFolder scratchDir = new TemporaryFolder();
+
   private final Driver driver;
 
   public TestHiveWriter() throws Exception {
@@ -85,12 +89,17 @@ public class TestHiveWriter {
     callTimeoutPool = Executors.newFixedThreadPool(callTimeoutPoolSize,
             new ThreadFactoryBuilder().setNameFormat("hiveWriterTest").build());
 
-    // 1) Start metastore
+    // 1) Start metastore config
     conf = new HiveConf(this.getClass());
     TestUtil.setConfValues(conf);
     if (metaStoreURI != null) {
       conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
     }
+    File scratchFolder = scratchDir.newFolder();
+    scratchFolder.setExecutable(true, false);
+    scratchFolder.setReadable(true, false);
+    scratchFolder.setWritable(true, false);
+    conf.setVar(HiveConf.ConfVars.SCRATCHDIR, scratchFolder.getAbsolutePath());
 
     // 2) Setup Hive client
     SessionState.start(new CliSessionState(conf));
@@ -188,7 +197,7 @@ public class TestHiveWriter {
     HiveWriter writer = new HiveWriter(endPoint, txnPerBatch, true, timeout
             , callTimeoutPool, ugi, serializer, sinkCounter);
 
-    Assert.assertEquals(writer.getRemainingTxns(),2);
+    Assert.assertEquals(writer.getRemainingTxns(), 2);
     writer.flush(true);
 
     Assert.assertEquals(writer.getRemainingTxns(), 1);
