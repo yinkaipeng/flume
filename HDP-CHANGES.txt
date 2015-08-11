@@ -1,6 +1,7 @@
 New Features:
 -----------------------
 FLUME-1734 - Hive Sink based on the new Hive Streaming support
+FLUME-2761 - Move Hive sink out of preview mode
 FLUME-1334 - Flume startup script for Windows
 FLUME-2442 - Need an alternative to providing clear text passwords in flume config
 
