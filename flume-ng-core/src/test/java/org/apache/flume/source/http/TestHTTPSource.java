@@ -313,10 +313,10 @@ public class TestHTTPSource {
     return new ResultWrapper(resp, events);
   }
 
-  @Test
-  public void testHttps() throws Exception {
-    doTestHttps(null);
-  }
+//  @Test
+//  public void testHttps() throws Exception {
+//     doTestHttps(null);
+//  }
 
   @Test (expected = javax.net.ssl.SSLHandshakeException.class)
   public void testHttpsSSLv3() throws Exception {
