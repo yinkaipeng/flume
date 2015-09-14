@@ -21,7 +21,7 @@ limitations under the License.
   <parent>
     <artifactId>flume-parent</artifactId>
     <groupId>org.apache.flume</groupId>
-    <version>1.5.2</version>
+    <version>1.5.2.2.2.8.0-3150</version>
   </parent>
 
   <artifactId>flume-ng-embedded-agent</artifactId>
