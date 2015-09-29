@@ -427,6 +427,7 @@ public class HiveSink extends AbstractSink implements Configurable {
       sinkCounter.addToEventDrainSuccessCount(txnEventCount);
       return txnEventCount;
     } catch (HiveWriter.Failure e) {
+      // in case of error we close all TxnBatches to start clean next time
       LOG.warn(getName() + " : " + e.getMessage(), e);
       abortAllWriters();
       closeAllWriters();
@@ -568,8 +569,8 @@ public class HiveSink extends AbstractSink implements Configurable {
     for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
       try {
         HiveWriter w = entry.getValue();
-        LOG.info("Closing connection to {}", w);
-        w.closeConnection();
+        w.abort();
+        w.close();
       } catch (InterruptedException ex) {
         Thread.currentThread().interrupt();
       }
