@@ -73,5 +73,6 @@ FULME-2544 - Windows: Incorrect Path Separator used in HDFS path (HDFS Sink)
 FLUME-2722 - Windows : TestKafkaSourceUtil Unit Tests fail on Windows
 FLUME-2754 - Hive Sink skipping first transaction in each Batch of Hive Transactions
 FLUME-2841 - Upgrade commons-collections to 3.2.2
+FLUME-2854 - parameterizing jetty version.
 
 Stopping Windows Service leaves the Flume java process running
