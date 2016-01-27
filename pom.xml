@@ -277,7 +277,7 @@ limitations under the License.
         <hadoop.version>${hadoop2.version}</hadoop.version>
         <hbase.version>0.98.2-hadoop2</hbase.version>
         <hadoop.common.artifact.id>hadoop-common</hadoop.common.artifact.id>
-        <thrift.version>0.9.3</thrift.version>
+        <thrift.version>0.9.2</thrift.version>
       </properties>
       <dependencyManagement>
         <dependencies>
