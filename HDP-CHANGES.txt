@@ -75,5 +75,6 @@ FLUME-2754 - Hive Sink skipping first transaction in each Batch of Hive Transact
 FLUME-2841 - Upgrade commons-collections to 3.2.2
 FLUME-2854 - parameterizing jetty version.
 FLUME-2865 - Upgrade thrift version (0.9.2)
+FLUME-2889 - Fixes to DateTime computations
 
 Stopping Windows Service leaves the Flume java process running
