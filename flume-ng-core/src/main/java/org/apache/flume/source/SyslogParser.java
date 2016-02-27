@@ -288,9 +288,6 @@ public class SyslogParser {
    * @return Typical (for Java) milliseconds since the UNIX epoch
    */
   protected long parseRfc3164Time(String ts) {
-    DateTime now = DateTime.now();
-    int year = now.getYear();
-
     ts = TWO_SPACES.matcher(ts).replaceFirst(" ");
 
     DateTime date;
@@ -305,14 +302,17 @@ public class SyslogParser {
     // rfc3164 dates are really dumb.
     // NB: cannot handle replaying of old logs or going back to the future
     if (date != null) {
+      DateTime now = DateTime.now();
+      int year = now.getYear();
+
       DateTime fixed = date.withYear(year);
 
       // flume clock is ahead or there is some latency, and the year rolled
       if (fixed.isAfter(now) && fixed.minusMonths(1).isAfter(now)) {
-         fixed = date.minusYears(1);
+        fixed = fixed.minusYears(1);
       // flume clock is behind and the year rolled
       } else if (fixed.isBefore(now) && fixed.plusMonths(1).isBefore(now)) {
-        fixed = date.plusYears(1);
+        fixed = fixed.plusYears(1);
       }
       date = fixed;
     }
