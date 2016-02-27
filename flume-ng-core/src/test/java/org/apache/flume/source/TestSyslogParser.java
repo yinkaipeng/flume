@@ -21,8 +21,14 @@ package org.apache.flume.source;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import org.apache.flume.Event;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeUtils;
+import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.Assert;
@@ -87,9 +93,55 @@ public class TestSyslogParser {
     for (String msg : messages) {
       boolean keepFields = true;
       Event event = parser.parseMessage(msg, charset, keepFields);
+      
       Assert.assertArrayEquals(event.getBody(), msg.getBytes());
       Assert.assertNull("Failure to parse known-good syslog message",
           event.getHeaders().get(SyslogUtils.EVENT_STATUS));
     }
+  }
+
+  @Test
+  public void testRfc3164DateParsing() {
+    SyslogParser parser = new SyslogParser();
+    DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm:ssZZZ");
+    DateTimeFormatter isoFormatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm:ssZZZ");
+
+
+    DateTimeUtils.setCurrentMillisFixed(formatter.parseDateTime("01/01/2018 13:14:15UTC").getMillis());
+
+    String dateString = "Oct 11 22:14:15";
+    long dateLongs;
+    dateLongs = formatter.parseDateTime("11/10/2017 22:14:15UTC").getMillis();
+
+
+
+    Assert.assertEquals(isoFormatter.print(dateLongs), isoFormatter.print(parser.parseRfc3164Time(dateString)));
+
+    dateString = "Jan  5 17:32:18";
+    dateLongs = formatter.parseDateTime("05/01/2018 17:32:18UTC").getMillis();
+    Assert.assertEquals(isoFormatter.print(dateLongs), isoFormatter.print(parser.parseRfc3164Time(dateString)));
+
+    dateString = "Oct 22 10:52:12";
+    dateLongs = formatter.parseDateTime("22/10/2017 10:52:12UTC").getMillis();
+    Assert.assertEquals(isoFormatter.print(dateLongs), isoFormatter.print(parser.parseRfc3164Time(dateString)));
+
+    dateString = "Mar 01 01:02:03";
+    dateLongs = formatter.parseDateTime("01/03/2017 01:02:03UTC").getMillis();
+    Assert.assertEquals(isoFormatter.print(dateLongs), isoFormatter.print(parser.parseRfc3164Time(dateString)));
+
+    DateTimeUtils.setCurrentMillisFixed(formatter.parseDateTime("01/02/2020 13:14:15UTC").getMillis());
+
+    dateString = "Feb 29 01:02:03";
+    dateLongs = formatter.parseDateTime("29/02/2020 01:02:03UTC").getMillis();
+    Assert.assertEquals(isoFormatter.print(dateLongs), isoFormatter.print(parser.parseRfc3164Time(dateString)));
+
+    DateTimeUtils.setCurrentMillisFixed(formatter.parseDateTime("01/01/2020 13:14:15UTC").getMillis());
+
+    dateString = "Feb 29 01:02:03";
+    dateLongs = formatter.parseDateTime("28/02/2019 01:02:03UTC").getMillis();
+    Assert.assertEquals(isoFormatter.print(dateLongs), isoFormatter.print(parser.parseRfc3164Time(dateString)));
+
+    DateTimeUtils.setCurrentMillisSystem();
+
   }
 }
