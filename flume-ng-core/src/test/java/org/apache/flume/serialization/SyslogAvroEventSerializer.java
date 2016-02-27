@@ -86,7 +86,6 @@ public class SyslogAvroEventSerializer
   @Override
   protected SyslogEvent convert(Event event) {
     SyslogEvent sle = new SyslogEvent();
-
     // Stringify body so it's easy to parse.
     // This is a pretty inefficient way to do it.
     String msg = new String(event.getBody(), Charsets.UTF_8);
@@ -184,18 +183,18 @@ public class SyslogAvroEventSerializer
     // rfc3164 dates are really dumb.
     // NB: cannot handle replaying of old logs or going back to the future
     if (date != null) {
-      DateTime now = new DateTime();
+      DateTime now = DateTime.now();
       int year = now.getYear();
-      DateTime corrected = date.withYear(year);
+      DateTime fixed = date.withYear(year);
 
-      // flume clock is ahead or there is some latency, and the year rolled
-      if (corrected.isAfter(now) && corrected.minusMonths(1).isAfter(now)) {
-        corrected = date.withYear(year - 1);
-      // flume clock is behind and the year rolled
-      } else if (corrected.isBefore(now) && corrected.plusMonths(1).isBefore(now)) {
-        corrected = date.withYear(year + 1);
+      // system clock is ahead or there is some latency, and the year rolled
+      if (fixed.isAfter(now) && fixed.minusMonths(1).isAfter(now)) {
+        fixed = fixed.minusYears(1);
+        // system clock is behind and the year rolled
+      } else if (fixed.isBefore(now) && fixed.plusMonths(1).isBefore(now)) {
+        fixed = fixed.plusYears(1);
       }
-      date = corrected;
+      date = fixed;
     }
 
     if (date == null) {
