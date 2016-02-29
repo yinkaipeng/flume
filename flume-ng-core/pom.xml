@@ -14,15 +14,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <artifactId>flume-parent</artifactId>
     <groupId>org.apache.flume</groupId>
-    <version>1.5.2</version>
+    <version>1.5.2.2.4.0.0-169</version>
   </parent>
 
   <groupId>org.apache.flume</groupId>
@@ -146,10 +145,9 @@ limitations under the License.
                 <phase>generate-sources</phase>
                 <configuration>
                   <target>
-                    <mkdir dir="${project.build.directory}/generated-sources/java"/>
+                    <mkdir dir="${project.build.directory}/generated-sources/java" />
                     <exec executable="sh">
-                      <arg
-                        line = "${basedir}/scripts/saveVersion.sh ${project.version} ${project.build.directory}" />
+                      <arg line="${basedir}/scripts/saveVersion.sh ${project.version} ${project.build.directory}" />
                     </exec>
                   </target>
                 </configuration>
@@ -203,10 +201,9 @@ limitations under the License.
                 <phase>generate-sources</phase>
                 <configuration>
                   <target>
-                    <mkdir dir="${project.build.directory}/generated-sources/java/org/apache/flume"/>
+                    <mkdir dir="${project.build.directory}/generated-sources/java/org/apache/flume" />
                     <exec executable="powershell">
-                      <arg
-                              line = "-executionpolicy unrestricted -file ${basedir}\scripts\saveVersion.ps1  ${project.version} ${project.build.directory}" />
+                      <arg line="-executionpolicy unrestricted -file ${basedir}\scripts\saveVersion.ps1  ${project.version} ${project.build.directory}" />
                     </exec>
                   </target>
                 </configuration>
