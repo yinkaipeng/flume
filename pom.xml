@@ -36,8 +36,8 @@ limitations under the License.
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <!-- Java compiler configuration -->
-    <sourceJavaVersion>1.6</sourceJavaVersion>
-    <targetJavaVersion>1.6</targetJavaVersion>
+    <sourceJavaVersion>1.7</sourceJavaVersion>
+    <targetJavaVersion>1.7</targetJavaVersion>
 
     <!-- defaults for flaky test and focused test exclusions -->
     <test.exclude.pattern>$</test.exclude.pattern> <!-- junk pattern -->
@@ -789,8 +789,8 @@ limitations under the License.
           <configuration>
             <source>${sourceJavaVersion}</source>
             <target>${targetJavaVersion}</target>
-            <source>1.6</source>
-            <target>1.6</target>
+            <source>1.7</source>
+            <target>1.7</target>
             <!-- Memory management -->
             <fork>true</fork>
             <meminitial>128m</meminitial>
