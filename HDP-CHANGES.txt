@@ -52,6 +52,7 @@ FLUME-2655 - Update documentation for hdfs.closeTries based on FLUME-2586
 FLUME-2095 - JMS source with TIBCO (patch-1)
 FLUME-2804 - Hive sink should try to clean up transactions when flume exits
 FLUME-2821 - Flume-Kafka Source with new Consumer
+FLUME-2822 - Flume-Kafka-Sink with new Producer
 
 Bug Fixes:
 ----------------------
