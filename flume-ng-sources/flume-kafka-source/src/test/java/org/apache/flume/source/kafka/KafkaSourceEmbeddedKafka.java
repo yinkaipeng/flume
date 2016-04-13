@@ -22,6 +22,7 @@ import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import kafka.admin.AdminUtils;
+import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
 import kafka.utils.ZKStringSerializer$;
 
@@ -85,7 +86,8 @@ public class KafkaSourceEmbeddedKafka {
     int numPartitions = 1;
     int replicationFactor = 1;
     Properties topicConfig = new Properties();
-    AdminUtils.createTopic(zkClient, topicName, numPartitions,
+    ZkUtils zkUtils = ZkUtils.apply(zkClient, false);
+    AdminUtils.createTopic(zkUtils, topicName, numPartitions,
             replicationFactor, topicConfig);
   }
 
