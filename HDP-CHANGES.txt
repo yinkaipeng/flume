@@ -15,6 +15,15 @@ FLUME-2499 - Include Kafka Message Key in Event Header, Updated Comments
 Kafka Source (Experimental):
 FLUME-2250 - Add support for Kafka Source
 
+Kafka Channel (Experimental):
+FLUME-2500 - Add a channel that uses Kafka
+FLUME-2523 - Document Kafka channel
+FLUME-2560 - Add Kafka Channel to dist tarballs.
+FLUME-2562 - Add metrics for Kafka Source, Kafka Sink and Kafka Channel.
+FLUME-2734 - Kafka Channel timeout property is overridden by default value
+FLUME-2781 - Kafka Channel with parseAsFlumeEvent=true should write data as is, not as flume events.
+FLUME-2823 - Flume-Kafka-Channel with new APIs
+
 
 Unsupported Features:
 -----------------------
