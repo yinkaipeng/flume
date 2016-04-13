@@ -61,7 +61,7 @@ limitations under the License.
     <thrift.version>0.9.0</thrift.version>
     <kite.version>0.12.0</kite.version>
     <hive.version>0.14.0</hive.version>
-    <kafka.version>0.8.2-beta</kafka.version>
+    <kafka.version>0.9.0.1</kafka.version>
     <jetty.version>6.1.26</jetty.version>
   </properties>
 
@@ -1225,7 +1225,7 @@ limitations under the License.
       <dependency>
         <groupId>org.apache.flume.flume-ng-channels</groupId>
         <artifactId>flume-kafka-channel</artifactId>
-        <version>1.6.0-SNAPSHOT</version>
+        <version>1.5.2</version>
       </dependency>
 
       <dependency>
