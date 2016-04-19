@@ -2492,6 +2492,8 @@ kafka.consumer.auto.offset.reset  latest                      What to do when th
                                                               latest: automatically reset the offset to the latest offset
                                                               none: throw exception to the consumer if no previous offset is found for the consumer\'s group
                                                               anything else: throw exception to the consumer.
+kafka.producer.security.protocol                              Set to SASL_PLAINTEXT or SASL_SSL if writing to Kafka using Kerberos. See below for additional info on Kerberos setup.
+kafka.consumer.security.protocol                              Set to SASL_PLAINTEXT or SASL_SSL if reading from Kafka using Kerberos. See below for additional info on Kerberos setup.
 ================================  ==========================  ===============================================================================================================
 
 Deprecated Properties
@@ -2515,11 +2517,45 @@ Example for agent named a1:
 .. code-block:: properties
 
     a1.channels.channel1.type = org.apache.flume.channel.kafka.KafkaChannel
-    a1.channels.channel1.capacity = 10000
-    a1.channels.channel1.transactionCapacity = 1000
     a1.channels.channel1.kafka.bootstrap.servers = kafka-1:9092,kafka-2:9092,kafka-3:9092
     a1.channels.channel1.kafka.topic = channel1
     a1.channels.channel1.kafka.consumer.group.id = flume-consumer
+
+**Kerberos and Kafka Channel:**
+
+To use Kafka channel with a Kafka cluster secured with Kerberos, set the producer/consumer.security.protocol properties noted above for producer and/or consumer.
+The Kerberos keytab and principal to be used is specified in a JAAS file's "KafkaClient" section. See `Kafka doc <http://kafka.apache.org/documentation.html#security_sasl_clientconfig>`_
+for info on the JAAS file contents. The location of this JAAS file is specified via JAVA_OPTS using -Djava.security.auth.login.config=/path/to/kafka_jaas.conf (in flume-env.sh)
+
+.. code-block:: properties
+
+    a1.channels.channel1.type = org.apache.flume.channel.kafka.KafkaChannel
+    a1.channels.channel1.kafka.bootstrap.servers = kafka-1:9092,kafka-2:9092,kafka-3:9092
+    a1.channels.channel1.kafka.topic = channel1
+    a1.channels.channel1.kafka.consumer.group.id = flume-consumer
+    a1.channels.c1.kafka.producer.security.protocol = SASL_PLAINTEXT
+    a1.channels.c1.kafka.consumer.security.protocol = SASL_PLAINTEXT
+
+Sample JAAS file
+
+.. code-block:: javascript
+
+    KafkaClient {
+        com.sun.security.auth.module.Krb5LoginModule required
+        useKeyTab=true
+        storeKey=true
+        serviceName="kafka"
+        keyTab="/path/to/keytabs/testuser1.keytab"
+        principal="testuser1/kafka1.example.com";
+    };
+
+Sample flume-env.sh
+
+.. code-block:: properties
+
+    export JAVA_HOME=/path/java-home/
+    export JAVA_OPTS="-Djava.security.auth.login.config=/path/to/kafka_jaas.conf"
+
 
 File Channel
 ~~~~~~~~~~~~
