@@ -23,6 +23,7 @@ FLUME-2562 - Add metrics for Kafka Source, Kafka Sink and Kafka Channel.
 FLUME-2734 - Kafka Channel timeout property is overridden by default value
 FLUME-2781 - Kafka Channel with parseAsFlumeEvent=true should write data as is, not as flume events.
 FLUME-2823 - Flume-Kafka-Channel with new APIs
+FLUME-2901 - Document Kerberos setup for Kafka channel
 
 
 Unsupported Features:
