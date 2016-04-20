@@ -2538,8 +2538,8 @@ Sample secure configuration using SASL_PLAINTEXT.
     a1.channels.channel1.kafka.bootstrap.servers = kafka-1:9092,kafka-2:9092,kafka-3:9092
     a1.channels.channel1.kafka.topic = channel1
     a1.channels.channel1.kafka.consumer.group.id = flume-consumer
-    a1.channels.c1.kafka.producer.security.protocol = SASL_PLAINTEXT
-    a1.channels.c1.kafka.consumer.security.protocol = SASL_PLAINTEXT
+    a1.channels.channel1.kafka.producer.security.protocol = SASL_PLAINTEXT
+    a1.channels.channel1.kafka.consumer.security.protocol = SASL_PLAINTEXT
 
 Sample JAAS file
 
