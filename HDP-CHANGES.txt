@@ -53,6 +53,7 @@ FLUME-2095 - JMS source with TIBCO (patch-1)
 FLUME-2804 - Hive sink should try to clean up transactions when flume exits
 FLUME-2821 - Flume-Kafka Source with new Consumer
 FLUME-2822 - Flume-Kafka-Sink with new Producer
+FLUME-2852 - Kafka Source/Sink should optionally read/write Flume records
 
 Bug Fixes:
 ----------------------
