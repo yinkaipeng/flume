@@ -4,6 +4,7 @@ FLUME-1734 - Hive Sink based on the new Hive Streaming support
 FLUME-2761 - Move Hive sink out of preview mode
 FLUME-1334 - Flume startup script for Windows
 FLUME-2442 - Need an alternative to providing clear text passwords in flume config
+FLUME-2729 - Allow pollableSource backoff times to be configurable
 
 Kafka Sink (Experimental):
 FLUME-2251 - Add support for Kafka Sink
@@ -25,6 +26,9 @@ FLUME-2781 - Kafka Channel with parseAsFlumeEvent=true should write data as is, 
 FLUME-2823 - Flume-Kafka-Channel with new APIs
 FLUME-2901 - Document Kerberos setup for Kafka channel
 
+TailDir source
+FLUME-2498 - Implement Taildir Source
+FLUME-2801 - Performance improvement on TailDir source
 
 Unsupported Features:
 -----------------------
