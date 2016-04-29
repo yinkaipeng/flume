@@ -40,7 +40,7 @@ public class KafkaSourceEmbeddedKafka {
     Properties props = new Properties();
     props.put("zookeeper.connect",zookeeper.getConnectString());
     props.put("broker.id","1");
-    KafkaConfig config = new KafkaConfig(props);
+    KafkaConfig config = KafkaConfig.fromProps(props);
     kafkaServer = new KafkaServerStartable(config);
     kafkaServer.startup();
     initProducer();
@@ -88,7 +88,7 @@ public class KafkaSourceEmbeddedKafka {
     Properties topicConfig = new Properties();
     ZkUtils zkUtils = ZkUtils.apply(zkClient, false);
     AdminUtils.createTopic(zkUtils, topicName, numPartitions,
-            replicationFactor, topicConfig);
+                           replicationFactor, topicConfig, kafka.admin.RackAwareMode.Disabled$.MODULE$);
   }
 
 }

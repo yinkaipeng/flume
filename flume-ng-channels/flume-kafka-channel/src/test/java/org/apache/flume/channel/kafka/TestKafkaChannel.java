@@ -504,7 +504,7 @@ public class TestKafkaChannel {
     int replicationFactor = 1;
     Properties topicConfig = new Properties();
     AdminUtils.createTopic(zkUtils, topicName, numPartitions,
-            replicationFactor, topicConfig);
+            replicationFactor, topicConfig, kafka.admin.RackAwareMode.Disabled$.MODULE$);
   }
 
   public static void deleteTopic(String topicName) {
