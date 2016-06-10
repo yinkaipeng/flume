@@ -102,5 +102,6 @@ FLUME-3027 - Kafka offset seems to jump back and forth to earlier number
 FLUME-2427 - Be less verbose in isFileClosed() notification
 FLUME-3114 - Upgrade commons-httpclient library dependency
 FLUME-2672 - NPE in KafkaSourceCounter
+FLUME-2915 - The kafka channel using new APIs will be stuck when the sink is avro sink
 
 Stopping Windows Service leaves the Flume java process running

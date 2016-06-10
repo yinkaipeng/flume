@@ -187,6 +187,11 @@ import static org.apache.flume.channel.kafka.KafkaChannelConfiguration.*;
     doParseAsFlumeEventFalseAsSource(true);
   }
 
+  @Test
+  public void testNullKeyNoHeader() throws Exception {
+    doTestNullKeyNoHeader();
+  }
+
   private void doParseAsFlumeEventFalse(Boolean checkHeaders) throws Exception {
     final KafkaChannel channel = startChannel(false);
     Properties props = channel.getProducerProps();
@@ -213,6 +218,30 @@ import static org.apache.flume.channel.kafka.KafkaChannelConfiguration.*;
       finals.remove(i);
     }
     Assert.assertTrue(finals.isEmpty());
+    channel.stop();
+  }
+
+  private void doTestNullKeyNoHeader() throws Exception {
+    final KafkaChannel channel = startChannel(false);
+    Properties props = channel.getProducerProps();
+    KafkaProducer<String, byte[]> producer = new KafkaProducer<String, byte[]>(props);
+
+    for (int i = 0; i < 50; i++) {
+      ProducerRecord<String, byte[]> data = new ProducerRecord<String, byte[]>(topic, null, String.valueOf(i).getBytes());
+      producer.send(data).get();
+    }
+    ExecutorCompletionService<Void> submitterSvc = new
+            ExecutorCompletionService<Void>(Executors.newCachedThreadPool());
+    List<Event> events = pullEvents(channel, submitterSvc,
+            50, false, false);
+    wait(submitterSvc, 5);
+    List<String> finals = new ArrayList<String>(50);
+    for (int i = 0; i < 50; i++) {
+      finals.add(i, events.get(i).getHeaders().get(KEY_HEADER));
+    }
+    for (int i = 0; i < 50; i++) {
+      Assert.assertTrue( finals.get(i) == null);
+    }
     channel.stop();
   }
 
