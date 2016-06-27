@@ -239,6 +239,7 @@ public class TestExecSource {
     }
 
   @Test
+  @Ignore("Flaky test")
   public void testMonitoredCounterGroup() throws InterruptedException, LifecycleException,
   EventDeliveryException, IOException {
     // mini script
