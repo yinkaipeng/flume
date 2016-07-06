@@ -88,8 +88,8 @@ public class ScribeSource extends AbstractSource implements
         Scribe.Processor processor = new Scribe.Processor(new Receiver());
         TNonblockingServerTransport transport = new TNonblockingServerSocket(port);
         THsHaServer.Args args = new THsHaServer.Args(transport);
-
-        args.workerThreads(workers);
+        args.minWorkerThreads(workers);
+        args.maxWorkerThreads(workers);
         args.processor(processor);
         args.transportFactory(new TFramedTransport.Factory());
         args.protocolFactory(new TBinaryProtocol.Factory(false, false));

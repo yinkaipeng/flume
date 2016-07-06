@@ -48,6 +48,7 @@ class HiveWriter {
       .getLogger(HiveWriter.class);
 
   private final HiveEndPoint endPoint;
+  private final String sinkName;
   private HiveEventSerializer serializer;
   private final StreamingConnection connection;
   private final int txnsPerBatch;
@@ -77,8 +78,10 @@ class HiveWriter {
   HiveWriter(HiveEndPoint endPoint, int txnsPerBatch,
              boolean autoCreatePartitions, long callTimeout,
              ExecutorService callTimeoutPool, UserGroupInformation ugi,
-             HiveEventSerializer serializer, SinkCounter sinkCounter)
+             HiveEventSerializer serializer, SinkCounter sinkCounter,
+             String sinkName)
           throws ConnectFailure, InterruptedException {
+
     try {
       this.autoCreatePartitions = autoCreatePartitions;
       this.sinkCounter = sinkCounter;
@@ -94,6 +97,7 @@ class HiveWriter {
       this.txnBatch.beginNextTransaction();
       this.closed = false;
       this.lastUsed = System.currentTimeMillis();
+      this.sinkName = "Flume-HiveSink:" + sinkName;
     } catch (InterruptedException e) {
       throw e;
     } catch (RuntimeException e) {
@@ -373,7 +377,7 @@ class HiveWriter {
       return  timedCall(new CallRunner1<StreamingConnection>() {
         @Override
         public StreamingConnection call() throws InterruptedException, StreamingException {
-          return endPoint.newConnection(autoCreatePartitions, null, ugi); // could block
+          return endPoint.newConnection(autoCreatePartitions, null, ugi, sinkName); // could block
         }
       });
     } catch (Exception e) {
