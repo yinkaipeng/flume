@@ -449,7 +449,7 @@ public class HiveSink extends AbstractSink implements Configurable {
       if( writer == null ) {
         LOG.info(getName() + ": Creating Writer to Hive end point : " + endPoint);
         writer = new HiveWriter(endPoint, txnsPerBatchAsk, autoCreatePartitions,
-                callTimeout, callTimeoutPool, ugi, serializer, sinkCounter);
+                callTimeout, callTimeoutPool, ugi, serializer, sinkCounter, getName());
 
         sinkCounter.incrementConnectionCreatedCount();
         if(allWriters.size() > maxOpenConnections){
