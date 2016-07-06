@@ -123,7 +123,7 @@ public class TestHiveWriter {
     HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals);
     SinkCounter sinkCounter = new SinkCounter(this.getClass().getName());
     HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-            , callTimeoutPool, ugi, serializer, sinkCounter, "testInstantiate");
+            , callTimeoutPool, ugi, serializer, sinkCounter);
 
     writer.close();
   }
@@ -133,7 +133,7 @@ public class TestHiveWriter {
     HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, partVals);
     SinkCounter sinkCounter = new SinkCounter(this.getClass().getName());
     HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-            , callTimeoutPool, ugi, serializer, sinkCounter, "testWriteBasic");
+            , callTimeoutPool, ugi, serializer, sinkCounter);
 
     writeEvents(writer,3);
     writer.flush(false);
@@ -147,7 +147,7 @@ public class TestHiveWriter {
     SinkCounter sinkCounter = new SinkCounter(this.getClass().getName());
 
     HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-            , callTimeoutPool, ugi, serializer, sinkCounter, "testWriteMultiFlush");
+            , callTimeoutPool, ugi, serializer, sinkCounter);
 
     checkRecordCountInTable(0);
     SimpleEvent event = new SimpleEvent();
@@ -186,7 +186,7 @@ public class TestHiveWriter {
 
     int txnPerBatch = 3;
     HiveWriter writer = new HiveWriter(endPoint, txnPerBatch, true, timeout
-            , callTimeoutPool, ugi, serializer, sinkCounter, "testTxnBatchConsumption");
+            , callTimeoutPool, ugi, serializer, sinkCounter);
 
     Assert.assertEquals(writer.getRemainingTxns(),2);
     writer.flush(true);
@@ -232,7 +232,7 @@ public class TestHiveWriter {
 
 
     HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout, callTimeoutPool,
-              ugi, serializer2, sinkCounter, "testInOrderWrite");
+              ugi, serializer2, sinkCounter);
 
     SimpleEvent event = new SimpleEvent();
     event.setBody("1,Hello world 1".getBytes());
@@ -297,12 +297,12 @@ public class TestHiveWriter {
     SinkCounter sinkCounter2 = new SinkCounter(this.getClass().getName());
 
     HiveWriter writer1 = new HiveWriter(endPoint1, 10, true, timeout
-            , callTimeoutPool, ugi, serializer, sinkCounter1, "testSecondWriterBeforeFirstCommits");
+            , callTimeoutPool, ugi, serializer, sinkCounter1);
 
     writeEvents(writer1, 3);
 
     HiveWriter writer2 = new HiveWriter(endPoint2, 10, true, timeout
-            , callTimeoutPool, ugi, serializer, sinkCounter2, "testSecondWriterBeforeFirstCommits");
+            , callTimeoutPool, ugi, serializer, sinkCounter2);
     writeEvents(writer2, 3);
     writer2.flush(false); // commit
 
@@ -326,7 +326,7 @@ public class TestHiveWriter {
     SinkCounter sinkCounter2 = new SinkCounter(this.getClass().getName());
 
     HiveWriter writer1 = new HiveWriter(endPoint1, 10, true, timeout
-            , callTimeoutPool, ugi, serializer, sinkCounter1, "testSecondWriterAfterFirstCommits");
+            , callTimeoutPool, ugi, serializer, sinkCounter1);
 
     writeEvents(writer1, 3);
 
@@ -334,7 +334,7 @@ public class TestHiveWriter {
 
 
     HiveWriter writer2 = new HiveWriter(endPoint2, 10, true, timeout
-            , callTimeoutPool, ugi, serializer, sinkCounter2, "testSecondWriterAfterFirstCommits");
+            , callTimeoutPool, ugi, serializer, sinkCounter2);
     writeEvents(writer2, 3);
     writer2.flush(false); // commit
 
