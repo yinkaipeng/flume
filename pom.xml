@@ -60,7 +60,7 @@ limitations under the License.
     <hadoop2.version>2.4.0</hadoop2.version>
     <thrift.version>0.9.0</thrift.version>
     <kite.version>0.12.0</kite.version>
-    <hive.version>1.2.2</hive.version>
+    <hive.version>0.14.0</hive.version>
     <kafka.version>0.9.0.1</kafka.version>
     <jetty.version>6.1.26</jetty.version>
   </properties>
@@ -277,7 +277,7 @@ limitations under the License.
         <hadoop.version>${hadoop2.version}</hadoop.version>
         <hbase.version>0.98.2-hadoop2</hbase.version>
         <hadoop.common.artifact.id>hadoop-common</hadoop.common.artifact.id>
-        <thrift.version>0.9.3</thrift.version>
+        <thrift.version>0.9.2</thrift.version>
       </properties>
       <dependencyManagement>
         <dependencies>
