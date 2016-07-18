@@ -209,8 +209,8 @@ public class TestHiveWriter {
 
   private void checkRecordCountInTable(int expectedCount)
           throws CommandNeedRetryException, IOException {
-//    int count = TestUtil.listRecordsInTable(driver, dbName, tblName).size();
-//    Assert.assertEquals(expectedCount, count);
+    int count = TestUtil.listRecordsInTable(driver, dbName, tblName).size();
+    Assert.assertEquals(expectedCount, count);
   }
 
   /**

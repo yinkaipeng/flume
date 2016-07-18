@@ -31,6 +31,7 @@ import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.ql.CommandNeedRetryException;
 import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
+import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.util.Shell;
 import org.apache.hive.hcatalog.streaming.QueryFailedException;
@@ -55,9 +56,12 @@ public class TestUtil {
    * @param conf HiveConf to add these values to.
    */
   public static void setConfValues(HiveConf conf) {
+    conf.set("fs.raw.impl", RawFileSystem.class.getName());
     conf.setVar(HiveConf.ConfVars.HIVE_TXN_MANAGER, txnMgr);
     conf.setBoolVar(HiveConf.ConfVars.HIVE_SUPPORT_CONCURRENCY, true);
-    conf.set("fs.raw.impl", RawFileSystem.class.getName());
+//    conf.setVar(HiveConf.ConfVars.HIVEFETCHTASKCONVERSION, "none");
+    conf.setBoolVar(HiveConf.ConfVars.METASTORE_AUTO_CREATE_ALL, true);
+    conf.setBoolVar(HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION, false);
   }
 
   public static void createDbAndTable(Driver driver, String databaseName,
@@ -149,7 +153,13 @@ public class TestUtil {
 
   public static ArrayList<String> listRecordsInTable(Driver driver, String dbName, String tblName)
           throws CommandNeedRetryException, IOException {
-    driver.run("select * from " + dbName + "." + tblName);
+    CommandProcessorResponse resp = driver.run("select * from " + dbName + "." + tblName);
+
+    if(resp.getResponseCode() != 0) {
+      System.err.println(resp.toString());
+      throw new IOException( resp.getException() );
+    }
+
     ArrayList<String> res = new ArrayList<String>();
     driver.getResults(res);
     return res;
