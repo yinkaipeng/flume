@@ -60,7 +60,7 @@ public class TestUtil {
     conf.setVar(HiveConf.ConfVars.HIVE_TXN_MANAGER, txnMgr);
     conf.setBoolVar(HiveConf.ConfVars.HIVE_SUPPORT_CONCURRENCY, true);
 //    conf.setVar(HiveConf.ConfVars.HIVEFETCHTASKCONVERSION, "none");
-    conf.setBoolVar(HiveConf.ConfVars.METASTORE_AUTO_CREATE_SCHEMA, true);
+    conf.setBoolVar(HiveConf.ConfVars.METASTORE_AUTO_CREATE_ALL, true);
     conf.setBoolVar(HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION, false);
   }
 
