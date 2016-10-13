@@ -160,22 +160,19 @@ Configurable {
 
   @Override
   public void start() {
-    logger.info("Exec source starting with command:{}", command);
+    logger.info("Exec source starting with command: {}", command);
+
+    // Start the counter before starting any threads that may access it.
+    sourceCounter.start();
 
     executor = Executors.newSingleThreadExecutor();
+    runner = new ExecRunnable(shell, command, getChannelProcessor(), sourceCounter, restart,
+                              restartThrottle, logStderr, bufferCount, batchTimeout, charset);
 
-    runner = new ExecRunnable(shell, command, getChannelProcessor(), sourceCounter,
-        restart, restartThrottle, logStderr, bufferCount, batchTimeout, charset);
-
-    // FIXME: Use a callback-like executor / future to signal us upon failure.
+    // Start the runner thread.
     runnerFuture = executor.submit(runner);
 
-    /*
-     * NB: This comes at the end rather than the beginning of the method because
-     * it sets our state to running. We want to make sure the executor is alive
-     * and well first.
-     */
-    sourceCounter.start();
+    // Mark the Source as RUNNING.
     super.start();
 
     logger.debug("Exec source started");
@@ -183,7 +180,7 @@ Configurable {
 
   @Override
   public void stop() {
-    logger.info("Stopping exec source with command:{}", command);
+    logger.info("Stopping exec source with command: {}", command);
     if(runner != null) {
       runner.setRestart(false);
       runner.kill();
@@ -319,7 +316,7 @@ Configurable {
                     }
                   }
                 } catch (Exception e) {
-                  logger.error("Exception occured when processing event batch", e);
+                  logger.error("Exception occurred when processing event batch", e);
                   if(e instanceof InterruptedException) {
                       Thread.currentThread().interrupt();
                   }
@@ -329,8 +326,8 @@ Configurable {
           batchTimeout, batchTimeout, TimeUnit.MILLISECONDS);
 
           while ((line = reader.readLine()) != null) {
+            sourceCounter.incrementEventReceivedCount();
             synchronized (eventList) {
-              sourceCounter.incrementEventReceivedCount();
               eventList.add(EventBuilder.withBody(line.getBytes(charset)));
               if(eventList.size() >= bufferCount || timeout()) {
                 flushEventBatch(eventList);
