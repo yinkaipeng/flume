@@ -446,6 +446,7 @@ public class TestFileChannelRestart extends TestFileChannelBase {
     doTestCorruptInflights("inflighttakes", false);
   }
 
+  @Ignore
   @Test
   public void testCorruptInflightTakesWithBackup() throws Exception {
     Assume.assumeTrue( !System.getProperty("os.name").toLowerCase().contains("win"));

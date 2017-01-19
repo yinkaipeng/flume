@@ -28,6 +28,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.Assume;
 import org.slf4j.Logger;
@@ -175,6 +176,7 @@ public class TestLog {
   /**
    * There is a race here in that someone could take up some space
    */
+  @Ignore
   @Test
   public void testMinimumRequiredSpaceTooSmallForPut() throws IOException,
           InterruptedException {
