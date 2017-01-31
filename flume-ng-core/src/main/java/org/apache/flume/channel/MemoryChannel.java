@@ -18,6 +18,8 @@
  */
 package org.apache.flume.channel;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -173,7 +175,6 @@ public class MemoryChannel extends BasicChannelSemantics {
         }
         putList.clear();
       }
-      bytesRemaining.release(putByteCounter);
       putByteCounter = 0;
       takeByteCounter = 0;
 
@@ -371,5 +372,10 @@ public class MemoryChannel extends BasicChannelSemantics {
     }
     //Each event occupies at least 1 slot, so return 1.
     return 1;
+  }
+
+  @VisibleForTesting
+  int getBytesRemainingValue() {
+    return bytesRemaining.availablePermits();
   }
 }
