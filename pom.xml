@@ -1443,7 +1443,13 @@ limitations under the License.
         <classifier>test</classifier>
         <scope>test</scope>
       </dependency>
-
+      <dependency>
+        <groupId>org.apache.kafka</groupId>
+        <artifactId>kafka-clients</artifactId>
+        <version>${kafka.version}</version>
+        <classifier>test</classifier>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 

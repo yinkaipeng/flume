@@ -27,7 +27,7 @@ import java.util.List;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import junit.framework.Assert;
-import kafka.common.TopicExistsException;
+import org.apache.kafka.common.errors.TopicExistsException;
 import kafka.consumer.ConsumerIterator;
 import kafka.message.Message;
 
