@@ -52,6 +52,7 @@ import org.junit.*;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import org.junit.rules.TemporaryFolder;
 
 public class TestExecSource {
 
@@ -62,6 +63,8 @@ public class TestExecSource {
 
   private ChannelSelector rcs = new ReplicatingChannelSelector();
 
+  @Rule
+  public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Before
   public void setUp() {
@@ -94,13 +97,11 @@ public class TestExecSource {
 
   @Test
   public void testProcess() throws InterruptedException, LifecycleException,
-  EventDeliveryException, IOException {
+      EventDeliveryException, IOException {
 
     // Generates a random files for input\output
-    File inputFile = File.createTempFile("input", null);
-    File ouputFile = File.createTempFile("ouput", null);
-    FileUtils.forceDeleteOnExit(inputFile);
-    FileUtils.forceDeleteOnExit(ouputFile);
+    File inputFile = temporaryFolder.newFile("input");
+    File outputFile = temporaryFolder.newFile("output");
 
     // Generates input file with a random data set (10 lines, 200 characters each)
     FileOutputStream outputStream1 = new FileOutputStream(inputFile);
@@ -127,7 +128,7 @@ public class TestExecSource {
     transaction.begin();
     Event event;
 
-    FileOutputStream outputStream = new FileOutputStream(ouputFile);
+    FileOutputStream outputStream = new FileOutputStream(outputFile);
 
     while ((event = channel.take()) != null) {
       outputStream.write(event.getBody());
@@ -139,7 +140,7 @@ public class TestExecSource {
     transaction.close();
 
     Assert.assertEquals(FileUtils.checksumCRC32(inputFile),
-      FileUtils.checksumCRC32(ouputFile));
+      FileUtils.checksumCRC32(outputFile));
   }
 
   @Test
@@ -289,8 +290,7 @@ public class TestExecSource {
   @Test
   public void testBatchTimeout() throws InterruptedException, LifecycleException,
   EventDeliveryException, IOException {
-
-    String filePath = "/tmp/flume-execsource." + Thread.currentThread().getId();
+    String filePath = temporaryFolder.newFile().getAbsolutePath();
     String eventBody = "TestMessage";
     FileOutputStream outputStream = new FileOutputStream(filePath);
 
@@ -319,6 +319,7 @@ public class TestExecSource {
     outputStream.close();
     Thread.sleep(1500);
 
+
     for(int i = 0; i < 3; i++) {
       Event event = channel.take();
       assertNotNull(event);
@@ -329,8 +330,6 @@ public class TestExecSource {
     transaction.commit();
     transaction.close();
     source.stop();
-    File file = new File(filePath);
-    FileUtils.forceDelete(file);
   }
 
     private void runTestShellCmdHelper(String shell, String command, String[] expectedOutput)
@@ -339,7 +338,7 @@ public class TestExecSource {
       context.put("command", command);
       Configurables.configure(source, context);
       source.start();
-      File outputFile = File.createTempFile("flumeExecSourceTest_", "");
+      File outputFile = temporaryFolder.newFile();
       FileOutputStream outputStream = new FileOutputStream(outputFile);
       if(SystemUtils.IS_OS_WINDOWS)
            Thread.sleep(2500);
@@ -360,7 +359,6 @@ public class TestExecSource {
 //          System.out.println(line);
         Assert.assertArrayEquals(expectedOutput, output.toArray(new String[]{}));
       } finally {
-        FileUtils.forceDelete(outputFile);
         transaction.close();
         source.stop();
       }
