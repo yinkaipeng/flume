@@ -107,5 +107,6 @@ FLUME-2915 - The kafka channel using new APIs will be stuck when the sink is avr
 FLUME-2920 - Kafka Channel Should Not Commit Offsets When Stopping
 FLUME-2972 - Handle offset migration in the new Kafka Channel
 FLUME-2983 - Handle offset migration in the new Kafka Source
+FLUME-3080 - Close failure in HDFS Sink might cause data loss
 
 Stopping Windows Service leaves the Flume java process running
