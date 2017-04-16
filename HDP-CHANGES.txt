@@ -108,5 +108,6 @@ FLUME-2920 - Kafka Channel Should Not Commit Offsets When Stopping
 FLUME-2972 - Handle offset migration in the new Kafka Channel
 FLUME-2983 - Handle offset migration in the new Kafka Source
 FLUME-3080 - Close failure in HDFS Sink might cause data loss
+FLUME-3043 - KafkaSink SinkCallback throws NullPointerException when Log4J level is debug
 
 Stopping Windows Service leaves the Flume java process running
