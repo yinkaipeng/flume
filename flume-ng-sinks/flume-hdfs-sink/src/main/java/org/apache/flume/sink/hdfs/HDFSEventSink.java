@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
@@ -57,7 +59,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class HDFSEventSink extends AbstractSink implements Configurable {
@@ -372,8 +373,8 @@ public class HDFSEventSink extends AbstractSink implements Configurable {
   public Status process() throws EventDeliveryException {
     Channel channel = getChannel();
     Transaction transaction = channel.getTransaction();
-    List<BucketWriter> writers = Lists.newArrayList();
     transaction.begin();
+    Set<BucketWriter> writers = new LinkedHashSet<>();
     try {
       int txnEventCount = 0;
       for (txnEventCount = 0; txnEventCount < batchSize; txnEventCount++) {
@@ -414,11 +415,6 @@ public class HDFSEventSink extends AbstractSink implements Configurable {
           }
         }
 
-        // track the buckets getting written in this transaction
-        if (!writers.contains(bucketWriter)) {
-          writers.add(bucketWriter);
-        }
-
         // Write the data to HDFS
         try {
           bucketWriter.append(event);
@@ -432,6 +428,11 @@ public class HDFSEventSink extends AbstractSink implements Configurable {
             sfWriters.put(lookupPath, bucketWriter);
           }
           bucketWriter.append(event);
+        }
+
+        // track the buckets getting written in this transaction
+        if (!writers.contains(bucketWriter)) {
+          writers.add(bucketWriter);
         }
       }
 
@@ -474,23 +475,24 @@ public class HDFSEventSink extends AbstractSink implements Configurable {
     }
   }
 
-  private static void closeActiveBucketWriters(List<BucketWriter> writers, WriterLinkedHashMap sfWriters) {
+  private static void closeActiveBucketWriters(Iterable<BucketWriter> writers, WriterLinkedHashMap sfWriters) {
     for( BucketWriter writer : writers ) {
       sfWriters.remove(writer.getPath());
     }
   }
 
-  private BucketWriter initializeBucketWriter(String realPath,
-    String realName, String lookupPath, HDFSWriter hdfsWriter,
-    WriterCallback closeCallback) {
+  @VisibleForTesting
+  BucketWriter initializeBucketWriter(String realPath,
+      String realName, String lookupPath, HDFSWriter hdfsWriter,
+      WriterCallback closeCallback) {
     BucketWriter bucketWriter = new BucketWriter(rollInterval,
-      rollSize, rollCount,
-      batchSize, context, realPath, realName, inUsePrefix, inUseSuffix,
-      suffix, codeC, compType, hdfsWriter, timedRollerPool,
-      proxyTicket, sinkCounter, idleTimeout, closeCallback,
-      lookupPath, callTimeout, callTimeoutPool, retryInterval,
-      tryCount);
-    if(mockFs != null) {
+        rollSize, rollCount,
+        batchSize, context, realPath, realName, inUsePrefix, inUseSuffix,
+        suffix, codeC, compType, hdfsWriter, timedRollerPool,
+        proxyTicket, sinkCounter, idleTimeout, closeCallback,
+        lookupPath, callTimeout, callTimeoutPool, retryInterval,
+        tryCount);
+    if (mockFs != null) {
       bucketWriter.setFileSystem(mockFs);
       bucketWriter.setMockStream(mockWriter);
     }
