@@ -94,5 +94,6 @@ FLUME-2632 - High CPU on KafkaSink
 FLUME-2812 - Fix semaphore leak causing java.lang.Error: Maximum permit count exceeded in MemoryChannel
 FLUME-3031 - Sequence source should reset its counter for event body on channel exception
 FLUME-2991 - ExecSource command execution starts before starting the sourceCounter
+FLUME-3027 - Kafka offset seems to jump back and forth to earlier number
 
 Stopping Windows Service leaves the Flume java process running
