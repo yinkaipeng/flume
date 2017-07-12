@@ -96,5 +96,7 @@ FLUME-3031 - Sequence source should reset its counter for event body on channel 
 FLUME-2991 - ExecSource command execution starts before starting the sourceCounter
 FLUME-3002 - Some tests in TestBucketWriter are flaky
 FLUME-3027 - Kafka offset seems to jump back and forth to earlier number
+FLUME-2427 - Be less verbose in isFileClosed() notification
+FLUME-3114 - Upgrade commons-httpclient library dependency
 
 Stopping Windows Service leaves the Flume java process running
