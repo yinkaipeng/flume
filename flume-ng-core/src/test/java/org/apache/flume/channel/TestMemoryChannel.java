@@ -19,12 +19,8 @@
 
 package org.apache.flume.channel;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingDeque;
-
-import org.apache.flume.Channel;
 import org.apache.flume.ChannelException;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
@@ -36,8 +32,13 @@ import org.apache.flume.event.SimpleEvent;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import static org.fest.reflect.core.Reflection.*;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.LinkedBlockingDeque;
+
+import static org.fest.reflect.core.Reflection.field;
 
 public class TestMemoryChannel {
 
@@ -73,6 +74,26 @@ public class TestMemoryChannel {
   }
 
   @Test
+  public void testPutAcceptsNullValueInHeader() {
+    Configurables.configure(channel, new Context());
+
+    Event event = EventBuilder.withBody("test body".getBytes(Charsets.UTF_8),
+        Collections.<String, String>singletonMap("test_key", null));
+
+    Transaction txPut = channel.getTransaction();
+    txPut.begin();
+    channel.put(event);
+    txPut.commit();
+    txPut.close();
+
+    Transaction txTake = channel.getTransaction();
+    txTake.begin();
+    Event eventTaken = channel.take();
+    Assert.assertEquals(event, eventTaken);
+    txTake.commit();
+  }
+
+  @Test
   public void testChannelResize() {
     Context context = new Context();
     Map<String, String> parms = new HashMap<String, String>();
@@ -83,7 +104,7 @@ public class TestMemoryChannel {
 
     Transaction transaction = channel.getTransaction();
     transaction.begin();
-    for(int i=0; i < 5; i++) {
+    for (int i=0; i < 5; i++) {
       channel.put(EventBuilder.withBody(String.format("test event %d", i).getBytes()));
     }
     transaction.commit();
@@ -126,7 +147,7 @@ public class TestMemoryChannel {
     parms.put("transactionCapacity", "2");
     context.putAll(parms);
     Configurables.configure(channel, context);
-    for(int i=0; i < 6; i++) {
+    for (int i=0; i < 6; i++) {
       transaction = channel.getTransaction();
       transaction.begin();
       Assert.assertNotNull(channel.take());

@@ -113,5 +113,6 @@ FLUME-3083 - Taildir source can miss events if file updated in same second as fi
 FLUME-3085 - HDFS Sink can skip flushing some BucketWriters, might lead to data loss
 FLUME-2752 - Flume AvroSource will leak the memory and the OOM will be happened
 FLUME-2905 - NetcatSource - Socket not closed when an exception is encountered during start() leading to file descriptor leaks
+FLUME-2620 - File channel throws NullPointerException if a header value is null
 
 Stopping Windows Service leaves the Flume java process running

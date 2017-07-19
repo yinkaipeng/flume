@@ -52,6 +52,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -63,6 +64,7 @@ public class TestFileChannel extends TestFileChannelBase {
 
   private static final Logger LOG = LoggerFactory
           .getLogger(TestFileChannel.class);
+  public static final String TEST_KEY = "test_key";
 
   @Before
   public void setup() throws Exception {
@@ -225,6 +227,28 @@ public class TestFileChannel extends TestFileChannelBase {
     Set<String> actual = takeEvents(channel, 1);
     compareInputAndOut(expected, actual);
   }
+  @Test
+  public void testPutConvertsNullValueToEmptyStrInHeader() throws Exception {
+    channel.start();
+
+    Event event = EventBuilder.withBody("test body".getBytes(Charsets.UTF_8),
+        Collections.<String, String>singletonMap(TEST_KEY, null));
+
+    Transaction txPut = channel.getTransaction();
+    txPut.begin();
+    channel.put(event);
+    txPut.commit();
+    txPut.close();
+
+    Transaction txTake = channel.getTransaction();
+    txTake.begin();
+    Event eventTaken = channel.take();
+    Assert.assertArrayEquals(event.getBody(), eventTaken.getBody());
+    Assert.assertEquals("", eventTaken.getHeaders().get(TEST_KEY));
+    txTake.commit();
+    txTake.close();
+  }
+
   @Test
   public void testCommitAfterNoPutTake() throws Exception {
     channel.start();
