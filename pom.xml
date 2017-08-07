@@ -36,8 +36,8 @@ limitations under the License.
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <!-- Java compiler configuration -->
-    <sourceJavaVersion>1.6</sourceJavaVersion>
-    <targetJavaVersion>1.6</targetJavaVersion>
+    <sourceJavaVersion>1.7</sourceJavaVersion>
+    <targetJavaVersion>1.7</targetJavaVersion>
 
     <!-- defaults for flaky test and focused test exclusions -->
     <test.exclude.pattern>$</test.exclude.pattern> <!-- junk pattern -->
@@ -78,6 +78,7 @@ limitations under the License.
     <module>flume-ng-sdk</module>
     <module>flume-ng-tests</module>
     <module>flume-tools</module>
+    <module>flume-shared</module>
   </modules>
 
   <profiles>
@@ -789,8 +790,8 @@ limitations under the License.
           <configuration>
             <source>${sourceJavaVersion}</source>
             <target>${targetJavaVersion}</target>
-            <source>1.6</source>
-            <target>1.6</target>
+            <source>1.7</source>
+            <target>1.7</target>
             <!-- Memory management -->
             <fork>true</fork>
             <meminitial>128m</meminitial>
@@ -1213,6 +1214,13 @@ limitations under the License.
         <groupId>org.apache.flume.flume-ng-channels</groupId>
         <artifactId>flume-file-channel</artifactId>
         <version>1.5.2.2.6.2.0-SNAPSHOT</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.flume.flume-shared</groupId>
+        <artifactId>flume-shared-kafka-test</artifactId>
+        <version>1.5.2.2.6.2.0-SNAPSHOT</version>
+        <scope>test</scope>
       </dependency>
 
       <dependency>

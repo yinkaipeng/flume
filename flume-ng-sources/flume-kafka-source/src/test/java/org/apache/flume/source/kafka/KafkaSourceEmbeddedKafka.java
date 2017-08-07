@@ -16,31 +16,56 @@
  */
 package org.apache.flume.source.kafka;
 
+import kafka.admin.AdminUtils;
+import kafka.admin.RackAwareMode;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
-import kafka.javaapi.producer.Producer;
-import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
-import kafka.admin.AdminUtils;
 import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
-import kafka.utils.ZKStringSerializer$;
+import org.apache.commons.io.FileUtils;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 public class KafkaSourceEmbeddedKafka {
+
+  public static String HOST = InetAddress.getLoopbackAddress().getCanonicalHostName();
+
   KafkaServerStartable kafkaServer;
   KafkaSourceEmbeddedZookeeper zookeeper;
-  int zkPort = 21818; // none-standard
-  Producer<String,String> producer;
 
-  public KafkaSourceEmbeddedKafka() {
+  int zkPort = 21818; // none-standard
+  int serverPort = 18922;
+
+  KafkaProducer<String, byte[]> producer;
+  File dir;
+
+  public KafkaSourceEmbeddedKafka(Properties properties) {
     zookeeper = new KafkaSourceEmbeddedZookeeper(zkPort);
+    dir = new File(System.getProperty("java.io.tmpdir"), "kafka_log-" + UUID.randomUUID());
+    try {
+      FileUtils.deleteDirectory(dir);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
     Properties props = new Properties();
     props.put("zookeeper.connect",zookeeper.getConnectString());
     props.put("broker.id","1");
-    KafkaConfig config = KafkaConfig.fromProps(props);
+    props.put("host.name", "localhost");
+    props.put("port", String.valueOf(serverPort));
+    props.put("log.dir", dir.getAbsolutePath());
+    if (properties != null) {
+      props.putAll(properties);
+    }
+    KafkaConfig config = new KafkaConfig(props);
     kafkaServer = new KafkaServerStartable(config);
     kafkaServer.startup();
     initProducer();
@@ -56,39 +81,59 @@ public class KafkaSourceEmbeddedKafka {
     return zookeeper.getConnectString();
   }
 
-  private void initProducer()
-  {
+  public String getBootstrapServers() {
+    return HOST + ":" + serverPort;
+  }
+
+  private void initProducer() {
     Properties props = new Properties();
-    props.put("metadata.broker.list","127.0.0.1:" +
-            kafkaServer.serverConfig().port());
-    props.put("serializer.class","kafka.serializer.StringEncoder");
-    props.put("request.required.acks", "1");
-
-    ProducerConfig config = new ProducerConfig(props);
-
-    producer = new Producer<String,String>(config);
-
+    props.put("bootstrap.servers", HOST + ":" + serverPort);
+    props.put("acks", "1");
+    producer = new KafkaProducer<String,byte[]>(props,
+            new StringSerializer(), new ByteArraySerializer());
   }
 
   public void produce(String topic, String k, String v) {
-    KeyedMessage<String,String> message = new KeyedMessage<String,String>(topic,k,v);
-    producer.send(message);
+    produce(topic, k, v.getBytes());
   }
 
-  public void createTopic(String topicName) {
+  public void produce(String topic, String k, byte[] v) {
+    ProducerRecord<String, byte[]> rec = new ProducerRecord<String, byte[]>(topic, k, v);
+    try {
+      producer.send(rec).get();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public void produce(String topic, int partition, String k, String v) {
+    produce(topic,partition,k,v.getBytes());
+  }
+
+  public void produce(String topic, int partition, String k, byte[] v) {
+    ProducerRecord<String, byte[]> rec = new ProducerRecord<String, byte[]>(topic, partition, k, v);
+    try {
+      producer.send(rec).get();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public void createTopic(String topicName, int numPartitions) {
     // Create a ZooKeeper client
     int sessionTimeoutMs = 10000;
     int connectionTimeoutMs = 10000;
-    ZkClient zkClient = new ZkClient(zookeeper.getConnectString(),
-            sessionTimeoutMs, connectionTimeoutMs,
-            ZKStringSerializer$.MODULE$);
-
-    int numPartitions = 1;
+    ZkClient zkClient =
+        ZkUtils.createZkClient(HOST + ":" + zkPort, sessionTimeoutMs, connectionTimeoutMs);
+    ZkUtils zkUtils = ZkUtils.apply(zkClient, false);
     int replicationFactor = 1;
     Properties topicConfig = new Properties();
-    ZkUtils zkUtils = ZkUtils.apply(zkClient, false);
-    AdminUtils.createTopic(zkUtils, topicName, numPartitions,
-                           replicationFactor, topicConfig, kafka.admin.RackAwareMode.Disabled$.MODULE$);
+    AdminUtils.createTopic(zkUtils, topicName, numPartitions, replicationFactor, topicConfig,
+            RackAwareMode.Disabled$.MODULE$);
   }
 
 }

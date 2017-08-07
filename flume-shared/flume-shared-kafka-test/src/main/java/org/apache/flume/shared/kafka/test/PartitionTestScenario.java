@@ -16,12 +16,11 @@
  limitations under the License.
  */
 
-package org.apache.flume.sink.kafka;
+package org.apache.flume.shared.kafka.test;
 
-public class TestConstants {
-  public static final String STATIC_TOPIC = "static-topic";
-  public static final String CUSTOM_KEY = "custom-key";
-  public static final String CUSTOM_TOPIC = "custom-topic";
-  public static final String HEADER_1_VALUE = "test-avro-header";
-  public static final String HEADER_1_KEY = "header1";
+public enum PartitionTestScenario {
+  STATIC_HEADER_ONLY,
+  PARTITION_ID_HEADER_ONLY,
+  STATIC_HEADER_AND_PARTITION_ID,
+  NO_PARTITION_HEADERS
 }
