@@ -22,6 +22,7 @@ public final class BasicConfigurationConstants {
   public static final String CONFIG_SOURCES_PREFIX = CONFIG_SOURCES + ".";
   public static final String CONFIG_SOURCE_CHANNELSELECTOR_PREFIX = "selector.";
 
+
   public static final String CONFIG_SINKS = "sinks";
   public static final String CONFIG_SINKS_PREFIX = CONFIG_SINKS + ".";
   public static final String CONFIG_SINK_PROCESSOR_PREFIX = "processor.";

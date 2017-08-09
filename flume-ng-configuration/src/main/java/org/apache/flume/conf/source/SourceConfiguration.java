@@ -18,7 +18,6 @@ package org.apache.flume.conf.source;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -94,7 +93,7 @@ public class SourceConfiguration extends ComponentConfiguration {
           config = "OTHER";
         }
       } else {
-        config = selectorType.toString().toUpperCase(Locale.ENGLISH);
+        config = selectorType.toString().toUpperCase();
       }
 
       this.selectorConf =
@@ -113,11 +112,11 @@ public class SourceConfiguration extends ComponentConfiguration {
   }
 
   @Override
-  public String toString(int indentCount) {
+  public String toString(int indentCount){
     String basicStr = super.toString(indentCount);
     StringBuilder sb = new StringBuilder();
     sb.append(basicStr).append("CHANNELS:");
-    for (String channel : this.channels) {
+    for(String channel : this.channels){
       sb.append(FlumeConfiguration.INDENTSTEP).append(
           channel).append(FlumeConfiguration.NEWLINE);
     }
@@ -153,7 +152,7 @@ public class SourceConfiguration extends ComponentConfiguration {
     EXEC("org.apache.flume.conf.source.ExecSourceConfiguration"),
 
     /**
-     * Avro source.
+     * Avro soruce.
      *
      * @see AvroSource
      */
