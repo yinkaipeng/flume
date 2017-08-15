@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
+import org.apache.flume.conf.LogPrivacyUtil;
 import org.apache.flume.conf.ConfigurationException;
 import org.apache.flume.event.EventBuilder;
 import org.slf4j.Logger;
@@ -108,7 +109,9 @@ public class BlobHandler implements HTTPSourceHandler {
         String name = (String) iter.nextElement();
         requestHeaders.put(name, request.getHeader(name));
       }
-      LOGGER.debug("requestHeaders: {}", requestHeaders);
+      if (LogPrivacyUtil.allowLogRawData()) {
+        LOGGER.debug("requestHeaders: {}", requestHeaders);
+      }
     }
     Map<String, String> headers = new HashMap();
     if (request.getContentType() != null) {
