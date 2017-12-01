@@ -21,6 +21,7 @@ package org.apache.flume.sink.hdfs;
 import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +32,7 @@ import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.event.EventBuilder;
 import org.apache.flume.instrumentation.SinkCounter;
+import org.apache.flume.sink.hdfs.HDFSEventSink.WriterCallback;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -70,11 +72,8 @@ public class TestBucketWriter {
   public void testEventCountingRoller() throws IOException, InterruptedException {
     int maxEvents = 100;
     MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-    BucketWriter bucketWriter = new BucketWriter(0, 0, maxEvents, 0, ctx,
-        "/tmp", "file", "", ".tmp", null, null, SequenceFile.CompressionType.NONE,
-        hdfsWriter, timedRollerPool, null,
-        new SinkCounter("test-bucket-writer-" + System.currentTimeMillis()), 0,
-        null, null, 30000, Executors.newSingleThreadExecutor(), 0, 0);
+    BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter)
+        .setRollCount(maxEvents).build();
 
     Event e = EventBuilder.withBody("foo", Charsets.UTF_8);
     for (int i = 0; i < 1000; i++) {
@@ -94,12 +93,8 @@ public class TestBucketWriter {
   public void testSizeRoller() throws IOException, InterruptedException {
     int maxBytes = 300;
     MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-    BucketWriter bucketWriter = new BucketWriter(0, maxBytes, 0, 0,
-      ctx, "/tmp", "file", "", ".tmp", null, null,
-      SequenceFile.CompressionType.NONE, hdfsWriter,timedRollerPool,
-      null, new SinkCounter("test-bucket-writer-" +
-      System.currentTimeMillis()),0, null, null, 30000,
-      Executors.newSingleThreadExecutor(), 0, 0);
+    BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter)
+        .setRollSize(maxBytes).build();
 
     Event e = EventBuilder.withBody("foo", Charsets.UTF_8);
     for (int i = 0; i < 1000; i++) {
@@ -122,16 +117,14 @@ public class TestBucketWriter {
     final AtomicBoolean calledBack = new AtomicBoolean(false);
 
     MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-    BucketWriter bucketWriter = new BucketWriter(ROLL_INTERVAL, 0, 0, 0, ctx,
-      "/tmp", "file", "", ".tmp", null, null, SequenceFile.CompressionType.NONE,
-      hdfsWriter, timedRollerPool, null,
-      new SinkCounter("test-bucket-writer-" + System.currentTimeMillis()),
-      0, new HDFSEventSink.WriterCallback() {
-      @Override
-      public void run(String filePath) {
-        calledBack.set(true);
-      }
-    }, null, 30000, Executors.newSingleThreadExecutor(), 0, 0);
+    BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter)
+        .setRollInterval(ROLL_INTERVAL)
+        .setOnCloseCallback(new HDFSEventSink.WriterCallback() {
+          @Override
+          public void run(String filePath) {
+            calledBack.set(true);
+          }
+        }).build();
 
     Event e = EventBuilder.withBody("foo", Charsets.UTF_8);
     long startNanos = System.nanoTime();
@@ -142,15 +135,11 @@ public class TestBucketWriter {
     // sleep to force a roll... wait 2x interval just to be sure
     Thread.sleep(2 * ROLL_INTERVAL * 1000L);
 
-    Assert.assertTrue(bucketWriter.closed);
+    Assert.assertTrue(bucketWriter.closed.get());
     Assert.assertTrue(calledBack.get());
 
-    bucketWriter = new BucketWriter(ROLL_INTERVAL, 0, 0, 0, ctx,
-      "/tmp", "file", "", ".tmp", null, null, SequenceFile.CompressionType.NONE,
-      hdfsWriter, timedRollerPool, null,
-      new SinkCounter("test-bucket-writer-"
-        + System.currentTimeMillis()), 0, null, null, 30000,
-      Executors.newSingleThreadExecutor(), 0, 0);
+    bucketWriter = new BucketWriterBuilder(hdfsWriter)
+        .setRollInterval(ROLL_INTERVAL).build();
     // write one more event (to reopen a new file so we will roll again later)
     bucketWriter.append(e);
 
@@ -221,19 +210,17 @@ public class TestBucketWriter {
         open = true;
       }
     };
-    HDFSTextSerializer serializer = new HDFSTextSerializer();
+
     File tmpFile = File.createTempFile("flume", "test");
     tmpFile.deleteOnExit();
     String path = tmpFile.getParent();
     String name = tmpFile.getName();
 
-    BucketWriter bucketWriter = new BucketWriter(ROLL_INTERVAL, 0, 0,
-      0, ctx, path, name, "", ".tmp", null, null,
-      SequenceFile.CompressionType.NONE, hdfsWriter,
-      timedRollerPool, null, new SinkCounter("test-bucket-writer-"
-      + System.currentTimeMillis()),
-      0, null, null, 30000, Executors.newSingleThreadExecutor(),
-      0, 0);
+    BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter)
+        .setRollInterval(ROLL_INTERVAL)
+        .setFilePath(path)
+        .setFileName(name)
+        .build();
 
     Event e = EventBuilder.withBody("foo", Charsets.UTF_8);
     for (int i = 0; i < NUM_EVENTS - 1; i++) {
@@ -252,12 +239,10 @@ public class TestBucketWriter {
       final String suffix = null;
 
       MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-      BucketWriter bucketWriter = new BucketWriter(ROLL_INTERVAL, 0,
-        0, 0, ctx, "/tmp", "file", "", ".tmp", suffix, null,
-        SequenceFile.CompressionType.NONE, hdfsWriter,
-        timedRollerPool, null, new SinkCounter("test-bucket-writer-"
-        + System.currentTimeMillis()), 0, null, null, 30000,
-        Executors.newSingleThreadExecutor(), 0, 0);
+      BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter)
+          .setRollInterval(ROLL_INTERVAL)
+          .setFileSuffix(suffix)
+          .build();
 
       // Need to override system time use for test so we know what to expect
       final long testTime = System.currentTimeMillis();
@@ -280,12 +265,10 @@ public class TestBucketWriter {
         final String suffix = ".avro";
 
       MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-      BucketWriter bucketWriter = new BucketWriter(ROLL_INTERVAL, 0,
-        0, 0, ctx, "/tmp", "file", "", ".tmp", suffix, null,
-        SequenceFile.CompressionType.NONE, hdfsWriter,
-        timedRollerPool, null, new SinkCounter(
-        "test-bucket-writer-" + System.currentTimeMillis()), 0,
-        null, null, 30000, Executors.newSingleThreadExecutor(), 0, 0);
+      BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter)
+          .setRollInterval(ROLL_INTERVAL)
+          .setFileSuffix(suffix)
+          .build();
 
         // Need to override system time use for test so we know what to expect
 
@@ -312,14 +295,12 @@ public class TestBucketWriter {
     final String suffix = ".foo";
 
     MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-    BucketWriter bucketWriter = new BucketWriter(ROLL_INTERVAL, 0, 0,
-      0, ctx, "/tmp", "file", "", ".tmp", suffix,
-      HDFSEventSink.getCodec("gzip"),
-      SequenceFile.CompressionType.BLOCK, hdfsWriter,
-      timedRollerPool, null, new SinkCounter("test-bucket-writer-"
-      + System.currentTimeMillis()), 0, null, null, 30000,
-      Executors.newSingleThreadExecutor(), 0, 0
-    );
+    BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter)
+        .setRollInterval(ROLL_INTERVAL)
+        .setFileSuffix(suffix)
+        .setCodeC(HDFSEventSink.getCodec("gzip"))
+        .setCompType(SequenceFile.CompressionType.BLOCK)
+        .build();
 
     // Need to override system time use for test so we know what to expect
     final long testTime = System.currentTimeMillis();
@@ -344,13 +325,10 @@ public class TestBucketWriter {
     final String PREFIX = "BRNO_IS_CITY_IN_CZECH_REPUBLIC";
 
     MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-    HDFSTextSerializer formatter = new HDFSTextSerializer();
-    BucketWriter bucketWriter = new BucketWriter(ROLL_INTERVAL, 0, 0,
-      0, ctx, "/tmp", "file", PREFIX, ".tmp", null, null,
-      SequenceFile.CompressionType.NONE, hdfsWriter,
-      timedRollerPool, null, new SinkCounter(
-        "test-bucket-writer-" + System.currentTimeMillis()), 0,
-      null, null, 30000, Executors.newSingleThreadExecutor(), 0, 0);
+    BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter)
+        .setRollInterval(ROLL_INTERVAL)
+        .setInUsePrefix(PREFIX)
+        .build();
 
     Event e = EventBuilder.withBody("foo", Charsets.UTF_8);
     bucketWriter.append(e);
@@ -364,13 +342,10 @@ public class TestBucketWriter {
     final String SUFFIX = "WELCOME_TO_THE_HELLMOUNTH";
 
     MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-    HDFSTextSerializer serializer = new HDFSTextSerializer();
-    BucketWriter bucketWriter = new BucketWriter(ROLL_INTERVAL, 0, 0,
-      0, ctx, "/tmp", "file", "", SUFFIX, null, null,
-      SequenceFile.CompressionType.NONE, hdfsWriter,
-      timedRollerPool, null, new SinkCounter(
-        "test-bucket-writer-" + System.currentTimeMillis()), 0,
-      null, null, 30000, Executors.newSingleThreadExecutor(), 0, 0);
+    BucketWriter bucketWriter = new BucketWriterBuilder(hdfsWriter)
+        .setRollInterval(ROLL_INTERVAL)
+        .setInUseSuffix(SUFFIX)
+        .build();
 
     Event e = EventBuilder.withBody("foo", Charsets.UTF_8);
     bucketWriter.append(e);
@@ -384,19 +359,17 @@ public class TestBucketWriter {
     final String SUFFIX = "WELCOME_TO_THE_EREBOR";
     final AtomicBoolean callbackCalled = new AtomicBoolean(false);
 
-    MockHDFSWriter hdfsWriter = new MockHDFSWriter();
-    BucketWriter bucketWriter = new BucketWriter(ROLL_INTERVAL, 0, 0,
-      0, ctx, "/tmp", "file", "", SUFFIX, null, null,
-      SequenceFile.CompressionType.NONE,
-      hdfsWriter, timedRollerPool, null,
-      new SinkCounter(
-        "test-bucket-writer-" + System.currentTimeMillis()), 0,
-      new HDFSEventSink.WriterCallback() {
-      @Override
-      public void run(String filePath) {
-        callbackCalled.set(true);
-      }
-    }, "blah", 30000, Executors.newSingleThreadExecutor(), 0, 0);
+    BucketWriter bucketWriter = new BucketWriterBuilder()
+        .setRollInterval(ROLL_INTERVAL)
+        .setInUseSuffix(SUFFIX)
+        .setOnCloseCallback(new HDFSEventSink.WriterCallback() {
+          @Override
+          public void run(String filePath) {
+            callbackCalled.set(true);
+          }
+        })
+        .setOnCloseCallbackPath("blah")
+        .build();
 
     Event e = EventBuilder.withBody("foo", Charsets.UTF_8);
     bucketWriter.append(e);
@@ -405,7 +378,54 @@ public class TestBucketWriter {
     Assert.assertTrue(callbackCalled.get());
   }
 
+  private class FLUME2973Tester {
+    private final BucketWriter bucketWriter;
 
+    public FLUME2973Tester(long rollDelay) {
+      bucketWriter = new BucketWriterBuilder()
+          .setRollInterval(rollDelay)
+          .setOnCloseCallback(new HDFSEventSink.WriterCallback() {
+            @Override
+            public void run(String filePath) {
+              sleepBeforeSecondLock();
+              onWriterClosed();
+            }
+          }).build();
+    }
+
+    public synchronized void openWriter()
+        throws IOException, InterruptedException {
+      Event e = EventBuilder.withBody("foo", Charsets.UTF_8);
+      bucketWriter.append(e);
+    }
+
+    public synchronized void closeWriter()
+        throws IOException, InterruptedException {
+      sleepBeforeSecondLock();
+      bucketWriter.close();
+    }
+
+    private synchronized void onWriterClosed() {
+      // No-op
+    }
+
+    private void sleepBeforeSecondLock() {
+      try {
+        Thread.sleep(1000L);
+      } catch (InterruptedException e) {
+        // Ignored
+      }
+    }
+  }
+
+  @Test(timeout = 10000L)
+  public void testFLUME2973() throws IOException, InterruptedException {
+    long rollDelay = 1L;
+    FLUME2973Tester tester = new FLUME2973Tester(rollDelay);
+    tester.openWriter();
+    Thread.sleep(rollDelay * 1000L);
+    tester.closeWriter();
+  }
 
   @Test
   public void testSequenceFileRenameRetries() throws Exception {
@@ -438,14 +458,17 @@ public class TestBucketWriter {
     MockFileSystem mockFs = new
       MockFileSystem(fs,
       numberOfRetriesRequired, closeSucceed);
-    BucketWriter bucketWriter = new BucketWriter(0, 0, 1, 1, ctx,
-      hdfsPath, "File", "singleBucket", ".tmp", null, null,
-      null, new MockDataStream(mockFs),
-      timedRollerPool, null,
-      new SinkCounter(
-        "test-bucket-writer-" + System.currentTimeMillis()),
-      0, null, null, 30000, Executors.newSingleThreadExecutor(), 1,
-      numberOfRetriesRequired);
+    MockDataStream writer = new MockDataStream(mockFs);
+    BucketWriter bucketWriter = new BucketWriterBuilder(writer)
+        .setRollCount(1)
+        .setBatchSize(1)
+        .setFilePath(hdfsPath)
+        .setFileName(hdfsPath)
+        .setInUsePrefix("singleBucket")
+        .setCompType(null)
+        .setRetryInterval(1)
+        .setMaxCloseTries(numberOfRetriesRequired)
+        .build();
 
     bucketWriter.setFileSystem(mockFs);
     // At this point, we checked if isFileClosed is available in
@@ -461,5 +484,163 @@ public class TestBucketWriter {
       "but got " + bucketWriter.renameTries.get(),
       bucketWriter.renameTries.get() ==
         numberOfRetriesRequired);
+  }
+
+  private class BucketWriterBuilder {
+    private long rollInterval = 0;
+    private long rollSize = 0;
+    private long rollCount = 0;
+    private long batchSize = 0;
+    private Context context = TestBucketWriter.this.ctx;
+    private String filePath = "/tmp";
+    private String fileName = "file";
+    private String inUsePrefix = "";
+    private String inUseSuffix = ".tmp";
+    private String fileSuffix = null;
+    private CompressionCodec codeC = null;
+    private CompressionType compType = SequenceFile.CompressionType.NONE;
+    private HDFSWriter writer = null;
+    private ScheduledExecutorService timedRollerPool = TestBucketWriter.timedRollerPool;
+    private SinkCounter sinkCounter = new SinkCounter(
+        "test-bucket-writer-" + System.currentTimeMillis());
+    private int idleTimeout = 0;
+    private WriterCallback onCloseCallback = null;
+    private String onCloseCallbackPath = null;
+    private long callTimeout = 30000;
+    private ExecutorService callTimeoutPool = Executors
+        .newSingleThreadExecutor();
+    private long retryInterval = 0;
+    private int maxCloseTries = 0;
+
+    public BucketWriterBuilder() {
+      this.writer = new MockHDFSWriter();
+    }
+
+    public BucketWriterBuilder(HDFSWriter writer) {
+      this.writer = writer;
+    }
+
+    public BucketWriterBuilder setRollInterval(long rollInterval) {
+      this.rollInterval = rollInterval;
+      return this;
+    }
+
+    public BucketWriterBuilder setRollSize(long rollSize) {
+      this.rollSize = rollSize;
+      return this;
+    }
+
+    public BucketWriterBuilder setRollCount(long rollCount) {
+      this.rollCount = rollCount;
+      return this;
+    }
+
+    public BucketWriterBuilder setBatchSize(long batchSize) {
+      this.batchSize = batchSize;
+      return this;
+    }
+
+    @SuppressWarnings("unused")
+    public BucketWriterBuilder setContext(Context context) {
+      this.context = context;
+      return this;
+    }
+
+    public BucketWriterBuilder setFilePath(String filePath) {
+      this.filePath = filePath;
+      return this;
+    }
+
+    public BucketWriterBuilder setFileName(String fileName) {
+      this.fileName = fileName;
+      return this;
+    }
+
+    public BucketWriterBuilder setInUsePrefix(String inUsePrefix) {
+      this.inUsePrefix = inUsePrefix;
+      return this;
+    }
+
+    public BucketWriterBuilder setInUseSuffix(String inUseSuffix) {
+      this.inUseSuffix = inUseSuffix;
+      return this;
+    }
+
+    public BucketWriterBuilder setFileSuffix(String fileSuffix) {
+      this.fileSuffix = fileSuffix;
+      return this;
+    }
+
+    public BucketWriterBuilder setCodeC(CompressionCodec codeC) {
+      this.codeC = codeC;
+      return this;
+    }
+
+    public BucketWriterBuilder setCompType(CompressionType compType) {
+      this.compType = compType;
+      return this;
+    }
+
+    @SuppressWarnings("unused")
+    public BucketWriterBuilder setTimedRollerPool(
+        ScheduledExecutorService timedRollerPool) {
+      this.timedRollerPool = timedRollerPool;
+      return this;
+    }
+
+    @SuppressWarnings("unused")
+    public BucketWriterBuilder setSinkCounter(SinkCounter sinkCounter) {
+      this.sinkCounter = sinkCounter;
+      return this;
+    }
+
+    @SuppressWarnings("unused")
+    public BucketWriterBuilder setIdleTimeout(int idleTimeout) {
+      this.idleTimeout = idleTimeout;
+      return this;
+    }
+
+    public BucketWriterBuilder setOnCloseCallback(
+        WriterCallback onCloseCallback) {
+      this.onCloseCallback = onCloseCallback;
+      return this;
+    }
+
+    public BucketWriterBuilder setOnCloseCallbackPath(
+        String onCloseCallbackPath) {
+      this.onCloseCallbackPath = onCloseCallbackPath;
+      return this;
+    }
+
+    @SuppressWarnings("unused")
+    public BucketWriterBuilder setCallTimeout(long callTimeout) {
+      this.callTimeout = callTimeout;
+      return this;
+    }
+
+    @SuppressWarnings("unused")
+    public BucketWriterBuilder setCallTimeoutPool(
+        ExecutorService callTimeoutPool) {
+      this.callTimeoutPool = callTimeoutPool;
+      return this;
+    }
+
+    public BucketWriterBuilder setRetryInterval(long retryInterval) {
+      this.retryInterval = retryInterval;
+      return this;
+    }
+
+    public BucketWriterBuilder setMaxCloseTries(int maxCloseTries) {
+      this.maxCloseTries = maxCloseTries;
+      return this;
+    }
+
+    public BucketWriter build() {
+      return new BucketWriter(rollInterval, rollSize, rollCount, batchSize,
+          context, filePath, fileName, inUsePrefix, inUseSuffix, fileSuffix,
+          codeC, compType, writer, timedRollerPool, null, sinkCounter,
+          idleTimeout, onCloseCallback, onCloseCallbackPath, callTimeout,
+          callTimeoutPool, retryInterval, maxCloseTries);
+    }
   }
 }
