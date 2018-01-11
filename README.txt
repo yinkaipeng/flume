@@ -8,3 +8,4 @@ Patch Upgrade - Wed Dec  6 18:35:33 UTC 2017
 Patch Upgrade - Sun Dec 10 04:25:25 UTC 2017
 Patch Upgrade - Sun Dec 10 10:13:12 UTC 2017
 Patch Upgrade - Sat Dec 16 14:51:50 UTC 2017
+Patch Upgrade - Thu Jan 11 11:14:32 UTC 2018
