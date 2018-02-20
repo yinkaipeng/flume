@@ -1332,7 +1332,7 @@ limitations under the License.
       <dependency>
         <groupId>org.apache.derby</groupId>
         <artifactId>derby</artifactId>
-        <version>10.8.2.2</version>
+        <version>10.14.1.0</version>
       </dependency>
 
       <dependency>
