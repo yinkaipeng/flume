@@ -114,5 +114,10 @@ FLUME-3085 - HDFS Sink can skip flushing some BucketWriters, might lead to data 
 FLUME-2752 - Flume AvroSource will leak the memory and the OOM will be happened
 FLUME-2905 - NetcatSource - Socket not closed when an exception is encountered during start() leading to file descriptor leaks
 FLUME-2620 - File channel throws NullPointerException if a header value is null
+FLUME-3194 upgrade derby to the latest version
+FLUME-2678. Refactor Hive dependencies.
+FLUME-2050. Upgrade to Log4j 2.10.0
+FLUME-3132. Upgrade tomcat jasper library dependencies
+FLUME-2973. Deadlock in hdfs sink
 
 Stopping Windows Service leaves the Flume java process running
