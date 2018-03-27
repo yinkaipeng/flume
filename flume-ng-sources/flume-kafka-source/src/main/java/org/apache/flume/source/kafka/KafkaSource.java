@@ -577,8 +577,8 @@ public class KafkaSource extends AbstractPollableSource
                                                                      String topicStr) {
     Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
     ZKGroupTopicDirs topicDirs = new ZKGroupTopicDirs(groupId, topicStr);
-    List<String> partitions = asJavaListConverter(
-        client.getChildrenParentMayNotExist(topicDirs.consumerOffsetDir())).asJava();
+    Collection<String> partitions = asJavaCollectionConverter(
+        client.getChildrenParentMayNotExist(topicDirs.consumerOffsetDir())).asJavaCollection();
     for (String partition : partitions) {
       TopicPartition key = new TopicPartition(topicStr, Integer.valueOf(partition));
       Option<String> data = client.readDataMaybeNull(
