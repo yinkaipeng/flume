@@ -57,7 +57,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.protocol.SecurityProtocol;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.security.JaasUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +66,7 @@ import com.google.common.base.Optional;
 import scala.Option;
 
 import static org.apache.flume.source.kafka.KafkaSourceConstants.*;
-import static scala.collection.JavaConverters.asJavaListConverter;
+import static scala.collection.JavaConverters.asJavaCollectionConverter;
 
 /**
  * A Source for Kafka which reads messages from kafka topics.
@@ -444,8 +444,8 @@ public class KafkaSource extends AbstractPollableSource
     ZkUtils zkUtils = ZkUtils.apply(zookeeperConnect, ZK_SESSION_TIMEOUT, ZK_CONNECTION_TIMEOUT,
         JaasUtils.isZkSecurityEnabled());
     try {
-      List<BrokerEndPoint> endPoints =
-          asJavaListConverter(zkUtils.getAllBrokerEndPointsForChannel(securityProtocol)).asJava();
+      Collection<BrokerEndPoint> endPoints =
+          asJavaCollectionConverter(zkUtils.getAllBrokerEndPointsForChannel(securityProtocol)).asJavaCollection();
       List<String> connections = new ArrayList<>();
       for (BrokerEndPoint endPoint : endPoints) {
         connections.add(endPoint.connectionString());
