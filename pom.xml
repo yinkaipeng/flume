@@ -61,7 +61,7 @@ limitations under the License.
     <kite.version>0.13.0</kite.version>
     <hive.version>1.2.1000.2.6.5.0-SNAPSHOT</hive.version>
     <kafka.version>0.10.1.2.6.5.0-SNAPSHOT</kafka.version>
-    <kafka.artifact.id>2_11</kafka.artifact.id>
+    <kafka.artifact.id>kafka_2.11</kafka.artifact.id>
     <jetty.version>6.1.26.hwx</jetty.version>
     <log4j.version>2.10.0</log4j.version>
   </properties>
