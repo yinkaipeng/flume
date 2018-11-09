@@ -20,7 +20,7 @@ limitations under the License.
   <parent>
     <artifactId>flume-parent</artifactId>
     <groupId>org.apache.flume</groupId>
-    <version>1.5.2.2.6.5.0-SNAPSHOT</version>
+    <version>1.5.2.2.6.5.1003-2</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>flume-ng-clients</artifactId>
